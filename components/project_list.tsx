@@ -3,15 +3,13 @@
 import { useState } from "react"
 import Header from "./header"
 
+
 interface Project {
   id: number
   name: string
   status: "진행중" | "완료" | "대기중" | "보류"
-  priority: "높음" | "보통" | "낮음"
   assignee: string
   dueDate: string
-  issues: number
-  codeQuality: number
   description: string
 }
 
@@ -20,55 +18,40 @@ const mockProjects: Project[] = [
     id: 1,
     name: "사용자 인증 시스템",
     status: "진행중",
-    priority: "높음",
     assignee: "김개발",
     dueDate: "2024-01-15",
-    issues: 3,
-    codeQuality: 92,
     description: "JWT 기반 로그인/회원가입 시스템 구현",
   },
   {
     id: 2,
     name: "결제 모듈 개발",
     status: "완료",
-    priority: "높음",
     assignee: "이코드",
     dueDate: "2024-01-10",
-    issues: 0,
-    codeQuality: 95,
     description: "PG사 연동 및 결제 프로세스 구현",
   },
   {
     id: 3,
     name: "관리자 대시보드",
     status: "대기중",
-    priority: "보통",
     assignee: "박프론트",
     dueDate: "2024-01-20",
-    issues: 1,
-    codeQuality: 88,
     description: "관리자용 통계 및 관리 페이지",
   },
   {
     id: 4,
     name: "모바일 앱 최적화",
     status: "보류",
-    priority: "낮음",
     assignee: "최모바일",
     dueDate: "2024-01-25",
-    issues: 5,
-    codeQuality: 76,
     description: "반응형 디자인 및 성능 최적화",
   },
   {
     id: 5,
     name: "API 문서화",
     status: "진행중",
-    priority: "보통",
     assignee: "정백엔드",
     dueDate: "2024-01-18",
-    issues: 2,
-    codeQuality: 90,
     description: "Swagger를 이용한 API 문서 자동화",
   },
 ]
@@ -76,7 +59,7 @@ const mockProjects: Project[] = [
 export default function ProjectList() {
   const [projects, setProjects] = useState<Project[]>(mockProjects)
   const [searchTerm, setSearchTerm] = useState("")
-  const [sortBy, setSortBy] = useState<"name" | "status" | "priority" | "dueDate" | "codeQuality">("name")
+  const [sortBy, setSortBy] = useState<"name" | "status" | "dueDate">("name")
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
@@ -85,7 +68,6 @@ export default function ProjectList() {
     name: "",
     assignee: "",
     dueDate: "",
-    priority: "보통" as const,
     description: "",
   })
 
@@ -103,25 +85,6 @@ export default function ProjectList() {
       default:
         return "bg-gray-100 text-gray-800"
     }
-  }
-
-  const getPriorityColor = (priority: Project["priority"]) => {
-    switch (priority) {
-      case "높음":
-        return "bg-red-100 text-red-800"
-      case "보통":
-        return "bg-yellow-100 text-yellow-800"
-      case "낮음":
-        return "bg-green-100 text-green-800"
-      default:
-        return "bg-gray-100 text-gray-800"
-    }
-  }
-
-  const getCodeQualityColor = (score: number) => {
-    if (score >= 90) return "text-green-600"
-    if (score >= 80) return "text-yellow-600"
-    return "text-red-600"
   }
 
   const filteredAndSortedProjects = projects
@@ -153,11 +116,9 @@ export default function ProjectList() {
         id: Math.max(...projects.map((p) => p.id)) + 1,
         ...newProject,
         status: "대기중",
-        issues: 0,
-        codeQuality: Math.floor(Math.random() * 20) + 80,
       }
       setProjects([...projects, project])
-      setNewProject({ name: "", assignee: "", dueDate: "", priority: "보통", description: "" })
+      setNewProject({ name: "", assignee: "", dueDate: "", description: "" })
       setShowCreateModal(false)
     }
   }
@@ -175,12 +136,6 @@ export default function ProjectList() {
     }
   }
 
-  const handleDeleteProject = (projectId: number) => {
-    if (confirm("정말로 이 프로젝트를 삭제하시겠습니까?")) {
-      setProjects(projects.filter((p) => p.id !== projectId))
-    }
-  }
-
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
@@ -191,8 +146,17 @@ export default function ProjectList() {
         {/* Search and Filter Bar */}
         <div className="bg-white rounded-lg border border-slate-200 p-6 mb-6">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+            
+          <button onClick={() => setShowCreateModal(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              새 프로젝트
+            </button>
+
             <div className="flex-1 max-w-md">
               <div className="relative">
+                
                 <svg
                   className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2"
                   fill="none"
@@ -206,6 +170,7 @@ export default function ProjectList() {
                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                   />
                 </svg>
+                
                 <input
                   type="text"
                   placeholder="프로젝트 검색..."
@@ -223,9 +188,7 @@ export default function ProjectList() {
               >
                 <option value="name">이름순</option>
                 <option value="status">상태순</option>
-                <option value="priority">우선순위순</option>
                 <option value="dueDate">마감일순</option>
-                <option value="codeQuality">코드품질순</option>
               </select>
               <button
                 onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
@@ -326,7 +289,7 @@ export default function ProjectList() {
             <p className="text-slate-500">검색 결과가 없습니다.</p>
           </div>
         )}
-      </main>
+        {/* 페이지 헤더 끝*/}
 
       {/* Create Project Modal */}
       {showCreateModal && (
@@ -375,19 +338,6 @@ export default function ProjectList() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">우선순위</label>
-                <select
-                  value={newProject.priority}
-                  onChange={(e) => setNewProject({ ...newProject, priority: e.target.value as Project["priority"] })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="낮음">낮음</option>
-                  <option value="보통">보통</option>
-                  <option value="높음">높음</option>
-                </select>
-              </div>
-
-              <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">설명</label>
                 <textarea
                   value={newProject.description}
@@ -416,137 +366,7 @@ export default function ProjectList() {
           </div>
         </div>
       )}
-
-      {/* Edit Project Modal */}
-      {showEditModal && editingProject && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-slate-800">프로젝트 편집</h2>
-              <button onClick={() => setShowEditModal(false)} className="text-slate-400 hover:text-slate-600">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">프로젝트 이름</label>
-                <input
-                  type="text"
-                  value={editingProject.name}
-                  onChange={(e) => setEditingProject({ ...editingProject, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">담당자</label>
-                <input
-                  type="text"
-                  value={editingProject.assignee}
-                  onChange={(e) => setEditingProject({ ...editingProject, assignee: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">마감일</label>
-                <input
-                  type="date"
-                  value={editingProject.dueDate}
-                  onChange={(e) => setEditingProject({ ...editingProject, dueDate: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">상태</label>
-                <select
-                  value={editingProject.status}
-                  onChange={(e) =>
-                    setEditingProject({ ...editingProject, status: e.target.value as Project["status"] })
-                  }
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="대기중">대기중</option>
-                  <option value="진행중">진행중</option>
-                  <option value="완료">완료</option>
-                  <option value="보류">보류</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">우선순위</label>
-                <select
-                  value={editingProject.priority}
-                  onChange={(e) =>
-                    setEditingProject({ ...editingProject, priority: e.target.value as Project["priority"] })
-                  }
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="낮음">낮음</option>
-                  <option value="보통">보통</option>
-                  <option value="높음">높음</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">이슈 개수</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={editingProject.issues}
-                  onChange={(e) =>
-                    setEditingProject({ ...editingProject, issues: Number.parseInt(e.target.value) || 0 })
-                  }
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">코드 품질 점수</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={editingProject.codeQuality}
-                  onChange={(e) =>
-                    setEditingProject({ ...editingProject, codeQuality: Number.parseInt(e.target.value) || 0 })
-                  }
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">설명</label>
-                <textarea
-                  value={editingProject.description}
-                  onChange={(e) => setEditingProject({ ...editingProject, description: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  rows={3}
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
-              >
-                취소
-              </button>
-              <button
-                onClick={handleUpdateProject}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                저장
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      </main>
     </div>
   )
 }
