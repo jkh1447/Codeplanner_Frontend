@@ -3,7 +3,7 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: 'Code Planner',
-  description: 'Created with v0',
+  description: 'Created and planned by Code Planner',
   generator: 'v0.dev',
 }
 

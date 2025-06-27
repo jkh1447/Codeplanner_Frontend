@@ -1,4 +1,4 @@
-// File: C:\Users\KTY\jungle_project\test\Codeplanner_Frontend\app\projects\page.tsx
+// File: C:\Users\KTY\jungle_project\Codeplanner_Frontend\app\projects\page.tsx
 import * as entry from '../../../../app/projects/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
