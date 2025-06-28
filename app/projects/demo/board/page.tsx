@@ -1,4 +1,5 @@
-import KanbanBoard from "@/src/components/dashboard/KanbanBoard";
+import KanbanBoard from "@/src/components/dashboard/board/KanbanBoard";
+import "./page.css";
 
 export default function Page() {
     return (

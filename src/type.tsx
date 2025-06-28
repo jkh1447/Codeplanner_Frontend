@@ -5,3 +5,12 @@ export type Column = {
     title: string;
 };
 
+export type Task = {
+    id: Id;
+    content: string;
+    columnId: Id;
+};
+
+export type ColumnWithTasks = Column & {
+    tasks: Task[];
+}; 
