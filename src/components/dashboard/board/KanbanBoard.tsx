@@ -20,7 +20,20 @@ import { createPortal } from "react-dom";
 import TaskCard from "./TaskCard";
 
 function KanbanBoard() {
-    const [columns, setColumns] = useState<Column[]>([]);
+    const [columns, setColumns] = useState<Column[]>([
+        {
+            id: "1",
+            title: "Todo",
+        },
+        {
+            id: "2",
+            title: "In Progress",
+        },
+        {
+            id: "3",
+            title: "Done",
+        },
+    ]);
     const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
     const [isClient, setIsClient] = useState(false);
 
@@ -42,7 +55,7 @@ function KanbanBoard() {
     }, []);
 
     return (
-        <div className="h-screen w-full overflow-x-auto overflow-y-hidden px-[40px]">
+        <div className="w-full overflow-x-auto overflow-y-hidden px-[40px]">
             <DndContext
                 sensors={sensors}
                 onDragStart={onDragStart}
@@ -170,61 +183,62 @@ function KanbanBoard() {
         setActiveTask(null);
         const { active, over } = event;
         if (!over) return;
-        const activeColumnId = active.id;
-        const overColumnId = over.id;
 
-        if (activeColumnId === overColumnId) return;
-        setColumns((columns) => {
-            const activeColumnIndex = columns.findIndex(
-                (col) => col.id === activeColumnId
-            );
+        const activeId = active.id;
+        const overId = over.id;
 
-            const overColumnIndex = columns.findIndex(
-                (col) => col.id === overColumnId
-            );
-            return arrayMove(columns, activeColumnIndex, overColumnIndex);
-        });
+        if (activeId === overId) return;
+
+        // Column 드래그만 처리
+        const isActiveColumn = active.data.current?.type === "Column";
+        const isOverColumn = over.data.current?.type === "Column";
+
+        if (isActiveColumn && isOverColumn) {
+            setColumns((columns) => {
+                const activeColumnIndex = columns.findIndex(
+                    (col) => col.id === activeId
+                );
+                const overColumnIndex = columns.findIndex(
+                    (col) => col.id === overId
+                );
+                return arrayMove(columns, activeColumnIndex, overColumnIndex);
+            });
+        }
     }
 
     function onDragOver(event: DragOverEvent) {
         const { active, over } = event;
         if (!over) return;
-        const activeTaskId = active.id;
-        const overTaskId = over.id;
+        const activeId = active.id;
+        const overId = over.id;
 
-        if (activeTaskId === overTaskId) return;
+        if (activeId === overId) return;
 
-        const isActiveTask = active.data.current?.type === "Task";
+        const isActiveATask = active.data.current?.type === "Task";
         const isOverTask = over.data.current?.type === "Task";
 
-        if (!isActiveTask) return;
+        if (!isActiveATask) return;
 
-        if (isActiveTask && isOverTask) {
+        if (isActiveATask && isOverTask) {
             setTasks((tasks) => {
-                const activeTaskIndex = tasks.findIndex(
-                    (t) => t.id === activeTaskId
-                );
-                const overTaskIndex = tasks.findIndex(
-                    (t) => t.id === overTaskId
-                );
+                const activeIndex = tasks.findIndex((t) => t.id === activeId);
+                const overIndex = tasks.findIndex((t) => t.id === overId);
 
-                tasks[activeTaskIndex].columnId = tasks[overTaskIndex].columnId;
+                tasks[activeIndex].columnId = tasks[overIndex].columnId;
 
-                return arrayMove(tasks, activeTaskIndex, overTaskIndex);
+                return arrayMove(tasks, activeIndex, overIndex);
             });
         }
 
         const isOverAColumn = over.data.current?.type === "Column";
 
-        if (isActiveTask && isOverAColumn) {
+        if (isActiveATask && isOverAColumn) {
             setTasks((tasks) => {
-                const activeTaskIndex = tasks.findIndex(
-                    (t) => t.id === activeTaskId
-                );
+                const activeIndex = tasks.findIndex((t) => t.id === activeId);
 
-                tasks[activeTaskIndex].columnId = overTaskId;
+                tasks[activeIndex].columnId = overId;
 
-                return arrayMove(tasks, activeTaskIndex, activeTaskIndex);
+                return arrayMove(tasks, activeIndex, activeIndex);
             });
         }
     }

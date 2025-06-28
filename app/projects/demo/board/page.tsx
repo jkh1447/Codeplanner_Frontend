@@ -3,7 +3,7 @@ import "./page.css";
 
 export default function Page() {
     return (
-        <div className="p-8">
+        <div className="min-h-screen p-8">
             <h1 className="text-2xl font-bold text-slate-800">프로젝트 Demo</h1>
             <div className="text-slate-600 mt-2">
                 <KanbanBoard />

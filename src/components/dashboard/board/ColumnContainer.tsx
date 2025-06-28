@@ -29,7 +29,9 @@ function ColumnContainer(props: Props) {
 
     const [editMode, setEditMode] = useState(false);
 
-    const tasksIds = useMemo(() => { return tasks.map((task) => task.id) }, [tasks]);
+    const tasksIds = useMemo(() => {
+        return tasks.map((task) => task.id);
+    }, [tasks]);
 
     const {
         setNodeRef,
@@ -57,7 +59,7 @@ function ColumnContainer(props: Props) {
             <div
                 ref={setNodeRef}
                 style={style}
-                className="bg-[#f8f8f8] opacity-40 border-[#1d4ed8] border-2 w-[350px] h-[500px] max-h-[500px] rounded-md flex flex-col"
+                className="bg-[#f8f8f8] opacity-40 border-[#1d4ed8] border-2 w-[350px] h-[3000px] max-h-[3000px] rounded-md flex flex-col"
             ></div>
         );
     }
@@ -66,7 +68,7 @@ function ColumnContainer(props: Props) {
         <div
             ref={setNodeRef}
             style={style}
-            className="bg-[#f8f8f8] w-[350px] h-[500px] max-h-[500px] rounded-md flex flex-col"
+            className="bg-[#f8f8f8] w-[350px] h-[3000px] max-h-[3000px] rounded-md flex flex-col"
         >
             {/* Column title */}
 
@@ -117,17 +119,18 @@ function ColumnContainer(props: Props) {
                         />
                     ))}
                 </SortableContext>
+
+                {/* Add Task button inside the task container */}
+                <button
+                    className="flex gap-2 items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-md p-4 hover:bg-gray-100 hover:border-gray-400 transition-colors mt-2"
+                    onClick={() => {
+                        createTask(column.id);
+                    }}
+                >
+                    <PlusIcon />
+                    Add Task
+                </button>
             </div>
-            {/* Column footer */}
-            <button
-                className="flex gap-2 items-center border-white border-2 rounded-md p-4 border-x-[white] hover:bg-gray-300 hover:text-black active:bg-white"
-                onClick={() => {
-                    createTask(column.id);
-                }}
-            >
-                <PlusIcon />
-                Add Task
-            </button>
         </div>
     );
 }
