@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Header from "./header"
 
 
@@ -11,53 +11,90 @@ interface Project {
   assignee: string
   dueDate: string
   description: string
+  people: number
 }
 
-const mockProjects: Project[] = [
-  {
-    id: 1,
-    name: "사용자 인증 시스템",
-    status: "진행중",
-    assignee: "김개발",
-    dueDate: "2024-01-15",
-    description: "JWT 기반 로그인/회원가입 시스템 구현",
-  },
-  {
-    id: 2,
-    name: "결제 모듈 개발",
-    status: "완료",
-    assignee: "이코드",
-    dueDate: "2024-01-10",
-    description: "PG사 연동 및 결제 프로세스 구현",
-  },
-  {
-    id: 3,
-    name: "관리자 대시보드",
-    status: "대기중",
-    assignee: "박프론트",
-    dueDate: "2024-01-20",
-    description: "관리자용 통계 및 관리 페이지",
-  },
-  {
-    id: 4,
-    name: "모바일 앱 최적화",
-    status: "보류",
-    assignee: "최모바일",
-    dueDate: "2024-01-25",
-    description: "반응형 디자인 및 성능 최적화",
-  },
-  {
-    id: 5,
-    name: "API 문서화",
-    status: "진행중",
-    assignee: "정백엔드",
-    dueDate: "2024-01-18",
-    description: "Swagger를 이용한 API 문서 자동화",
-  },
-]
-
 export default function ProjectList() {
-  const [projects, setProjects] = useState<Project[]>(mockProjects)
+  const [projects, setProjects] = useState<Project[]>([])
+  useEffect(() => {
+    // Mock 데이터 (백엔드 서버가 실행되지 않을 때 사용)
+    const mockProjects: Project[] = [
+      {
+        id: 1,
+        name: "사용자 인증 시스템",
+        status: "진행중",
+        assignee: "김개발",
+        dueDate: "2024-01-15",
+        description: "JWT 기반 로그인/회원가입 시스템 구현",
+        people: 3,
+      },
+      {
+        id: 2,
+        name: "결제 모듈 개발",
+        status: "완료",
+        assignee: "이코드",
+        dueDate: "2024-01-10",
+        description: "PG사 연동 및 결제 프로세스 구현",
+        people: 4,
+      },
+      {
+        id: 3,
+        name: "관리자 대시보드",
+        status: "대기중",
+        assignee: "박프론트",
+        dueDate: "2024-01-20",
+        description: "관리자용 통계 및 관리 페이지",
+        people: 2,
+      },
+    ]
+
+    console.log("백엔드 서버에 연결 시도 중...")
+    fetch("http://localhost:5000/projects", {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then((res) => {
+        console.log("응답 상태:", res.status, res.statusText)
+        console.log("응답 헤더:", res.headers)
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status} ${res.statusText}`)
+        }
+        return res.json()
+      })
+      .then((data) => {
+        console.log("백엔드에서 데이터를 성공적으로 받았습니다:", data)
+        
+        // 데이터가 없거나 빈 배열인 경우 처리
+        if (!data || !Array.isArray(data) || data.length === 0) {
+          console.log("백엔드에서 데이터가 없습니다. Mock 데이터를 사용합니다.")
+          setProjects(mockProjects)
+          return
+        }
+        
+        // 백엔드 데이터를 프론트엔드 형식으로 변환
+        const transformedProjects: Project[] = data.map((project: any) => ({
+          id: project.id,
+          name: project.title,
+          status: project.status,
+          assignee: project.project_leader,
+          dueDate: project.due_date,
+          description: project.descrition,
+          people: project.project_people,
+        }))
+        
+        console.log("변환된 프로젝트:", transformedProjects)
+        setProjects(transformedProjects)
+      })
+      .catch((error) => {
+        console.error("상세 에러 정보:", error)
+        console.warn("백엔드 서버 연결 실패, Mock 데이터를 사용합니다:", error)
+        console.log("백엔드 서버가 실행되지 않았습니다. Mock 데이터로 테스트합니다.")
+        setProjects(mockProjects)
+      })
+  }, [])
+
   const [searchTerm, setSearchTerm] = useState("")
   const [sortBy, setSortBy] = useState<"name" | "status" | "dueDate">("name")
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
@@ -110,31 +147,64 @@ export default function ProjectList() {
       }
     })
 
-  const handleCreateProject = () => {
-    if (newProject.name && newProject.assignee && newProject.dueDate) {
-      const project: Project = {
-        id: Math.max(...projects.map((p) => p.id)) + 1,
-        ...newProject,
-        status: "대기중",
+    const handleCreateProject = async () => {
+      if (newProject.name && newProject.assignee && newProject.dueDate) {
+        const payload = {
+          title: newProject.name,
+          descrition: newProject.description,
+          status: "대기중",
+          project_people: 0, // 실제 인원 입력 구조 있으면 바꾸세요
+          due_date: newProject.dueDate,
+          project_leader: newProject.assignee,
+        }
+    
+        try {
+          console.log("백엔드 서버에 프로젝트 생성 요청 중...")
+          const res = await fetch("http://localhost:5000/projects", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          })
+    
+          if (res.ok) {
+            const created = await res.json()
+            console.log("백엔드에서 프로젝트가 성공적으로 생성되었습니다:", created)
+            setProjects((prev) => [...prev, {
+              id: created.id,
+              name: created.title,
+              description: created.descrition,
+              status: created.status,
+              assignee: created.project_leader,
+              dueDate: created.due_date,
+              people: created.project_people,
+            }])
+            setNewProject({ name: "", assignee: "", dueDate: "", description: "" })
+            setShowCreateModal(false)
+            alert("프로젝트가 성공적으로 생성되었습니다!")
+          } else {
+            throw new Error(`HTTP error! status: ${res.status}`)
+          }
+        } catch (err) {
+          console.warn("백엔드 서버 연결 실패, Mock 데이터로 프로젝트를 추가합니다:", err)
+          // Mock 데이터로 새 프로젝트 추가
+          const newMockProject: Project = {
+            id: Date.now(), // 임시 ID
+            name: newProject.name,
+            description: newProject.description,
+            status: "대기중",
+            assignee: newProject.assignee,
+            dueDate: newProject.dueDate,
+            people: 3,
+          }
+          setProjects((prev) => [...prev, newMockProject])
+          setNewProject({ name: "", assignee: "", dueDate: "", description: "" })
+          setShowCreateModal(false)
+          alert("백엔드 서버가 실행되지 않아 Mock 데이터로 프로젝트를 추가했습니다.")
+        }
+      } else {
+        alert("필수 필드를 모두 입력해주세요.")
       }
-      setProjects([...projects, project])
-      setNewProject({ name: "", assignee: "", dueDate: "", description: "" })
-      setShowCreateModal(false)
     }
-  }
-
-  const handleEditProject = (project: Project) => {
-    setEditingProject(project)
-    setShowEditModal(true)
-  }
-
-  const handleUpdateProject = () => {
-    if (editingProject) {
-      setProjects(projects.map((p) => (p.id === editingProject.id ? editingProject : p)))
-      setShowEditModal(false)
-      setEditingProject(null)
-    }
-  }
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -243,7 +313,7 @@ export default function ProjectList() {
                           d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                         />
                       </svg>
-                      <span>3명</span>
+                      <span>{project.people}명</span>
                     </div>
 
                     {/* Due date */}
