@@ -133,7 +133,7 @@ export default function ProjectList() {
     
         try {
           console.log("백엔드 서버에 프로젝트 생성 요청 중...")
-          const res = await fetch("http://localhost:5000/projects", {
+          const res = await fetch("http://localhost:5000/projects/create", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
