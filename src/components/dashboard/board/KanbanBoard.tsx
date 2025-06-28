@@ -2,7 +2,7 @@
 
 import PlusIcon from "@/src/icons/PlusIcon";
 import { Column, Id, Task } from "@/src/type";
-import React, { useState, useRef, useMemo } from "react";
+import React, { useState, useRef, useMemo, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import ColumnContainer from "./ColumnContainer";
 import {
@@ -22,6 +22,7 @@ import TaskCard from "./TaskCard";
 function KanbanBoard() {
     const [columns, setColumns] = useState<Column[]>([]);
     const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
+    const [isClient, setIsClient] = useState(false);
 
     const [tasks, setTasks] = useState<Task[]>([]);
 
@@ -35,15 +36,20 @@ function KanbanBoard() {
         })
     );
 
+    // 클라이언트에서만 렌더링되도록 설정
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
+
     return (
-        <div className="m-auto flex min-h-screen w-full items-center overflow-x-auto overflow-y-hidden px-[40px]">
+        <div className="h-screen w-full overflow-x-auto overflow-y-hidden px-[40px]">
             <DndContext
                 sensors={sensors}
                 onDragStart={onDragStart}
                 onDragEnd={onDragEnd}
                 onDragOver={onDragOver}
             >
-                <div className="m-auto flex gap-4">
+                <div className="flex gap-4 min-w-max py-4">
                     <div className="flex gap-4">
                         <SortableContext items={columnsId}>
                             {columns.map((col) => (
@@ -66,38 +72,40 @@ function KanbanBoard() {
                         onClick={() => {
                             createNewColumn();
                         }}
-                        className="h-[60px] w-[350px] min-w-[350px] cursor-pointer rounded-lg bg-[#f8f8f8] border-2 border-gray-300 p-4 ring-rose-500 hover:ring-2 flex gap-2"
+                        className="h-[60px] w-[350px] min-w-[350px] cursor-pointer rounded-lg bg-[#f8f8f8] border-2 border-gray-300 p-4 ring-rose-500 hover:ring-2 flex gap-2 flex-shrink-0"
                     >
                         <PlusIcon />
                         Add Column
                     </button>
                 </div>
 
-                {createPortal(
-                    <DragOverlay>
-                        {activeColumn && (
-                            <ColumnContainer
-                                column={activeColumn}
-                                deleteColumn={deleteColumn}
-                                updateColumn={updateColumn}
-                                createTask={createTask}
-                                tasks={tasks.filter(
-                                    (task) => task.columnId === activeColumn.id
-                                )}
-                                deleteTask={deleteTask}
-                                updateTask={updateTask}
-                            />
-                        )}
-                        {activeTask && (
-                            <TaskCard
-                                task={activeTask}
-                                deleteTask={deleteTask}
-                                updateTask={updateTask}
-                            />
-                        )}
-                    </DragOverlay>,
-                    document.body
-                )}
+                {isClient &&
+                    createPortal(
+                        <DragOverlay>
+                            {activeColumn && (
+                                <ColumnContainer
+                                    column={activeColumn}
+                                    deleteColumn={deleteColumn}
+                                    updateColumn={updateColumn}
+                                    createTask={createTask}
+                                    tasks={tasks.filter(
+                                        (task) =>
+                                            task.columnId === activeColumn.id
+                                    )}
+                                    deleteTask={deleteTask}
+                                    updateTask={updateTask}
+                                />
+                            )}
+                            {activeTask && (
+                                <TaskCard
+                                    task={activeTask}
+                                    deleteTask={deleteTask}
+                                    updateTask={updateTask}
+                                />
+                            )}
+                        </DragOverlay>,
+                        document.body
+                    )}
             </DndContext>
         </div>
     );
@@ -200,14 +208,11 @@ function KanbanBoard() {
                     (t) => t.id === overTaskId
                 );
 
-                
                 tasks[activeTaskIndex].columnId = tasks[overTaskIndex].columnId;
-                
 
                 return arrayMove(tasks, activeTaskIndex, overTaskIndex);
             });
         }
-
 
         const isOverAColumn = over.data.current?.type === "Column";
 
@@ -216,14 +221,12 @@ function KanbanBoard() {
                 const activeTaskIndex = tasks.findIndex(
                     (t) => t.id === activeTaskId
                 );
-                
 
                 tasks[activeTaskIndex].columnId = overTaskId;
 
                 return arrayMove(tasks, activeTaskIndex, activeTaskIndex);
             });
         }
-
     }
 }
 
