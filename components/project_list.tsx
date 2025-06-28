@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import Header from "./header"
 
-
+// 프로젝트 데이터 타입 정의
 interface Project {
   id: number
   name: string
@@ -14,39 +14,10 @@ interface Project {
   people: number
 }
 
+// 프로젝트 목록 컴포넌트
 export default function ProjectList() {
   const [projects, setProjects] = useState<Project[]>([])
   useEffect(() => {
-    // Mock 데이터 (백엔드 서버가 실행되지 않을 때 사용)
-    const mockProjects: Project[] = [
-      {
-        id: 1,
-        name: "사용자 인증 시스템",
-        status: "진행중",
-        assignee: "김개발",
-        dueDate: "2024-01-15",
-        description: "JWT 기반 로그인/회원가입 시스템 구현",
-        people: 3,
-      },
-      {
-        id: 2,
-        name: "결제 모듈 개발",
-        status: "완료",
-        assignee: "이코드",
-        dueDate: "2024-01-10",
-        description: "PG사 연동 및 결제 프로세스 구현",
-        people: 4,
-      },
-      {
-        id: 3,
-        name: "관리자 대시보드",
-        status: "대기중",
-        assignee: "박프론트",
-        dueDate: "2024-01-20",
-        description: "관리자용 통계 및 관리 페이지",
-        people: 2,
-      },
-    ]
 
     console.log("백엔드 서버에 연결 시도 중...")
     fetch("http://localhost:5000/projects", {
@@ -68,8 +39,8 @@ export default function ProjectList() {
         
         // 데이터가 없거나 빈 배열인 경우 처리
         if (!data || !Array.isArray(data) || data.length === 0) {
-          console.log("백엔드에서 데이터가 없습니다. Mock 데이터를 사용합니다.")
-          setProjects(mockProjects)
+          console.log("백엔드에서 데이터가 없습니다.")
+          alert("백엔드에서 데이터가 없습니다.")
           return
         }
         
@@ -89,18 +60,18 @@ export default function ProjectList() {
       })
       .catch((error) => {
         console.error("상세 에러 정보:", error)
-        console.warn("백엔드 서버 연결 실패, Mock 데이터를 사용합니다:", error)
-        console.log("백엔드 서버가 실행되지 않았습니다. Mock 데이터로 테스트합니다.")
-        setProjects(mockProjects)
+        console.warn("백엔드 서버 연결 실패", error)
+        console.log("백엔드 서버가 실행되지 않았습니다.")
       })
   }, [])
 
+  // 검색 및 필터링 상태 관리
   const [searchTerm, setSearchTerm] = useState("")
   const [sortBy, setSortBy] = useState<"name" | "status" | "dueDate">("name")
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
   const [showCreateModal, setShowCreateModal] = useState(false)
-  const [showEditModal, setShowEditModal] = useState(false)
-  const [editingProject, setEditingProject] = useState<Project | null>(null)
+  // const [showEditModal, setShowEditModal] = useState(false)
+  // const [editingProject, setEditingProject] = useState<Project | null>(null)
   const [newProject, setNewProject] = useState({
     name: "",
     assignee: "",
@@ -108,7 +79,7 @@ export default function ProjectList() {
     description: "",
   })
 
-  // Utility functions
+  // 상태 관리 함수
   const getStatusColor = (status: Project["status"]) => {
     switch (status) {
       case "진행중":
@@ -124,6 +95,7 @@ export default function ProjectList() {
     }
   }
 
+  // 검색 및 필터링 적용
   const filteredAndSortedProjects = projects
     .filter(
       (project) =>
@@ -147,6 +119,7 @@ export default function ProjectList() {
       }
     })
 
+    // 프로젝트 생성 함수
     const handleCreateProject = async () => {
       if (newProject.name && newProject.assignee && newProject.dueDate) {
         const payload = {
@@ -185,27 +158,18 @@ export default function ProjectList() {
             throw new Error(`HTTP error! status: ${res.status}`)
           }
         } catch (err) {
-          console.warn("백엔드 서버 연결 실패, Mock 데이터로 프로젝트를 추가합니다:", err)
-          // Mock 데이터로 새 프로젝트 추가
-          const newMockProject: Project = {
-            id: Date.now(), // 임시 ID
-            name: newProject.name,
-            description: newProject.description,
-            status: "대기중",
-            assignee: newProject.assignee,
-            dueDate: newProject.dueDate,
-            people: 3,
-          }
-          setProjects((prev) => [...prev, newMockProject])
+          console.warn("백엔드 서버 연결 실패", err)
+          setProjects((prev) => [...prev])
           setNewProject({ name: "", assignee: "", dueDate: "", description: "" })
           setShowCreateModal(false)
-          alert("백엔드 서버가 실행되지 않아 Mock 데이터로 프로젝트를 추가했습니다.")
+          alert("백엔드 서버가 실행되지 않았습니다.")
         }
       } else {
         alert("필수 필드를 모두 입력해주세요.")
       }
     }
-
+  
+  // 프로젝트 목록 컴포넌트 반환
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
@@ -213,7 +177,7 @@ export default function ProjectList() {
 
       {/* Main Content */}
       <main className="container mx-auto px-6 py-8">
-        {/* Search and Filter Bar */}
+        {/* 검색 및 필터링 바 */}
         <div className="bg-white rounded-lg border border-slate-200 p-6 mb-6">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             
@@ -270,19 +234,19 @@ export default function ProjectList() {
           </div>
         </div>
 
-        {/* Projects Grid */}
+        {/* 프로젝트 그리드 시작 */}
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {filteredAndSortedProjects.map((project) => (
             <div
               key={project.id}
               className="group relative bg-white rounded-2xl border border-slate-200/60 p-8 hover:shadow-2xl hover:shadow-slate-200/50 transition-all duration-300 hover:border-slate-300/80 hover:-translate-y-1 overflow-hidden"
             >
-              {/* Subtle gradient overlay */}
+              {/* 프로젝트 그리드 내부 그라데이션 오버레이 */}
               <div className="absolute inset-0 bg-gradient-to-br from-slate-50/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-              {/* Content */}
+              {/* 프로젝트 그리드 내부 컨텐츠 */}
               <div className="relative z-10">
-                {/* Header with Title and Status */}
+                {/* 프로젝트 그리드 내부 헤더 */}
                 <div className="flex items-start justify-between mb-6">
                   <h3 className="text-2xl font-bold text-slate-900 line-clamp-2 flex-1 mr-4 group-hover:text-slate-800 transition-colors">
                     {project.name}
@@ -294,16 +258,16 @@ export default function ProjectList() {
                   </span>
                 </div>
 
-                {/* Description */}
+                {/* 프로젝트 그리드 내부 설명 */}
                 <p className="text-slate-600 text-base mb-8 line-clamp-3 leading-relaxed group-hover:text-slate-700 transition-colors">
                   {project.description}
                 </p>
 
-                {/* Bottom section with project info and assignee */}
+                {/* 프로젝트 그리드 내부 하단 섹션 */}
                 <div className="flex items-center justify-between">
-                  {/* Left side - Project info */}
+                  {/* 프로젝트 그리드 내부 왼쪽 섹션 */}
                   <div className="flex items-center gap-4 text-slate-500 text-sm">
-                    {/* Team size */}
+                    {/* 프로젝트 그리드 내부 팀 인원 */}
                     <div className="flex items-center gap-1.5">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path
@@ -316,7 +280,7 @@ export default function ProjectList() {
                       <span>{project.people}명</span>
                     </div>
 
-                    {/* Due date */}
+                    {/* 프로젝트 그리드 내부 마감일 */}
                     <div className="flex items-center gap-1.5">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path
@@ -330,17 +294,18 @@ export default function ProjectList() {
                     </div>
                   </div>
 
-                  {/* Right side - Assignee */}
+                  {/* 프로젝트 그리드 내부 담당자 */}
                   <span className="text-slate-500 text-sm">{project.assignee}</span>
                 </div>
               </div>
 
-              {/* Decorative corner accent */}
+              {/* 프로젝트 그리드 내부 데코레이티브 코너 악센트 */}
               <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-blue-500/10 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </div>
           ))}
         </div>
 
+        {/* 검색 결과가 없을 때 */}
         {filteredAndSortedProjects.length === 0 && (
           <div className="text-center py-12">
             <svg
@@ -361,7 +326,7 @@ export default function ProjectList() {
         )}
         {/* 페이지 헤더 끝*/}
 
-      {/* Create Project Modal */}
+      {/* 프로젝트 생성 모달 */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
