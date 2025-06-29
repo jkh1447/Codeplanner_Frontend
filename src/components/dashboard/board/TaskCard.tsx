@@ -7,7 +7,7 @@ import { CSS } from "@dnd-kit/utilities";
 interface Props {
     task: Task;
     deleteTask: (id: Id) => void;
-    updateTask: (id: Id, content: string) => void;
+    updateTask: (id: Id, description: string) => void;
 }
 
 function TaskCard({ task, deleteTask, updateTask }: Props) {
@@ -38,22 +38,26 @@ function TaskCard({ task, deleteTask, updateTask }: Props) {
     const toggleEditMode = () => {
         setEditMode((prev) => !prev);
         setMouseIsOver(false);
-  };
-  
-  if (isDragging) {
-    return (
-        <div
-            ref={setNodeRef}
-            style={style}
-            className="
+    };
+
+    if (isDragging) {
+        return (
+            <div
+                ref={setNodeRef}
+                style={style}
+                className="
     bg-white p-2.5 h-[100px] min-h-[100px] items-center flex test-left rounded-xl border-2 border-blue-500 cursor-grab relative opacity-30"
-        />
-    );
-  }
+            />
+        );
+    }
 
     if (editMode) {
         return (
-            <div ref={setNodeRef} style={style} {...attributes} {...listeners}
+            <div
+                ref={setNodeRef}
+                style={style}
+                {...attributes}
+                {...listeners}
                 className="bg-white p-2.5 h-[100px] min-h-[100px] items-center flex test-left rounded-xl 
   hover:ring-2 hover:ring-inset hover:ring-gray-30 cursor-grab relative"
             >

@@ -20,7 +20,13 @@ import { createPortal } from "react-dom";
 import TaskCard from "./TaskCard";
 import { useParams } from "next/navigation";
 
-function KanbanBoard({ issues, projectId }: { issues: Task[]; projectId: string }) {
+function KanbanBoard({
+    issues,
+    projectId,
+}: {
+    issues: Task[];
+    projectId: string;
+}) {
     const [columns, setColumns] = useState<Column[]>([
         {
             id: "TODO",
@@ -54,6 +60,35 @@ function KanbanBoard({ issues, projectId }: { issues: Task[]; projectId: string 
     useEffect(() => {
         setIsClient(true);
     }, []);
+
+    // 서버에서 최신 데이터를 가져오는 함수
+    async function fetchLatestTasks() {
+        try {
+            const response = await fetch(
+                `http://localhost:5000/api/projects/${projectId}/issues`
+            );
+            if (response.ok) {
+                const latestTasks = await response.json();
+                setTasks(latestTasks);
+            }
+        } catch (error) {
+            console.error("Error fetching latest tasks:", error);
+        }
+    }
+
+    // 컴포넌트 마운트 시 또는 projectId 변경 시 최신 데이터 가져오기
+    useEffect(() => {
+        if (isClient && projectId) {
+            fetchLatestTasks();
+        }
+    }, [isClient, projectId]);
+
+    // 초기 데이터 설정 (서버에서 가져온 데이터가 없을 때만)
+    useEffect(() => {
+        if (issues && issues.length > 0 && tasks.length === 0) {
+            setTasks(issues);
+        }
+    }, [issues, tasks.length]);
 
     return (
         <div className="w-full overflow-x-auto overflow-y-hidden px-[40px]">
@@ -178,10 +213,10 @@ function KanbanBoard({ issues, projectId }: { issues: Task[]; projectId: string 
         setTasks(tasks.filter((task) => task.id !== id));
     }
 
-    function updateTask(id: Id, content: string) {
+    function updateTask(id: Id, description: string) {
         const newTasks = tasks.map((task) => {
             if (task.id !== id) return task;
-            return { ...task, content };
+            return { ...task, description };
         });
         setTasks(newTasks);
     }
@@ -243,8 +278,39 @@ function KanbanBoard({ issues, projectId }: { issues: Task[]; projectId: string 
                 const overColumnIndex = columns.findIndex(
                     (col) => col.id === overId
                 );
+
                 return arrayMove(columns, activeColumnIndex, overColumnIndex);
             });
+        }
+    }
+
+    // 서버에 Task 순서와 상태 업데이트를 보내는 함수
+    async function updateTaskOrderAndStatus(
+        issueIds: string[],
+        targetColumnId: string
+    ) {
+        try {
+            const response = await fetch(
+                `http://localhost:5000/api/projects/${projectId}/issues/update`,
+                {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        issueIds,
+                        targetColumnId,
+                    }),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("Failed to update task order and status");
+            }
+
+            console.log("Task order and status updated successfully");
+        } catch (error) {
+            console.error("Error updating task order and status:", error);
         }
     }
 
@@ -263,12 +329,24 @@ function KanbanBoard({ issues, projectId }: { issues: Task[]; projectId: string 
 
         if (isActiveATask && isOverTask) {
             setTasks((tasks) => {
+                console.log("onDragOver1");
                 const activeIndex = tasks.findIndex((t) => t.id === activeId);
                 const overIndex = tasks.findIndex((t) => t.id === overId);
 
                 tasks[activeIndex].status = tasks[overIndex].status;
 
-                return arrayMove(tasks, activeIndex, overIndex);
+                const newTasks = arrayMove(tasks, activeIndex, overIndex);
+
+                // 같은 Column 내에서 순서 변경된 경우
+                const targetColumnId = newTasks[activeIndex].status;
+                const issueIds = newTasks
+                    .filter((task) => task.status === targetColumnId)
+                    .map((task) => task.id.toString());
+
+                // 서버에 업데이트
+                updateTaskOrderAndStatus(issueIds, targetColumnId);
+
+                return newTasks;
             });
         }
 
@@ -276,11 +354,23 @@ function KanbanBoard({ issues, projectId }: { issues: Task[]; projectId: string 
 
         if (isActiveATask && isOverAColumn) {
             setTasks((tasks) => {
+                console.log("onDragOver2");
                 const activeIndex = tasks.findIndex((t) => t.id === activeId);
 
                 tasks[activeIndex].status = overId as string;
 
-                return arrayMove(tasks, activeIndex, activeIndex);
+                const newTasks = arrayMove(tasks, activeIndex, activeIndex);
+
+                // 새로운 Column의 모든 Task ID를 수집
+                const targetColumnId = overId.toString();
+                const issueIds = newTasks
+                    .filter((task) => task.status === targetColumnId)
+                    .map((task) => task.id.toString());
+
+                // 서버에 업데이트
+                updateTaskOrderAndStatus(issueIds, targetColumnId);
+
+                return newTasks;
             });
         }
     }
