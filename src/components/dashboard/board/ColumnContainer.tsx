@@ -5,9 +5,11 @@ import { CSS } from "@dnd-kit/utilities";
 import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import PlusIcon from "@/src/icons/PlusIcon";
 import TaskCard from "./TaskCard";
+import AddIssueModal from "./AddIssueModal";
 
 interface Props {
     column: Column;
+    projectId: string;
     deleteColumn: (id: Id) => void;
     updateColumn: (id: Id, title: string) => void;
     createTask: (columnId: Id) => void;
@@ -19,6 +21,7 @@ interface Props {
 function ColumnContainer(props: Props) {
     const {
         column,
+        projectId,
         deleteColumn,
         updateColumn,
         createTask,
@@ -63,6 +66,8 @@ function ColumnContainer(props: Props) {
             ></div>
         );
     }
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedColumn, setSelectedColumn] = useState("");
 
     return (
         <div
@@ -124,13 +129,31 @@ function ColumnContainer(props: Props) {
                 <button
                     className="flex gap-2 items-center justify-center w-full border-2 border-dashed border-gray-300 rounded-md p-4 hover:bg-gray-100 hover:border-gray-400 transition-colors mt-2"
                     onClick={() => {
-                        createTask(column.id);
+                        // createTask(column.id);
+                        setIsModalOpen(true);
+                        setSelectedColumn(column.id.toString());
                     }}
                 >
                     <PlusIcon />
                     Add Task
                 </button>
             </div>
+            {isModalOpen && (
+                <div
+                    className="fixed inset-0 bg-white bg-opacity-5 flex justify-center items-center z-50"
+                    onClick={() => setIsModalOpen(false)}
+                >
+                    <div onClick={(e) => e.stopPropagation()}>
+                        <AddIssueModal
+                            open={isModalOpen}
+                            onOpenChange={setIsModalOpen}
+                            selectedColumn={selectedColumn}
+                            taskCount={tasks.length}
+                            projectId={projectId}
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

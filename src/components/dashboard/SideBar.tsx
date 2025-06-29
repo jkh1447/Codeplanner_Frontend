@@ -51,38 +51,38 @@ const menuItems = [
     {
         title: "내 이슈",
         icon: AlertCircle,
-        url: "projects/demo/my-issues",
+        url: "my-issues",
         badge: "12",
     },
     {
         title: "요약",
         icon: Globe,
-        url: "projects/demo/summary",
+        url: "summary",
     },
     {
         title: "타임라인",
         icon: ChartNoAxesGantt,
-        url: "projects/demo/timeline",
+        url: "timeline",
     },
     {
         title: "보드",
         icon: Kanban,
-        url: "projects/demo/board",
+        url: "board",
     },
     {
         title: "목록",
         icon: TableOfContents,
-        url: "projects/demo/list",
+        url: "list",
     },
     {
         title: "코드",
         icon: Code,
-        url: "projects/demo/code",
+        url: "code",
     },
     {
         title: "설정",
         icon: Settings,
-        url: "projects/demo/settings",
+        url: "settings",
     },
 ];
 
