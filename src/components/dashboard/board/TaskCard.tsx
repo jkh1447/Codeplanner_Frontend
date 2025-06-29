@@ -66,7 +66,7 @@ function TaskCard({ task, deleteTask, updateTask }: Props) {
             text-black
             focus:outline-none
             "
-                    value={task.content}
+                    value={task.description}
                     autoFocus
                     placeholder="Enter a title for this task"
                     onBlur={toggleEditMode}
@@ -92,7 +92,7 @@ function TaskCard({ task, deleteTask, updateTask }: Props) {
             onMouseLeave={() => setMouseIsOver(false)}
         >
             <p className="my-auto h-[90%] w-full overflow-y-auto overflow-x-hidden whitespace-pre-wrap">
-                {task.content}
+                {task.description}
             </p>
             {mouseIsOver && (
                 <button
