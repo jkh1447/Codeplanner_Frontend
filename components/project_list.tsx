@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import Header from "./header"
 
-// 프로젝트 데이터 타입 정의
+// 프로젝트 데이터 타입 정의.
 interface Project {
   id: number
   name: string
