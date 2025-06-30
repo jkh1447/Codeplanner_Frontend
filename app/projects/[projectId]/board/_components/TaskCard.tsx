@@ -1,4 +1,6 @@
 import TrashIcon from "@/components/icons/TrashIcon";
+import PlusIcon from "@/components/icons/PlusIcon";
+import UserIcon from "@/components/icons/UserIcon";
 import { Id, Task } from "@/components/type";
 import { useSortable } from "@dnd-kit/sortable";
 import React, { useState } from "react";
@@ -7,12 +9,10 @@ import { CSS } from "@dnd-kit/utilities";
 interface Props {
     task: Task;
     deleteTask: (id: Id) => void;
-    updateTask: (id: Id, description: string) => void;
 }
 
-function TaskCard({ task, deleteTask, updateTask }: Props) {
+function TaskCard({ task, deleteTask }: Props) {
     const [mouseIsOver, setMouseIsOver] = useState(false);
-    const [editMode, setEditMode] = useState(false);
 
     const {
         setNodeRef,
@@ -27,7 +27,7 @@ function TaskCard({ task, deleteTask, updateTask }: Props) {
             type: "Task",
             task,
         },
-        disabled: editMode,
+        disabled: false,
     });
 
     const style = {
@@ -35,51 +35,13 @@ function TaskCard({ task, deleteTask, updateTask }: Props) {
         transform: CSS.Transform.toString(transform),
     };
 
-    const toggleEditMode = () => {
-        setEditMode((prev) => !prev);
-        setMouseIsOver(false);
-    };
-
     if (isDragging) {
         return (
             <div
                 ref={setNodeRef}
                 style={style}
-                className="
-    bg-white p-2.5 h-[100px] min-h-[100px] items-center flex test-left rounded-xl border-2 border-blue-500 cursor-grab relative opacity-30"
+                className="bg-white p-2.5 h-[120px] min-h-[120px] items-center flex flex-col justify-center rounded-xl border-2 border-blue-500 cursor-grab relative opacity-30"
             />
-        );
-    }
-
-    if (editMode) {
-        return (
-            <div
-                ref={setNodeRef}
-                style={style}
-                {...attributes}
-                {...listeners}
-                className="bg-white p-2.5 h-[100px] min-h-[100px] items-center flex test-left rounded-xl 
-  hover:ring-2 hover:ring-inset hover:ring-gray-30 cursor-grab relative"
-            >
-                <textarea
-                    className="
-            h-[90%]
-            w-full
-            resize-none
-            roundedbg-transparent
-            text-black
-            focus:outline-none
-            "
-                    value={task.description}
-                    autoFocus
-                    placeholder="Enter a title for this task"
-                    onBlur={toggleEditMode}
-                    onKeyDown={(e) => {
-                        if (e.key === "Enter" && e.shiftKey) toggleEditMode();
-                    }}
-                    onChange={(e) => updateTask(task.id, e.target.value)}
-                ></textarea>
-            </div>
         );
     }
 
@@ -89,23 +51,31 @@ function TaskCard({ task, deleteTask, updateTask }: Props) {
             style={style}
             {...attributes}
             {...listeners}
-            onClick={toggleEditMode}
-            className="bg-white p-2.5 h-[100px] min-h-[100px] items-center flex test-left rounded-xl 
-  hover:ring-2 hover:ring-inset hover:ring-gray-30 cursor-grab relative task"
+            className="bg-white p-3 min-h-[100px] flex flex-col rounded-xl shadow-md border border-gray-200 hover:ring-2 hover:ring-inset hover:ring-blue-300 cursor-pointer relative group transition-all"
             onMouseEnter={() => setMouseIsOver(true)}
             onMouseLeave={() => setMouseIsOver(false)}
         >
-            <p className="my-auto h-[90%] w-full overflow-y-auto overflow-x-hidden whitespace-pre-wrap">
-                {task.description}
-            </p>
-            {mouseIsOver && (
-                <button
-                    onClick={() => deleteTask(task.id)}
-                    className="stroke-white absolute right-4 top-1/2 -translate-y-1/2 bg-gray-300 p-2 rounded opacity-60 hover:opacity-100"
-                >
-                    <TrashIcon />
-                </button>
-            )}
+            <div className="flex items-center justify-between mb-1">
+                <span className="font-semibold text-base text-gray-800 truncate max-w-[70%] break-words whitespace-pre-line">
+                    {task.title}
+                </span>
+                {mouseIsOver && (
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            deleteTask(task.id);
+                        }}
+                        className="stroke-white absolute right-3 top-3 bg-gray-300 p-1.5 rounded hover:bg-red-400 hover:stroke-white opacity-80 hover:opacity-100 transition"
+                    >
+                        <TrashIcon />
+                    </button>
+                )}
+            </div>
+            <div className="absolute bottom-3 right-3">
+                <div className="w-7 h-7 rounded-full border-2 border-white shadow bg-gray-200 flex items-center justify-center">
+                    <UserIcon className="w-4 h-4 text-gray-500" />
+                </div>
+            </div>
         </div>
     );
 }
