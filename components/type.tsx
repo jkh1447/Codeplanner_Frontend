@@ -23,7 +23,7 @@ export type ColumnWithTasks = Column & {
     tasks: Task[];
 };
 
-// DB 스키마 기반 타입 추가ㄴㅁㅇ래ㅑㅓㄴㅁ애랴ㅓㅁㄷ내ㅑ러
+// DB 스키마 기반 타입 추가
 export type Issue = {
   id: Id;
   project_id: Id;
