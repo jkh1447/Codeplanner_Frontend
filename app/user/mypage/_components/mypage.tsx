@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +22,7 @@ interface UserProfile {
 }
 
 export default function MyPage() {
+  const router = useRouter();
   const [profile, setProfile] = useState<UserProfile>({
     display_name: "",
     email: "",
@@ -87,17 +89,19 @@ export default function MyPage() {
     setError("");
 
     try {
-      const response = await fetch("http://localhost:5000/user/profile", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          display_name: tempDisplayName,
-          email: profile.email,
-        }),
-      });
+      const response = await fetch(
+        "http://localhost:5000/user/mypage/updateDisplayName",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            display_name: tempDisplayName,
+          }),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -125,6 +129,21 @@ export default function MyPage() {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (response.ok) {
+        window.location.href = "/auth/login";
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "로그아웃 중 오류가 발생했습니다."
+      );
+    }
+  };
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -148,6 +167,19 @@ export default function MyPage() {
             <h1 className="text-2xl font-bold text-gray-900">Code Planner</h1>
           </div>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">마이페이지</h2>
+          <div className="flex items-center gap-3 relative">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => router.back()}
+              disabled={updateLoading}
+              className="h-10 w-10 bg-transparent absolute top-0 right-0"
+              style={{ zIndex: 10 }}
+              aria-label="닫기"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
           <p className="text-gray-600">내 정보를 확인하고 관리하세요</p>
         </div>
 
@@ -295,7 +327,11 @@ export default function MyPage() {
               <Button variant="outline" className="flex-1 bg-transparent">
                 비밀번호 변경
               </Button>
-              <Button variant="outline" className="flex-1 bg-transparent">
+              <Button
+                variant="outline"
+                className="flex-1 bg-transparent"
+                onClick={handleLogout}
+              >
                 로그아웃
               </Button>
             </div>

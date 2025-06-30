@@ -1,22 +1,30 @@
-"use client"
+"use client";
 
-import Link from "next/link"
+import Link from "next/link";
 import { Bell } from "lucide-react";
 
 // 헤더 컴포넌트
 export default function Header() {
-
-  {/* 헤더 컴포넌트 반환 */}
+  {
+    /* 헤더 컴포넌트 반환 */
+  }
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/projects" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-
+            <Link
+              href="/projectList"
+              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+            >
               {/* 로고 */}
               <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="w-5 h-5 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -25,12 +33,15 @@ export default function Header() {
                   />
                 </svg>
               </div>
-              <h1 className="text-2xl font-bold text-slate-800">Code Planner</h1>
+              <h1 className="text-2xl font-bold text-slate-800">
+                Code Planner
+              </h1>
             </Link>
-            <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm font-medium">DEMO</span>
+            <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm font-medium">
+              DEMO
+            </span>
           </div>
           <div className="flex items-center gap-3">
-
             {/* 알림 */}
             <div className="relative group">
               <button className="p-2 text-slate-600 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors relative">
@@ -48,8 +59,12 @@ export default function Header() {
                     <div className="flex items-start gap-3">
                       <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
                       <div>
-                        <p className="text-sm text-slate-800">새로운 이슈가 할당되었습니다</p>
-                        <p className="text-xs text-slate-500 mt-1">사용자 인증 시스템 - 5분 전</p>
+                        <p className="text-sm text-slate-800">
+                          새로운 이슈가 할당되었습니다
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          사용자 인증 시스템 - 5분 전
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -57,8 +72,12 @@ export default function Header() {
                     <div className="flex items-start gap-3">
                       <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
                       <div>
-                        <p className="text-sm text-slate-800">코드 리뷰가 완료되었습니다</p>
-                        <p className="text-xs text-slate-500 mt-1">결제 모듈 개발 - 1시간 전</p>
+                        <p className="text-sm text-slate-800">
+                          코드 리뷰가 완료되었습니다
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          결제 모듈 개발 - 1시간 전
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -66,14 +85,20 @@ export default function Header() {
                     <div className="flex items-start gap-3">
                       <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2 flex-shrink-0"></div>
                       <div>
-                        <p className="text-sm text-slate-800">마감일이 임박했습니다</p>
-                        <p className="text-xs text-slate-500 mt-1">관리자 대시보드 - 2시간 전</p>
+                        <p className="text-sm text-slate-800">
+                          마감일이 임박했습니다
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          관리자 대시보드 - 2시간 전
+                        </p>
                       </div>
                     </div>
                   </div>
                 </div>
                 <div className="p-3 border-t border-slate-200">
-                  <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">모든 알림 보기</button>
+                  <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                    모든 알림 보기
+                  </button>
                 </div>
               </div>
             </div>
@@ -81,7 +106,12 @@ export default function Header() {
             {/* 설정 */}
             <div className="relative group">
               <button className="p-2 text-slate-600 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -101,7 +131,12 @@ export default function Header() {
               <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-lg shadow-lg border border-slate-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                 <div className="p-2">
                   <button className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-lg flex items-center gap-3">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -112,7 +147,12 @@ export default function Header() {
                     계정 설정
                   </button>
                   <button className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-lg flex items-center gap-3">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -123,7 +163,12 @@ export default function Header() {
                     환경 설정
                   </button>
                   <button className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-lg flex items-center gap-3">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -154,13 +199,23 @@ export default function Header() {
                     </div>
                     <div>
                       <p className="font-semibold text-slate-800">김개발</p>
-                      <p className="text-sm text-slate-500">kim.dev@example.com</p>
+                      <p className="text-sm text-slate-500">
+                        kim.dev@example.com
+                      </p>
                     </div>
                   </div>
                 </div>
                 <div className="p-2">
-                  <button className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-lg flex items-center gap-3">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <Link
+                    href="/user/mypage"
+                    className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-lg flex items-center gap-3"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -169,9 +224,14 @@ export default function Header() {
                       />
                     </svg>
                     내 프로필
-                  </button>
+                  </Link>
                   <button className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-lg flex items-center gap-3">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -182,7 +242,12 @@ export default function Header() {
                     내 프로젝트
                   </button>
                   <button className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-lg flex items-center gap-3">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -199,5 +264,5 @@ export default function Header() {
         </div>
       </div>
     </header>
-  )
+  );
 }
