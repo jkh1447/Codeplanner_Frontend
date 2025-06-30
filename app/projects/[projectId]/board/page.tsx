@@ -1,5 +1,5 @@
-import KanbanBoard from "@/app/projects/[projectId]/board/_components/KanbanBoard";
-import { Task } from "@/src/type";
+import KanbanBoard from "./_components/KanbanBoard";
+import { Task } from "@/components/type";
 import "./page.css";
 
 export default async function Page({params}: {params: {projectId: string}}) {

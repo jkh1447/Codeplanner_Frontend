@@ -1,26 +1,20 @@
 "use client"
 
-
-import { useState } from "react"
 import Link from "next/link"
 import { Bell } from "lucide-react";
 
+// 헤더 컴포넌트
 export default function Header() {
-  const [showModal, setShowModal] = useState(false)
-  const [description, setDescription] = useState("")
-  const [name, setName] = useState("")
-  const [assignee, setAssignee] = useState("")
-  const [dueDate, setDueDate] = useState("")
-  const [status, setStatus] = useState("")
 
-
+  {/* 헤더 컴포넌트 반환 */}
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link href="/projects" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              {/* Logo */}
+
+              {/* 로고 */}
               <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
@@ -37,123 +31,14 @@ export default function Header() {
           </div>
           <div className="flex items-center gap-3">
 
-            {/* 새프로젝트 버튼 */}
-            {/* <button onClick={() => setShowModal(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              새 프로젝트
-            </button> */}
-
-            {/*{showModal && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
-            <h2 className="text-xl font-semibold mb-4">새 프로젝트 만들기</h2>
-
-            <div className="space-y-5">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">프로젝트 이름</label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">담당자</label>
-                <input
-                  type="text"
-                  value={assignee}
-                  onChange={(e) => setAssignee(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">마감일</label>
-                <input
-                  type="date"
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">상태</label>
-                <select
-                  value={status}
-                  onChange={(e) =>
-                    setStatus(e.target.value as Project["status"])
-                  }
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="대기중">대기중</option>
-                  <option value="진행중">진행중</option>
-                  <option value="완료">완료</option>
-                  <option value="보류">보류</option>
-                </select>
-              </div>
-
-              {/* <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">이슈 개수</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={issues}
-                  onChange={(e) =>
-                    setIssues(Number.parseInt(e.target.value) || 0)
-                  }
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-            <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">설명</label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  rows={3}
-                />
-            </div>
-            </div>
-
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setShowModal(false)}
-                className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
-              >
-                취소
-              </button>
-              <button
-                onClick={() => {
-                  // 저장 로직 필요 시 여기에 추가
-                  setShowModal(false)
-                }}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                저장
-              </button>
-            </div>
-
-            {/* 닫기 버튼 (X) 
-            <button className="absolute top-2 right-2 text-gray-500 hover:text-gray-700" onClick={() => setShowModal(false)}> × </button>
-          </div>
-        </div>
-      )}*/}
-      {/* 새프로젝트 버튼 */}
-
-            {/* Notifications */}
+            {/* 알림 */}
             <div className="relative group">
               <button className="p-2 text-slate-600 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors relative">
                 <Bell className="w-6 h-6" />
                 <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-xs"></span>
               </button>
 
-              {/* Notification Popup */}
+              {/* 알림 팝업 */}
               <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-lg border border-slate-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                 <div className="p-4 border-b border-slate-200">
                   <h3 className="font-semibold text-slate-800">알림</h3>
@@ -193,7 +78,7 @@ export default function Header() {
               </div>
             </div>
 
-            {/* Settings */}
+            {/* 설정 */}
             <div className="relative group">
               <button className="p-2 text-slate-600 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -212,7 +97,7 @@ export default function Header() {
                 </svg>
               </button>
 
-              {/* Settings Popup */}
+              {/* 설정 팝업 */}
               <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-lg shadow-lg border border-slate-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                 <div className="p-2">
                   <button className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-lg flex items-center gap-3">
@@ -252,7 +137,7 @@ export default function Header() {
               </div>
             </div>
 
-            {/* Profile */}
+            {/* 프로필 */}
             <div className="relative group">
               <button className="flex items-center gap-2 p-1 text-slate-600 hover:text-blue-600 rounded-lg transition-colors">
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
@@ -260,7 +145,7 @@ export default function Header() {
                 </div>
               </button>
 
-              {/* Profile Popup */}
+              {/* 프로필 팝업 */}
               <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg border border-slate-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                 <div className="p-4 border-b border-slate-200">
                   <div className="flex items-center gap-3">

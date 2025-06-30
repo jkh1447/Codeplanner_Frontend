@@ -1,7 +1,5 @@
 "use client";
 
-import PlusIcon from "@/components/icons/PlusIcon";
-import { Column, Id, Task } from "@/src/type";
 import React, { useState, useRef, useMemo, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import ColumnContainer from "./ColumnContainer";
@@ -20,6 +18,8 @@ import { createPortal } from "react-dom";
 import TaskCard from "./TaskCard";
 import { useParams } from "next/navigation";
 import BoardMenu from "./BoardMenu";
+import PlusIcon from "@/components/icons/PlusIcon";
+import { Column, Id, Task } from "@/components/type";
 
 function KanbanBoard({
     issues,

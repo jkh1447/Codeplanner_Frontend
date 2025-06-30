@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useState } from "react"
 import Link from "next/link"
-import Header from "./header"
+import Header from "../../../components/header"
 
 export default function Welcome() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -38,6 +38,28 @@ export default function Welcome() {
     }[] = []
 
     let textImageData: ImageData | null = null
+
+    // 파티클 수 계산 함수를 전역으로 이동
+    const calculateParticleCount = (canvas: HTMLCanvasElement, baseParticleCount: number) => {
+      // 기준 해상도 (Full HD)
+      const baseResolution = 1920 * 1080;
+      const currentResolution = canvas.width * canvas.height;
+      
+      // 비율 계산 (1.0이 기준)
+      const ratio = currentResolution / baseResolution;
+      
+      // 안전한 범위로 제한 (0.5 ~ 2.0)
+      const safeRatio = Math.max(0.5, Math.min(2.0, ratio));
+      
+      // 파티클 수 계산
+      const calculatedCount = Math.floor(baseParticleCount * safeRatio);
+      
+      // 최소/최대 값 보장
+      const minParticles = Math.floor(baseParticleCount * 0.3);
+      const maxParticles = Math.floor(baseParticleCount * 2.5);
+      
+      return Math.max(minParticles, Math.min(maxParticles, calculatedCount));
+    };
 
     function createTextImage() {
       if (!ctx || !canvas) return 0
@@ -93,7 +115,8 @@ export default function Welcome() {
 
     function createInitialParticles() {
       const baseParticleCount = 6000
-      const particleCount = Math.floor(baseParticleCount * Math.sqrt((canvas.width * canvas.height) / (1920 * 1080)))
+      if (!canvas) return;
+      const particleCount = calculateParticleCount(canvas, baseParticleCount);
       for (let i = 0; i < particleCount; i++) {
         const particle = createParticle()
         if (particle) particles.push(particle)
@@ -148,9 +171,7 @@ export default function Welcome() {
       }
 
       const baseParticleCount = 6000
-      const targetParticleCount = Math.floor(
-        baseParticleCount * Math.sqrt((canvas.width * canvas.height) / (1920 * 1080)),
-      )
+      const targetParticleCount = calculateParticleCount(canvas, baseParticleCount)
       while (particles.length < targetParticleCount) {
         const newParticle = createParticle()
         if (newParticle) particles.push(newParticle)
@@ -267,7 +288,7 @@ export default function Welcome() {
                 </button>
               </Link>
                 <Link
-                  href="/projects"
+                  href="/projectList"
                   className="border border-slate-300 hover:border-blue-600 text-slate-700 hover:text-blue-600 px-8 py-3 rounded-lg font-semibold transition-colors inline-block text-center"
                 >
                   데모 보기
