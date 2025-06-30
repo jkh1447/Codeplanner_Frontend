@@ -1,6 +1,6 @@
 import "../../globals.css";
-import TopNavBar from "@/src/components/dashboard/TopNavBar";
-import SideBar from "@/src/components/dashboard/SideBar";
+import TopNavBar from "@/app/projects/[projectId]/_components/TopNavBar";
+import SideBar from "@/app/projects/[projectId]/_components/SideBar";
 
 export default function ProjectLayout({
     children,
@@ -18,9 +18,7 @@ export default function ProjectLayout({
                     <SideBar />
                 </aside>
 
-                <main className="flex-1 overflow-y-auto">
-                    {children}
-                </main>
+                <main className="flex-1 overflow-y-auto">{children}</main>
             </div>
         </div>
     );

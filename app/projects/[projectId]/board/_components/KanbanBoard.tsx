@@ -1,6 +1,6 @@
 "use client";
 
-import PlusIcon from "@/src/icons/PlusIcon";
+import PlusIcon from "@/components/icons/PlusIcon";
 import { Column, Id, Task } from "@/src/type";
 import React, { useState, useRef, useMemo, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";

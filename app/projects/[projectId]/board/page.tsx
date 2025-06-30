@@ -1,4 +1,4 @@
-import KanbanBoard from "@/src/components/dashboard/board/KanbanBoard";
+import KanbanBoard from "@/app/projects/[projectId]/board/_components/KanbanBoard";
 import { Task } from "@/src/type";
 import "./page.css";
 

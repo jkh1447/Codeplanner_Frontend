@@ -1,4 +1,4 @@
-import TrashIcon from "@/src/icons/TrashIcon";
+import TrashIcon from "@/components/icons/TrashIcon";
 import { Id, Task } from "@/src/type";
 import { useSortable } from "@dnd-kit/sortable";
 import React, { useState } from "react";

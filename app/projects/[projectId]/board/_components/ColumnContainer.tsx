@@ -1,9 +1,9 @@
-import TrashIcon from "@/src/icons/TrashIcon";
+import TrashIcon from "@/components/icons/TrashIcon";
 import { Column, Id, Task } from "@/src/type";
 import React, { useMemo, useState } from "react";
 import { CSS } from "@dnd-kit/utilities";
 import { SortableContext, useSortable } from "@dnd-kit/sortable";
-import PlusIcon from "@/src/icons/PlusIcon";
+import PlusIcon from "@/components/icons/PlusIcon";
 import TaskCard from "./TaskCard";
 import AddIssueModal from "./AddIssueModal";
 
