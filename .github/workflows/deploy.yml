@@ -21,6 +21,11 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
+    - name: Clear build cache
+      run: |
+        rm -rf .next
+        rm -rf node_modules/.cache
+
     - name: Run linting (optional)
       run: npm run lint || echo "Linting failed but continuing deployment"
       continue-on-error: true
@@ -42,6 +47,7 @@ jobs:
           cd /home/ubuntu/codeplanner/Codeplanner_Frontend
           git pull origin main
           npm ci --production
+          rm -rf .next
           npm run build:prod
           pm2 restart codeplanner-frontend || pm2 start ecosystem.config.js
           sudo nginx -t && sudo systemctl reload nginx
