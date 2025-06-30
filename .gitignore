@@ -29,3 +29,16 @@ yarn-error.log*
 .env.development.local
 .env.test.local
 .env.production.local
+
+# CI/CD 관련
+.env
+.env.*
+!.env.example
+
+# 로그 파일
+logs/
+*.log
+
+# 임시 파일
+.tmp/
+.temp/
