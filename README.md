@@ -1,39 +1,39 @@
-# Getting Started with Create React App
+## 프로젝트 실행방법
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+프로젝트 디렉토리에서 다음을 실행할 수 있습니다.
 
-## Available Scripts
+### `npm install`
 
-In the project directory, you can run:
+npm 패키지를 프로젝트에 설치합니다.
 
 ### `npm start`
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+앱을 개발 모드로 실행합니다.\
+브라우저에서 확인하려면 [http://localhost:3000](http://localhost:3000)을 여세요.
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+편집하면 페이지가 다시 로드됩니다.\
+또한 콘솔에서 Lint 오류를 확인할 수 있습니다.
 
 ### `npm test`
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+테스트 실행을 대화형 감시 모드로 실행합니다.\
+자세한 내용은 [테스트 실행](https://facebook.github.io/create-react-app/docs/running-tests) 섹션을 참조하세요.
 
 ### `npm run build`
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+프로덕션용 앱을 `build` 폴더에 빌드합니다. \
+프로덕션 모드에서 React를 올바르게 번들링하고 최상의 성능을 위해 빌드를 최적화합니다.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+빌드가 최소화되었으며 파일 이름에 해시가 포함됩니다. \
+앱을 배포할 준비가 되었습니다!
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+자세한 내용은 [배포](https://facebook.github.io/create-react-app/docs/deployment) 섹션을 참조하세요.
 
 ### `npm run eject`
 
 **Note: this is a one-way operation. Once you `eject`, you can’t go back!**
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build depend                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ency from your project.
 
 Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
 
