@@ -2,7 +2,11 @@ import TrashIcon from "@/components/icons/TrashIcon";
 import { Column, Id, Task } from "@/components/type";
 import React, { useMemo, useState } from "react";
 import { CSS } from "@dnd-kit/utilities";
-import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import {
+    SortableContext,
+    useSortable,
+    verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import PlusIcon from "@/components/icons/PlusIcon";
 import TaskCard from "./TaskCard";
 import AddIssueModal from "./AddIssueModal";
@@ -12,7 +16,7 @@ interface Props {
     projectId: string;
     deleteColumn: (id: Id) => void;
     updateColumn: (id: Id, title: string) => void;
-    createTask: (columnId: Id) => void;
+    createTask: (formData: any) => void;
     updateTask: (id: Id, content: string) => void;
     deleteTask: (id: Id) => void;
     tasks: Task[];
@@ -120,7 +124,6 @@ function ColumnContainer(props: Props) {
                             key={task.id}
                             task={task}
                             deleteTask={deleteTask}
-                            updateTask={updateTask}
                         />
                     ))}
                 </SortableContext>
@@ -150,6 +153,7 @@ function ColumnContainer(props: Props) {
                             selectedColumn={selectedColumn}
                             taskCount={tasks.length}
                             projectId={projectId}
+                            createTask={createTask}
                         />
                     </div>
                 </div>
