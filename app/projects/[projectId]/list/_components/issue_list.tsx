@@ -110,6 +110,9 @@ const projectId = params?.projectId as string;
   const handleCloseDrawer = () => setSelectedTask(null);
 
   useEffect(() => {
+
+    // fetch(`http://localhost:3001/api/projects/${projectId}/issues`, {
+
     fetch(`http://localhost:5000/api/projects/${projectId}/issues`, {
       credentials: 'include',
     })
