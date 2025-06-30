@@ -1,6 +1,7 @@
 import "../../globals.css";
-import TopNavBar from "@/src/components/dashboard/TopNavBar";
-import SideBar from "@/src/components/dashboard/SideBar";
+import React from 'react';
+import TopNavBar from "./_components/TopNavBar";
+import SideBar from "./_components/SideBar";
 
 export default function ProjectLayout({
     children,
