@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 
 interface LoginDTO {
   email: string;
@@ -28,15 +28,22 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [showResendAlert, setShowResendAlert] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
 
   useEffect(() => {
     const success = searchParams.get("success");
+    const resend = searchParams.get("resend");
     if (success === "true") {
       setShowSuccessAlert(true);
       // URL에서 success 파라미터 제거
+      router.replace("/auth/login");
+    }
+    if (resend === "true") {
+      setShowResendAlert(true);
+      // URL에서 resend 파라미터 제거
       router.replace("/auth/login");
     }
   }, [searchParams, router]);
@@ -67,7 +74,12 @@ export default function LoginPage() {
           description: "성공적으로 로그인되었습니다.",
         });
         // 로그인 성공 후 리다이렉트 (필요에 따라 수정)
-        router.push("/projects/demo/board");
+        console.log(result.user.is_verified);
+        if (result.user.is_verified) {
+          router.push("/projectList");
+        } else {
+          router.push("/auth/needEmail");
+        }
       } else {
         const error = await response.json();
         toast({
@@ -105,6 +117,13 @@ export default function LoginPage() {
             <Alert className="mb-4 border-green-200 bg-green-50">
               <AlertDescription className="text-green-800">
                 회원가입이 완료되었습니다! 로그인해주세요.
+              </AlertDescription>
+            </Alert>
+          )}
+          {showResendAlert && (
+            <Alert className="mb-4 border-green-200 bg-green-50">
+              <AlertDescription className="text-green-800">
+                인증 메일이 다시 보내졌습니다! 인증 이후 로그인 해주세요.
               </AlertDescription>
             </Alert>
           )}

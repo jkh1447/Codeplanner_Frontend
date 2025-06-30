@@ -105,24 +105,34 @@ export default function IssueList() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showDetail, setShowDetail] = useState(false);
   const params = useParams();
-const projectId = params?.projectId as string;
+  const projectId = params?.projectId as string;
 
   const handleCloseDrawer = () => setSelectedTask(null);
 
   useEffect(() => {
-    fetch(`http://localhost:3001/api/projects/${projectId}/issues`, {
-      credentials: 'include',
+  fetch(`http://localhost:5000/api/projects/${projectId}/issues`, {
+    credentials: 'include',
+  })
+    .then((res) => {
+      if (!res.ok) throw new Error("이슈 목록 불러오기 실패");
+      return res.json();
     })
-      .then((res) => {
-        if (!res.ok) throw new Error("이슈 목록 불러오기 실패");
-        return res.json();
-      })
-      .then((data: Task[]) => setIssues(data))
-      .catch((err) => {
-        console.error(err);
-        setIssues([]);
-      });
-  }, [projectId]);
+    .then((data: any[]) => setIssues(
+      data.map(issue => ({
+        ...issue,
+        project_id: issue.projectId,
+        assignee_id: issue.assigneeId,
+        reporter_id: issue.reporterId,
+        issue_type: issue.issueType,
+        start_date: issue.startDate,
+        due_date: issue.dueDate,
+      }))
+    ))
+    .catch((err) => {
+      console.error(err);
+      setIssues([]);
+    });
+}, [projectId]);
 
   // 검색 필터링
   const filtered = issues.filter(issue =>
@@ -188,7 +198,7 @@ const projectId = params?.projectId as string;
           )}
         </div>
         {selectedTask && (
-          <TaskDrawer task={selectedTask} onClose={handleCloseDrawer} />
+          <TaskDrawer task={{ ...selectedTask, project_id: projectId}} onClose={handleCloseDrawer} />
         )}
       </main>
     </div>
