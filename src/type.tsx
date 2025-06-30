@@ -16,6 +16,7 @@ export type Task = {
     reporter_id: Id;
     start_date: string;
     due_date: string;
+    position: number;
 };
 
 export type ColumnWithTasks = Column & {
