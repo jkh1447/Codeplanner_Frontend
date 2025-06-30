@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Header from "../../../components/header"
+import { getApiUrl } from "../../../lib/api"
 
 // 프로젝트 데이터 타입 정의
 interface Project {
@@ -20,7 +21,10 @@ export default function ProjectList() {
   useEffect(() => {
 
     console.log("백엔드 서버에 연결 시도 중...")
-    fetch("http://localhost:5000/projects", {
+    const apiUrl = getApiUrl()
+    console.log("API URL:", apiUrl)
+    
+    fetch(`${apiUrl}/projects`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -51,7 +55,7 @@ export default function ProjectList() {
           status: project.status,
           assignee: project.project_leader ?? project.assignee ?? "",
           dueDate: project.due_date ?? project.dueDate ?? "",
-          description: project.descrition ?? project.description ?? "",
+          description: project.description ?? project.description ?? "",
           people: project.project_people ?? project.people ?? 0,
         }))
         
@@ -124,7 +128,7 @@ export default function ProjectList() {
       if (newProject.name && newProject.assignee && newProject.dueDate) {
         const payload = {
           title: newProject.name,
-          descrition: newProject.description,
+          description: newProject.description,
           status: "대기중",
           project_people: 0, // 실제 인원 입력 구조 있으면 바꾸세요
           due_date: newProject.dueDate,
@@ -135,7 +139,8 @@ export default function ProjectList() {
           console.log("백엔드 서버에 프로젝트 생성 요청 중...")
           console.log("전송할 데이터:", payload)
           
-          const res = await fetch("http://localhost:5000/projects/create", {
+          const apiUrl = getApiUrl()
+          const res = await fetch(`${apiUrl}/projects/create`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
@@ -150,7 +155,7 @@ export default function ProjectList() {
             setProjects((prev) => [...prev, {
               id: created.id,
               name: created.title,
-              description: created.descrition,
+              description: created.description,
               status: created.status,
               assignee: created.project_leader,
               dueDate: created.due_date,
