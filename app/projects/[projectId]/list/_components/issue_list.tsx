@@ -105,7 +105,7 @@ export default function IssueList() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showDetail, setShowDetail] = useState(false);
   const params = useParams();
-const projectId = params?.projectId as string;
+  const projectId = params?.projectId as string;
 
   const handleCloseDrawer = () => setSelectedTask(null);
 
@@ -191,7 +191,7 @@ const projectId = params?.projectId as string;
           )}
         </div>
         {selectedTask && (
-          <TaskDrawer task={selectedTask} onClose={handleCloseDrawer} />
+          <TaskDrawer task={{ ...selectedTask, project_id: projectId}} onClose={handleCloseDrawer} />
         )}
       </main>
     </div>
