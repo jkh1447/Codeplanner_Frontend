@@ -1,6 +1,7 @@
 "use client";
 import { Task } from "@/components/type";
 
+{/* 이슈에 대한 Drawer */}
 export default function TaskDrawer({
   task,
   onClose,
