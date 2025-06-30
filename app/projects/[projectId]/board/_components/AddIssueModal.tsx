@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { Id } from "@/components/type";
 
 // 더미 데이터 - 실제로는 서버에서 가져올 예정
 const users = [
@@ -78,6 +79,7 @@ interface AddIssueModalProps {
     selectedColumn?: string;
     projectId: string;
     taskCount?: number;
+    createTask: (formData: IssueFormData) => void;
 }
 
 export default function AddIssueModal({
@@ -86,8 +88,9 @@ export default function AddIssueModal({
     selectedColumn,
     projectId,
     taskCount,
+    createTask,
 }: AddIssueModalProps) {
-    console.log("addissueprojectId", projectId);
+    // console.log("addissueprojectId", projectId);
     const [formData, setFormData] = useState<IssueFormData>({
         project_id: projectId,
         title: "",
@@ -120,19 +123,8 @@ export default function AddIssueModal({
             return;
         }
 
-        // 여기서 실제 API 호출을 하게 됩니다
-        const response = await fetch(
-            `http://localhost:5000/api/projects/${projectId}/issues/create`,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(formData),
-            }
-        );
-
-        console.log("이슈 등록:", formData);
+        // createTask에 formData 전체를 넘김 (KanbanBoard에서 서버에 POST 후 fetchLatestTasks 실행)
+        createTask(formData);
 
         // 폼 초기화 및 모달 닫기
         setFormData({
@@ -174,7 +166,7 @@ export default function AddIssueModal({
                         {/* 제목 */}
                         <div className="space-y-2">
                             <Label htmlFor="title">제목 *</Label>
-                            <Input
+                            <Textarea
                                 id="title"
                                 placeholder="이슈 제목을 입력하세요"
                                 value={formData.title}
@@ -182,6 +174,7 @@ export default function AddIssueModal({
                                     handleInputChange("title", e.target.value)
                                 }
                                 required
+                                rows={2}
                             />
                         </div>
 

@@ -1,6 +1,6 @@
 import React from "react";
 
-function PlusIcon({ className = "size-6" }: { className?: string }) {
+function UserIcon({ className = "size-6" }: { className?: string }) {
     return (
         <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -13,10 +13,10 @@ function PlusIcon({ className = "size-6" }: { className?: string }) {
             <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                d="M15.75 7.5a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 19.5a7.5 7.5 0 0115 0v.75a.75.75 0 01-.75.75h-13.5a.75.75 0 01-.75-.75v-.75z"
             />
         </svg>
     );
 }
 
-export default PlusIcon;
+export default UserIcon;

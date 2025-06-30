@@ -47,6 +47,8 @@ function KanbanBoard({
 
     const [tasks, setTasks] = useState<Task[]>(issues);
 
+    let allTasks: Task[] = [];
+
     const [activeColumn, setActiveColumn] = useState<Column | null>(null);
     const [activeTask, setActiveTask] = useState<Task | null>(null);
     const sensors = useSensors(
@@ -63,37 +65,56 @@ function KanbanBoard({
     }, []);
 
     // 서버에서 최신 데이터를 가져오는 함수
-    async function fetchLatestTasks() {
+    const fetchLatestTasks = React.useCallback(async () => {
         try {
             const response = await fetch(
                 `http://localhost:5000/api/projects/${projectId}/issues`
             );
             if (response.ok) {
                 const latestTasks = await response.json();
+                allTasks = [];
+                allTasks.push(...latestTasks);
                 setTasks(latestTasks);
             }
         } catch (error) {
             console.error("Error fetching latest tasks:", error);
         }
-    }
+    }, [projectId]);
 
     // 컴포넌트 마운트 시 또는 projectId 변경 시 최신 데이터 가져오기
     useEffect(() => {
         if (isClient && projectId) {
             fetchLatestTasks();
         }
-    }, [isClient, projectId]);
+    }, [isClient, projectId, fetchLatestTasks]);
 
     // 초기 데이터 설정 (서버에서 가져온 데이터가 없을 때만)
     useEffect(() => {
         if (issues && issues.length > 0 && tasks.length === 0) {
             setTasks(issues);
         }
-    }, [issues, tasks.length]);
+    }, [issues]);
 
     return (
         <>
-            <BoardMenu />
+            
+            {/* 검색 기능 */}
+            <div className="flex justify-start space-x-4">
+                <div className="pt-2 relative text-gray-600">
+                    <input
+                        className="border-2 border-gray-300 bg-white h-10 px-5 pr-16 rounded-lg text-sm focus:outline-none"
+                        type="search"
+                        name="search"
+                        placeholder="Search" 
+                        onChange={(e) => searchTasks(e.target.value)}
+                    />
+                    <button
+                        type="submit"
+                        className="absolute right-0 top-0 mt-5 mr-4"
+                    ></button>
+                </div>
+            </div>
+
             <div className="w-full overflow-x-auto overflow-y-hidden">
                 {isClient && (
                     <DndContext
@@ -154,7 +175,6 @@ function KanbanBoard({
                                     <TaskCard
                                         task={activeTask}
                                         deleteTask={deleteTask}
-                                        updateTask={updateTask}
                                     />
                                 )}
                             </DragOverlay>,
@@ -199,21 +219,19 @@ function KanbanBoard({
         </>
     );
 
-    function createTask(columnId: Id) {
-        const newTask: Task = {
-            id: generateId(),
-            project_id: projectId,
-            title: "2",
-            description: "3",
-            issue_type: "4",
-            status: columnId as string,
-            assignee_id: "5",
-            reporter_id: "6",
-            start_date: "7",
-            due_date: "8",
-            position: tasks.length + 1,
-        };
-        setTasks([...tasks, newTask]);
+    function createTask(taskData: any) {
+        fetch(`http://localhost:5000/api/projects/${projectId}/issues/create`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(taskData),
+        })
+            .then((res) => {
+                if (!res.ok) throw new Error("Failed to add issue");
+                fetchLatestTasks();
+            })
+            .catch((err) => {
+                console.error("Error adding issue:", err);
+            });
     }
 
     function deleteTask(id: Id) {
@@ -263,97 +281,72 @@ function KanbanBoard({
     }
 
     function onDragEnd(event: DragEndEvent) {
-        console.log("onDragEnd 함수 호출됨!");
         setActiveColumn(null);
         setActiveTask(null);
         const { active, over } = event;
-
-        console.log("over 확인:", over);
-        if (!over) {
-            console.log("over가 null이어서 return");
-            return;
-        }
+        if (!over) return;
 
         const activeId = active.id;
         const overId = over.id;
 
-        console.log("ID 비교:", { activeId, overId });
-        if (activeId === overId) {
-            console.log("같은 ID - 재정렬 처리");
-            // 같은 ID여도 재정렬 처리는 진행
-            // return; // 이 줄을 주석 처리
-        }
-
-        console.log("onDragEnd 디버깅:", {
-            activeId,
-            overId,
-            activeType: active.data.current?.type,
-            overType: over.data.current?.type,
-        });
-
-        // Column 드래그 처리
-        const isActiveColumn = active.data.current?.type === "Column";
-        const isOverColumn = over.data.current?.type === "Column";
-
-        if (isActiveColumn && isOverColumn) {
-            setColumns((columns) => {
-                const activeColumnIndex = columns.findIndex(
-                    (col) => col.id === activeId
-                );
-                const overColumnIndex = columns.findIndex(
-                    (col) => col.id === overId
-                );
-
-                return arrayMove(columns, activeColumnIndex, overColumnIndex);
-            });
-        }
-
-        // Task 드래그 처리
         const isActiveTask = active.data.current?.type === "Task";
         const isOverTask = over.data.current?.type === "Task";
         const isOverAColumn = over.data.current?.type === "Column";
 
-        console.log("Task 드래그 조건 확인:", {
-            isActiveTask,
-            isOverTask,
-            isOverAColumn,
-            condition: isActiveTask && (isOverTask || isOverAColumn),
-        });
-
         if (isActiveTask && (isOverTask || isOverAColumn)) {
-            console.log("Task 드래그 처리 시작");
             setTasks((tasks) => {
                 const activeIndex = tasks.findIndex((t) => t.id === activeId);
-                let targetColumnId: string;
+                let newTasks = [...tasks];
 
                 if (isOverTask) {
-                    // Task 위에 놓은 경우
                     const overIndex = tasks.findIndex((t) => t.id === overId);
-                    targetColumnId = tasks[overIndex].status;
-                    tasks[activeIndex].status = targetColumnId;
-                } else {
-                    // Column 위에 놓은 경우
-                    targetColumnId = overId as string;
-                    tasks[activeIndex].status = targetColumnId;
+                    const targetColumnId = tasks[overIndex].status;
+
+                    if (tasks[activeIndex].status === targetColumnId) {
+                        // 같은 컬럼 내에서 순서 이동
+                        newTasks = arrayMove(newTasks, activeIndex, overIndex);
+                    } else {
+                        // 다른 컬럼으로 이동: 해당 컬럼의 마지막에 추가
+                        const movedTask = {
+                            ...newTasks[activeIndex],
+                            status: targetColumnId,
+                        };
+                        newTasks.splice(activeIndex, 1); // 기존 위치에서 제거
+                        // 해당 컬럼의 마지막 인덱스 찾기
+                        const lastIndex = newTasks.reduce(
+                            (acc, t, idx) =>
+                                t.status === targetColumnId ? idx : acc,
+                            -1
+                        );
+                        newTasks.splice(lastIndex + 1, 0, movedTask);
+                    }
+
+                    // 서버에 업데이트
+                    const issueIds = newTasks
+                        .filter((task) => task.status === targetColumnId)
+                        .map((task) => task.id.toString());
+                    updateTaskOrderAndStatus(issueIds, targetColumnId);
+                } else if (isOverAColumn) {
+                    const targetColumnId = overId as string;
+                    const movedTask = {
+                        ...newTasks[activeIndex],
+                        status: targetColumnId,
+                    };
+                    newTasks.splice(activeIndex, 1);
+                    // 해당 컬럼의 마지막 인덱스 찾기
+                    const lastIndex = newTasks.reduce(
+                        (acc, t, idx) =>
+                            t.status === targetColumnId ? idx : acc,
+                        -1
+                    );
+                    newTasks.splice(lastIndex + 1, 0, movedTask);
+
+                    // 서버에 업데이트
+                    const issueIds = newTasks
+                        .filter((task) => task.status === targetColumnId)
+                        .map((task) => task.id.toString());
+                    updateTaskOrderAndStatus(issueIds, targetColumnId);
                 }
-
-                const newTasks = arrayMove(tasks, activeIndex, activeIndex);
-
-                // 해당 컬럼의 모든 task ID 수집
-                const issueIds = newTasks
-                    .filter((task) => task.status === targetColumnId)
-                    .map((task) => task.id.toString());
-
-                console.log("onDragEnd - 서버로 보낼 데이터:", {
-                    targetColumnId,
-                    issueIds,
-                    columnTasks: newTasks.filter(
-                        (task) => task.status === targetColumnId
-                    ),
-                });
-                console.log("ondragend");
-                // 서버에 업데이트
-                updateTaskOrderAndStatus(issueIds, targetColumnId);
 
                 return newTasks;
             });
@@ -433,6 +426,14 @@ function KanbanBoard({
                 return newTasks;
             });
         }
+    }
+
+    function searchTasks(searchTerm: string) {
+        
+        const filteredTasks = allTasks.filter((task) =>
+            task.title.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        setTasks(filteredTasks);
     }
 }
 
