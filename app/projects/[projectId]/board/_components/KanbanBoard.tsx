@@ -91,8 +91,6 @@ function KanbanBoard({
         }
     }, [issues, tasks.length]);
 
-    
-
     return (
         <>
             <BoardMenu />
@@ -191,10 +189,10 @@ function KanbanBoard({
                                 </div>
                             ))}
                         </div>
-                        <button className="h-[60px] w-[350px] min-w-[350px] cursor-pointer rounded-lg bg-[#f8f8f8] border-2 border-gray-300 p-4 ring-rose-500 hover:ring-2 flex gap-2 flex-shrink-0">
+                        {/* <button className="h-[60px] w-[350px] min-w-[350px] cursor-pointer rounded-lg bg-[#f8f8f8] border-2 border-gray-300 p-4 ring-rose-500 hover:ring-2 flex gap-2 flex-shrink-0">
                             <PlusIcon />
                             Add Column
-                        </button>
+                        </button> */}
                     </div>
                 )}
             </div>
@@ -213,6 +211,7 @@ function KanbanBoard({
             reporter_id: "6",
             start_date: "7",
             due_date: "8",
+            position: tasks.length + 1,
         };
         setTasks([...tasks, newTask]);
     }
@@ -264,17 +263,35 @@ function KanbanBoard({
     }
 
     function onDragEnd(event: DragEndEvent) {
+        console.log("onDragEnd 함수 호출됨!");
         setActiveColumn(null);
         setActiveTask(null);
         const { active, over } = event;
-        if (!over) return;
+
+        console.log("over 확인:", over);
+        if (!over) {
+            console.log("over가 null이어서 return");
+            return;
+        }
 
         const activeId = active.id;
         const overId = over.id;
 
-        if (activeId === overId) return;
+        console.log("ID 비교:", { activeId, overId });
+        if (activeId === overId) {
+            console.log("같은 ID - 재정렬 처리");
+            // 같은 ID여도 재정렬 처리는 진행
+            // return; // 이 줄을 주석 처리
+        }
 
-        // Column 드래그만 처리
+        console.log("onDragEnd 디버깅:", {
+            activeId,
+            overId,
+            activeType: active.data.current?.type,
+            overType: over.data.current?.type,
+        });
+
+        // Column 드래그 처리
         const isActiveColumn = active.data.current?.type === "Column";
         const isOverColumn = over.data.current?.type === "Column";
 
@@ -288,6 +305,57 @@ function KanbanBoard({
                 );
 
                 return arrayMove(columns, activeColumnIndex, overColumnIndex);
+            });
+        }
+
+        // Task 드래그 처리
+        const isActiveTask = active.data.current?.type === "Task";
+        const isOverTask = over.data.current?.type === "Task";
+        const isOverAColumn = over.data.current?.type === "Column";
+
+        console.log("Task 드래그 조건 확인:", {
+            isActiveTask,
+            isOverTask,
+            isOverAColumn,
+            condition: isActiveTask && (isOverTask || isOverAColumn),
+        });
+
+        if (isActiveTask && (isOverTask || isOverAColumn)) {
+            console.log("Task 드래그 처리 시작");
+            setTasks((tasks) => {
+                const activeIndex = tasks.findIndex((t) => t.id === activeId);
+                let targetColumnId: string;
+
+                if (isOverTask) {
+                    // Task 위에 놓은 경우
+                    const overIndex = tasks.findIndex((t) => t.id === overId);
+                    targetColumnId = tasks[overIndex].status;
+                    tasks[activeIndex].status = targetColumnId;
+                } else {
+                    // Column 위에 놓은 경우
+                    targetColumnId = overId as string;
+                    tasks[activeIndex].status = targetColumnId;
+                }
+
+                const newTasks = arrayMove(tasks, activeIndex, activeIndex);
+
+                // 해당 컬럼의 모든 task ID 수집
+                const issueIds = newTasks
+                    .filter((task) => task.status === targetColumnId)
+                    .map((task) => task.id.toString());
+
+                console.log("onDragEnd - 서버로 보낼 데이터:", {
+                    targetColumnId,
+                    issueIds,
+                    columnTasks: newTasks.filter(
+                        (task) => task.status === targetColumnId
+                    ),
+                });
+                console.log("ondragend");
+                // 서버에 업데이트
+                updateTaskOrderAndStatus(issueIds, targetColumnId);
+
+                return newTasks;
             });
         }
     }
@@ -345,15 +413,7 @@ function KanbanBoard({
 
                 const newTasks = arrayMove(tasks, activeIndex, overIndex);
 
-                // 같은 Column 내에서 순서 변경된 경우
-                const targetColumnId = newTasks[activeIndex].status;
-                const issueIds = newTasks
-                    .filter((task) => task.status === targetColumnId)
-                    .map((task) => task.id.toString());
-
-                // 서버에 업데이트
-                updateTaskOrderAndStatus(issueIds, targetColumnId);
-
+                // UI 업데이트만 수행, 서버 업데이트는 onDragEnd에서 처리
                 return newTasks;
             });
         }
@@ -369,15 +429,7 @@ function KanbanBoard({
 
                 const newTasks = arrayMove(tasks, activeIndex, activeIndex);
 
-                // 새로운 Column의 모든 Task ID를 수집
-                const targetColumnId = overId.toString();
-                const issueIds = newTasks
-                    .filter((task) => task.status === targetColumnId)
-                    .map((task) => task.id.toString());
-
-                // 서버에 업데이트
-                updateTaskOrderAndStatus(issueIds, targetColumnId);
-
+                // UI 업데이트만 수행, 서버 업데이트는 onDragEnd에서 처리
                 return newTasks;
             });
         }

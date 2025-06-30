@@ -87,7 +87,7 @@ export default function AddIssueModal({
     projectId,
     taskCount,
 }: AddIssueModalProps) {
-  console.log("addissueprojectId", projectId);
+    console.log("addissueprojectId", projectId);
     const [formData, setFormData] = useState<IssueFormData>({
         project_id: projectId,
         title: "",
@@ -282,7 +282,7 @@ export default function AddIssueModal({
                             <div className="space-y-2">
                                 <Label>보고자</Label>
                                 <Select
-                                      value={formData.reporterId}
+                                    value={formData.reporterId}
                                     onValueChange={(value) =>
                                         handleInputChange("reporterId", value)
                                     }

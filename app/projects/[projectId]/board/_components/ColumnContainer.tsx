@@ -49,7 +49,7 @@ function ColumnContainer(props: Props) {
             type: "Column",
             column,
         },
-        disabled: editMode,
+        disabled: true,
     });
 
     const style = {
