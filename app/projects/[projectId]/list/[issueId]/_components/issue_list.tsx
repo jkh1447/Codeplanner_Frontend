@@ -9,8 +9,6 @@ export default function IssueList() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const handleCloseDrawer = () => setSelectedTask(null);
 
-  // 더미 데이터 (실제 API 연동 시 fetch로 대체)
-
   return (
     <div className="min-h-screen px-12 py-8">
       <h1 className="text-3xl font-bold text-slate-800 mb-6">📋 목록</h1>

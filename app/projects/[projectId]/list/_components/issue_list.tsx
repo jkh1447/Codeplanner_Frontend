@@ -105,13 +105,13 @@ export default function IssueList() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showDetail, setShowDetail] = useState(false);
   const params = useParams();
-  const projectId = params.projectId as string;
+const projectId = params?.projectId as string;
 
   const handleCloseDrawer = () => setSelectedTask(null);
 
   useEffect(() => {
     fetch(`http://localhost:3001/api/projects/${projectId}/issues`, {
-      credentials: 'include', // CORS 및 인증 문제 방지
+      credentials: 'include',
     })
       .then((res) => {
         if (!res.ok) throw new Error("이슈 목록 불러오기 실패");
