@@ -8,7 +8,7 @@ export default async function Page({params}: {params: {projectId: string}}) {
     console.log(projectId);
 
     const res = await fetch(
-        `${getApiUrl()}/api/projects/${projectId}/issues`,
+        `${getApiUrl()}/projects/${projectId}/issues`,
         { next: { revalidate: 60 } }
     );
     if (!res.ok) {

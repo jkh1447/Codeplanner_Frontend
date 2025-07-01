@@ -41,7 +41,7 @@ export default function TaskDrawer({
     setError("");
     try {
       console.log("project_id: ", task.project_id, "task_id: ", task.id);
-      const res = await fetch(`${getApiUrl()}/api/projects/${task.project_id}/${task.id}`, {
+      const res = await fetch(`${getApiUrl()}/projects/${task.project_id}/${task.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
