@@ -1,7 +1,7 @@
 "use client";
 import { Task } from "@/components/type";
-import { getApiUrl } from "@/lib/api";
 import { useState } from "react";
+import { getApiUrl } from "@/lib/api";
 
 {/* 이슈에 대한 카드 Drawer */}
 export default function TaskDrawer({
@@ -27,7 +27,6 @@ export default function TaskDrawer({
   // 로딩 및 에러 상태값 정의
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const apiUrl = getApiUrl();
 
   // 폼 값 변경해주는 핸들러
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -75,16 +74,14 @@ export default function TaskDrawer({
       />
       {/* Drawer */}
       <div className="fixed top-0 right-0 h-full w-[500px] bg-white shadow-2xl z-50 drawer-slide-in flex flex-col">
-        {/* Drawer 카드의 헤더 부분,  */}
         <div className="p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50">
           <div>
             <input
               className="text-xl font-bold text-gray-900 bg-transparent border-b border-gray-200 focus:outline-none focus:border-blue-400 w-full"
               name="title"
-              value={form.title} // 제목
-              onChange={handleChange} // ID
+              value={form.title}
+              onChange={handleChange}
             />
-            {/* Task_ID */}
             <p className="text-sm text-gray-500 mt-1">Task ID: {task.id}</p>
           </div>
           <button 
@@ -96,8 +93,6 @@ export default function TaskDrawer({
             </svg>
           </button>
         </div>
-
-        {/* 본문 내용 */}
         <div className="p-6 space-y-6 max-h-[calc(100vh-180px)] overflow-y-auto flex-1">
           {/* Type & Status */}
           <div className="flex gap-4">
@@ -192,10 +187,8 @@ export default function TaskDrawer({
         </div>
         <div className="p-4 border-t border-gray-200 flex justify-end bg-gray-50">
           <button
-            // 버튼 클릭시 저장
             onClick={handleSave}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium disabled:opacity-50"
-            // 종료 후 UI 상태 갱신
             disabled={loading}
           >
             {loading ? "저장 중..." : "저장"}
