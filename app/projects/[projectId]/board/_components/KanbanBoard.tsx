@@ -19,7 +19,7 @@ import { createPortal } from "react-dom";
 import TaskCard from "./TaskCard";
 import { useParams } from "next/navigation";
 import BoardMenu from "./BoardMenu";
-import PlusIcon from "@/components/icons/PlusIcon";
+import PlusIcon from "@/components/icons/PlusIcon"
 import { Column, Id, Task } from "@/components/type";
 
 function KanbanBoard({

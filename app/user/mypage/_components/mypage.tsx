@@ -49,6 +49,10 @@ export default function MyPage() {
       });
 
       if (!response.ok) {
+        if (response.status == 401) {
+          alert("로그인 후 이용해주세요.");
+          window.location.href = "/auth/login";
+        }
         throw new Error("사용자 정보를 불러올 수 없습니다.");
       }
 

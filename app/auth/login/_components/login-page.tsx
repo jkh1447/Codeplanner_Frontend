@@ -101,7 +101,12 @@ export default function LoginPage() {
   };
 
   const handleSignUpClick = () => {
-    router.push("http://localhost:3000/user/create");
+    // 개발/배포 환경에 따라 회원가입 경로 분기
+    if (process.env.NEXT_PUBLIC_ENV === "production") {
+      router.push("/user/create"); // 배포 환경: 상대경로 사용
+    } else {
+      router.push("http://localhost:3000/user/create"); // 개발 환경: 로컬 주소 사용
+    }
   };
 
   return (
