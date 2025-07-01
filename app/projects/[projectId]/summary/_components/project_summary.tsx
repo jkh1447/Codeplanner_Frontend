@@ -50,6 +50,12 @@ export default function SummaryPage() {
           credentials: "include",
         }
       );
+      if (!response.ok) {
+        if (response.status == 401) {
+          alert("로그인 후 이용해주세요.");
+          window.location.href = "/auth/login";
+        }
+      }
       const data = await response.json();
       setAllIssue(data.length);
       setCompletedIssue(
