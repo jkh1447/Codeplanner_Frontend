@@ -13,6 +13,7 @@ export default function MyIssuesPage() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const params = useParams();
   const projectId = params?.projectId as string;
+  const apiUrl = getApiUrl();
 
   useEffect(() => {
     fetch(`${getApiUrl()}/projects/${projectId}/my-issues`, {
