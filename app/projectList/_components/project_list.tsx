@@ -19,10 +19,8 @@ interface Project {
 // 프로젝트 목록 컴포넌트
 export default function ProjectList() {
     const [projects, setProjects] = useState<Project[]>([]);
-    const apiUrl = getApiUrl();
     useEffect(() => {
         console.log("백엔드 서버에 연결 시도 중...");
-        console.log("API URL:", apiUrl);
         fetch(`${getApiUrl()}/projects`, {
             method: "GET",
             credentials: "include",
@@ -56,7 +54,7 @@ export default function ProjectList() {
           status: project.status,
           assignee: project.project_leader ?? project.assignee ?? "",
           dueDate: project.due_date ?? project.dueDate ?? "",
-          description: project.descrition ?? project.description ?? "",
+          description: project.description ?? project.description ?? "",
           people: project.project_people ?? project.people ?? 0,
         }));
 
@@ -133,7 +131,7 @@ export default function ProjectList() {
     if (newProject.name && newProject.dueDate) {
       const payload = {
         title: newProject.name,
-        descrition: newProject.description,
+        description: newProject.description,
         status: "대기중",
         project_people: 1, // 실제 인원 입력 구조 있으면 바꾸세요
         due_date: newProject.dueDate,
@@ -143,7 +141,7 @@ export default function ProjectList() {
         console.log("백엔드 서버에 프로젝트 생성 요청 중...");
         console.log("전송할 데이터:", payload);
 
-        const res = await fetch(`${apiUrl}/projects/create`, {
+        const res = await fetch(`${getApiUrl()}/projects/create`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -164,7 +162,7 @@ export default function ProjectList() {
             {
               id: created.id,
               name: created.title,
-              description: created.descrition,
+              description: created.description,
               status: created.status,
               assignee: created.project_leader,
               dueDate: created.due_date,

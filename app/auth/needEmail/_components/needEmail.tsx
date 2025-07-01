@@ -22,7 +22,7 @@ export default function NeedEmailPage() {
 
   const handleResendEmail = async () => {
     try {
-      const response = await fetch(`${getApiUrl()}/api/user/email-resend`, {
+      const response = await fetch(`${getApiUrl()}/user/email-resend`, {
         method: "POST",
         credentials: "include",
       });

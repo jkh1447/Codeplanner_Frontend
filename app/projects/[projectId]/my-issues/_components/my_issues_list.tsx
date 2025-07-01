@@ -14,7 +14,7 @@ export default function MyIssuesPage() {
   const apiUrl = getApiUrl();
 
   useEffect(() => {
-    fetch(`${apiUrl}/projects/${projectId}/my-issues`, {
+    fetch(`${getApiUrl()}/projects/${projectId}/my-issues`, {
       credentials: "include",
     })
       .then((res) => res.json())
