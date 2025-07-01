@@ -111,7 +111,7 @@ export default function IssueList() {
   const handleCloseDrawer = () => setSelectedTask(null);
 
   useEffect(() => {
-        fetch(`${getApiUrl()}/api/projects/${projectId}/issues`, {
+        fetch(`${getApiUrl()}/projects/${projectId}/issues`, {
     credentials: 'include',
   })
     .then((res) => {

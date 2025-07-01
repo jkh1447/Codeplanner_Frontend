@@ -40,7 +40,7 @@ export default function SideBar() {
     const fetchMyIssueCount = async () => {
       try {
         const res = await fetch(
-          `${apiUrl}/api/projects/${projectId}/my-issues-count`,
+          `${apiUrl}/projects/${projectId}/my-issues-count`,
           {
             credentials: "include",
           }
