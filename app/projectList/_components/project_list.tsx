@@ -19,10 +19,8 @@ interface Project {
 // 프로젝트 목록 컴포넌트
 export default function ProjectList() {
     const [projects, setProjects] = useState<Project[]>([]);
-    const apiUrl = getApiUrl();
     useEffect(() => {
         console.log("백엔드 서버에 연결 시도 중...");
-        console.log("API URL:", apiUrl);
         fetch(`${getApiUrl()}/projects`, {
             method: "GET",
             credentials: "include",
@@ -143,7 +141,7 @@ export default function ProjectList() {
         console.log("백엔드 서버에 프로젝트 생성 요청 중...");
         console.log("전송할 데이터:", payload);
 
-        const res = await fetch(`${apiUrl}/projects/create`, {
+        const res = await fetch(`${getApiUrl()}/projects/create`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),

@@ -92,6 +92,7 @@ import { Badge } from "@/components/ui/badge";
 import { Task } from "@/components/type";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { getApiUrl } from "@/lib/api";
 
 export default function MyIssuesPage() {
   const [issues, setIssues] = useState<Task[]>([]);
@@ -99,7 +100,7 @@ export default function MyIssuesPage() {
   const projectId = params?.projectId as string;
 
   useEffect(() => {
-    fetch(`http://localhost:5000/api/projects/${projectId}/my-issues`, {
+    fetch(`${getApiUrl()}/projects/${projectId}/my-issues`, {
       credentials: "include",
     })
       .then((res) => res.json())

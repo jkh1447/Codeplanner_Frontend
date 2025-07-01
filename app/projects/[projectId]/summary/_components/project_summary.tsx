@@ -31,7 +31,7 @@ export default function SummaryPage() {
   useEffect(() => {
     const fetchMemberCount = async () => {
       const response = await fetch(
-        `${getApiUrl()}/api/summary/${projectId}/members`,
+        `${getApiUrl()}/summary/${projectId}/members`,
         {
           method: "GET",
           credentials: "include",
@@ -43,7 +43,7 @@ export default function SummaryPage() {
 
     const fetchAllIssue = async () => {
       const response = await fetch(
-        `${getApiUrl()}/api/summary/${projectId}/issues`,
+        `${getApiUrl()}/summary/${projectId}/issues`,
         {
           method: "GET",
           credentials: "include",
