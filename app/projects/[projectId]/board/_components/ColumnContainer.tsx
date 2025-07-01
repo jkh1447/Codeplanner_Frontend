@@ -89,7 +89,7 @@ function ColumnContainer(props: Props) {
             >
                 <div className="flex gap-2">
                     <div className="flex justify-center items-center bg-[#f8f8f8] px-2 py-1 text-sm rounded-full">
-                        0
+                        
                     </div>
                     {!editMode && column.title}
                     {editMode && (
@@ -107,14 +107,14 @@ function ColumnContainer(props: Props) {
                         />
                     )}
                 </div>
-                <button
+                {/* <button
                     onClick={() => {
                         deleteColumn(column.id);
                     }}
                     className="stroke-gray-500 hover:stroke-white hover:bg-gray-300 rounded px-1 py-2 "
                 >
                     <TrashIcon />
-                </button>
+                </button> */}
             </div>
             {/* Column task container */}
             <div className="flex flex-grow flex-col gap-4 p-2 overflow-x-hidden overflow-y-auto">
@@ -124,6 +124,7 @@ function ColumnContainer(props: Props) {
                             key={task.id}
                             task={task}
                             deleteTask={deleteTask}
+                            projectId={projectId}
                         />
                     ))}
                 </SortableContext>

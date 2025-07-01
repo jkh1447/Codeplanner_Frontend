@@ -8,10 +8,11 @@ import { CSS } from "@dnd-kit/utilities";
 
 interface Props {
     task: Task;
-    deleteTask: (id: Id) => void;
+    deleteTask: (id: Id, projectId: string) => void;
+    projectId: string;
 }
 
-function TaskCard({ task, deleteTask }: Props) {
+function TaskCard({ task, deleteTask, projectId }: Props) {
     const [mouseIsOver, setMouseIsOver] = useState(false);
 
     const {
@@ -63,7 +64,8 @@ function TaskCard({ task, deleteTask }: Props) {
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
-                            deleteTask(task.id);
+
+                            deleteTask(task.id, projectId);
                         }}
                         className="stroke-white absolute right-3 top-3 bg-gray-300 p-1.5 rounded hover:bg-red-400 hover:stroke-white opacity-80 hover:opacity-100 transition"
                     >
