@@ -143,7 +143,6 @@ export default function IssueList() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Header />
       <main className="container mx-auto px-6 py-8">
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between mb-6">
           <Button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2">
