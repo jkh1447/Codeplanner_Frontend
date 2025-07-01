@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
+import { getApiUrl } from "@/lib/api";
 import { useRouter } from "next/navigation";
 
 interface CreateUserDto {
@@ -81,7 +82,7 @@ export default function SignupPage() {
     setError("");
 
     try {
-      const response = await fetch("http://localhost:5000/user/create", {
+      const response = await fetch(`${getApiUrl()}/user/create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

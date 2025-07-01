@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Header from "../../../components/header";
+import { getApiUrl } from "@/lib/api";
 
 // 프로젝트 데이터 타입 정의
 interface Project {
@@ -18,9 +19,10 @@ interface Project {
 // 프로젝트 목록 컴포넌트
 export default function ProjectList() {
     const [projects, setProjects] = useState<Project[]>([]);
+    const apiUrl = getApiUrl();
     useEffect(() => {
         console.log("백엔드 서버에 연결 시도 중...");
-        fetch("http://localhost:5000/projects", {
+        fetch(`${apiUrl}/projects`, {
             method: "GET",
             credentials: "include",
             headers: {
@@ -149,7 +151,7 @@ export default function ProjectList() {
                 console.log("전송할 데이터:", payload);
 
                 const res = await fetch(
-                    "http://localhost:5000/projects/create",
+                    `${apiUrl}/projects/create`,
                     {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },

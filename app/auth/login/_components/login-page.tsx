@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "../../../../components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
+import { getApiUrl } from "@/lib/api";
 
 interface LoginDTO {
   email: string;
@@ -58,7 +59,7 @@ export default function LoginPage() {
     };
 
     try {
-      const response = await fetch("http://localhost:5000/auth/login", {
+      const response = await fetch(`${getApiUrl()}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

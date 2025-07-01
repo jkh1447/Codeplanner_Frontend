@@ -1,13 +1,14 @@
 import KanbanBoard from "./_components/KanbanBoard";
 import { Task } from "@/components/type";
 import "./page.css";
+import { getApiUrl } from "@/lib/api";
 
 export default async function Page({params}: {params: {projectId: string}}) {
     const { projectId } = await params;
     console.log(projectId);
 
     const res = await fetch(
-        `http://localhost:5000/api/projects/${projectId}/issues`,
+        `${getApiUrl()}/api/projects/${projectId}/issues`,
         { next: { revalidate: 60 } }
     );
     if (!res.ok) {
