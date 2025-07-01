@@ -1,12 +1,20 @@
 module.exports = {
   apps: [{
-    name: 'codeplanner-frontend',
+    name: 'Codeplanner_Frontend',
     script: 'npm',
-    args: 'start:prod',
-    cwd: '/home/ubuntu/codeplanner-frontend',
+    args: 'start',
+    cwd: '/home/ubuntu/codeplanner/Codeplanner_Frontend',
     env: {
+      NODE_ENV: 'development',
+      PORT: 3000,
+      NEXT_PUBLIC_API_URL: 'http://localhost:5000',
+      NEXT_PUBLIC_ENV: 'development'
+    },
+    env_production: {
       NODE_ENV: 'production',
-      PORT: 3000
+      PORT: 3000,
+      NEXT_PUBLIC_API_URL: 'http://3.38.25.129:5000',
+      NEXT_PUBLIC_ENV: 'production'
     },
     instances: 1,
     autorestart: true,

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Header from "../../../../../components/header";
 import { Issue, User, Label, Comment, Id, Task } from "@/components/type";
 import PlusIcon from "@/components/icons/PlusIcon";
+import { getApiUrl } from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -110,7 +111,7 @@ export default function IssueList() {
   const handleCloseDrawer = () => setSelectedTask(null);
 
   useEffect(() => {
-  fetch(`http://localhost:5000/api/projects/${projectId}/issues`, {
+        fetch(`${getApiUrl()}/projects/${projectId}/issues`, {
     credentials: 'include',
   })
     .then((res) => {
@@ -142,7 +143,6 @@ export default function IssueList() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Header />
       <main className="container mx-auto px-6 py-8">
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between mb-6">
           <Button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2">

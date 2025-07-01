@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback } from "react";
 import { GanttTask } from "../types";
+import { getApiUrl } from "@/lib/api";
 
 // Frappe Gantt 라이브러리를 위한 전역 타입 정의
 // window 객체에 Gantt 속성을 추가하여 TypeScript 오류 방지
@@ -25,7 +26,7 @@ export default function GanttChart({ tasks, loading = false, error = null }: Gan
 
   const handleDateChange = useCallback(async (task: GanttTask, start: Date, end: Date) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/issues/${task.id}/update-dates`, {
+      const response = await fetch(`${getApiUrl()}/issues/${task.id}/update-dates`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

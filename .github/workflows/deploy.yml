@@ -1,4 +1,4 @@
-name: Deploy to EC2
+name: Deploy Frontend to EC2
 
 on:
   push:
@@ -12,49 +12,26 @@ jobs:
     - name: Checkout source
       uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
-
-    - name: Install dependencies
-      run: npm ci
-
-    - name: Clear build cache
-      run: |
-        rm -rf .next
-        rm -rf node_modules/.cache
-
-    - name: Run linting (optional)
-      run: npm run lint || echo "Linting failed but continuing deployment"
-      continue-on-error: true
-
-    - name: Build application
-      run: npm run build:prod
-      env:
-        NODE_ENV: production
-
-    - name: Set up SSH private key
+    - name: Set up SSH key
       run: |
         mkdir -p ~/.ssh
         echo "${{ secrets.ENCODED_EC2_SSH_KEY }}" | base64 -d > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
 
-    - name: SSH and deploy
+    - name: Deploy to EC2
       run: |
-        ssh -o StrictHostKeyChecking=no ubuntu@43.201.107.10 << 'EOF'
+        ssh -o StrictHostKeyChecking=no ubuntu@3.38.25.129 << 'EOF'
           cd /home/ubuntu/codeplanner/Codeplanner_Frontend
           git pull origin main
-          npm ci --production
-          rm -rf .next
-          npm run build:prod
-          pm2 restart codeplanner-frontend || pm2 start ecosystem.config.js
-          sudo nginx -t && sudo systemctl reload nginx
-          echo "Frontend deployment completed successfully!"
-        EOF
 
-    - name: Deployment Status
-      run: |
-        echo "✅ Frontend deployment to EC2 completed!"
-        echo "🌐 Application URL: http://43.201.107.10" 
+          rm -rf .next node_modules
+          npm install
+          npm run build:prod
+
+          pm2 delete Codeplanner_Frontend || true
+          pm2 start ecosystem.config.js --env production
+
+          sudo nginx -t && sudo systemctl reload nginx
+
+          echo "✅ Frontend deployment complete"
+        EOF

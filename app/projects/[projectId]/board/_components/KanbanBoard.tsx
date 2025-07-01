@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useMemo, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
+import { getApiUrl } from "@/lib/api";
 import ColumnContainer from "./ColumnContainer";
 import {
     DndContext,
@@ -18,7 +19,7 @@ import { createPortal } from "react-dom";
 import TaskCard from "./TaskCard";
 import { useParams } from "next/navigation";
 import BoardMenu from "./BoardMenu";
-import PlusIcon from "@/components/icons/PlusIcon";
+import PlusIcon from "@/components/icons/PlusIcon"
 import { Column, Id, Task } from "@/components/type";
 
 function KanbanBoard({
@@ -68,7 +69,7 @@ function KanbanBoard({
     const fetchLatestTasks = React.useCallback(async () => {
         try {
             const response = await fetch(
-                `http://localhost:5000/api/projects/${projectId}/issues`
+                `${getApiUrl()}/projects/${projectId}/issues`
             );
             if (response.ok) {
                 const latestTasks = await response.json();
@@ -220,7 +221,7 @@ function KanbanBoard({
     );
 
     function createTask(taskData: any) {
-        fetch(`http://localhost:5000/api/projects/${projectId}/issues/create`, {
+        fetch(`${getApiUrl()}/projects/${projectId}/issues/create`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(taskData),
@@ -235,7 +236,7 @@ function KanbanBoard({
     }
 
     function deleteTask(id: Id, projectId: string) {
-        fetch(`http://localhost:5000/api/projects/${projectId}/issues/${id}`, {
+        fetch(`${getApiUrl()}/projects/${projectId}/issues/${id}`, {
             method: "DELETE",
         }).then((res) => {
             if (!res.ok) throw new Error("Failed to delete issue");
@@ -366,7 +367,7 @@ function KanbanBoard({
     ) {
         try {
             const response = await fetch(
-                `http://localhost:5000/api/projects/${projectId}/issues/updateOrder`,
+                `${getApiUrl()}/projects/${projectId}/issues/updateOrder`,
                 {
                     method: "PATCH",
                     headers: {

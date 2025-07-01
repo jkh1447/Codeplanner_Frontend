@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "../../../../components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
+import { getApiUrl } from "@/lib/api";
 
 interface LoginDTO {
   email: string;
@@ -58,7 +59,7 @@ export default function LoginPage() {
     };
 
     try {
-      const response = await fetch("http://localhost:5000/auth/login", {
+      const response = await fetch(`${getApiUrl()}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -100,7 +101,12 @@ export default function LoginPage() {
   };
 
   const handleSignUpClick = () => {
-    router.push("http://localhost:3000/user/create");
+    // 개발/배포 환경에 따라 회원가입 경로 분기
+    if (process.env.NEXT_PUBLIC_ENV === "production") {
+      router.push("/user/create"); // 배포 환경: 상대경로 사용
+    } else {
+      router.push("http://localhost:3000/user/create"); // 개발 환경: 로컬 주소 사용
+    }
   };
 
   return (

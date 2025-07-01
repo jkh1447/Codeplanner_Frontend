@@ -2,12 +2,34 @@
 
 import Link from "next/link";
 import { Bell } from "lucide-react";
+import { useState } from "react";
+import { getApiUrl } from "@/lib/api";
+import { Alert, AlertDescription } from "./ui/alert";
 
 // 헤더 컴포넌트
 export default function Header() {
   {
     /* 헤더 컴포넌트 반환 */
   }
+
+  const [error, setError] = useState("");
+
+  const handleLogout = async () => {
+    try {
+      const response = await fetch(`${getApiUrl()}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (response.ok) {
+        window.location.href = "/auth/login";
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "로그아웃 중 오류가 발생했습니다."
+      );
+    }
+  };
+
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
       <div className="container mx-auto px-6 py-4">
@@ -162,7 +184,10 @@ export default function Header() {
                     </svg>
                     환경 설정
                   </button>
-                  <button className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-lg flex items-center gap-3">
+                  <button
+                    onClick={handleLogout}
+                    className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-lg flex items-center gap-3"
+                  >
                     <svg
                       className="w-4 h-4"
                       fill="none"
@@ -181,6 +206,12 @@ export default function Header() {
                 </div>
               </div>
             </div>
+
+            {error && (
+              <Alert variant="destructive" className="mb-6">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
             {/* 프로필 */}
             <div className="relative group">
@@ -225,7 +256,10 @@ export default function Header() {
                     </svg>
                     내 프로필
                   </Link>
-                  <button className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-lg flex items-center gap-3">
+                  <a
+                    href="/projects"
+                    className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-lg flex items-center gap-3 block"
+                  >
                     <svg
                       className="w-4 h-4"
                       fill="none"
@@ -240,7 +274,7 @@ export default function Header() {
                       />
                     </svg>
                     내 프로젝트
-                  </button>
+                  </a>
                   <button className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-lg flex items-center gap-3">
                     <svg
                       className="w-4 h-4"

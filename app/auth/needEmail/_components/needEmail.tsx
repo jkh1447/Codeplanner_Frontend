@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { getApiUrl } from "@/lib/api";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +22,7 @@ export default function NeedEmailPage() {
 
   const handleResendEmail = async () => {
     try {
-      const response = await fetch("http://localhost:5000/user/email-resend", {
+      const response = await fetch(`${getApiUrl()}/user/email-resend`, {
         method: "POST",
         credentials: "include",
       });
