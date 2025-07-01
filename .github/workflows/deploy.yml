@@ -1,4 +1,4 @@
-name: Deploy to EC2
+name: Deploy Frontend to EC2
 
 on:
   push:
@@ -12,79 +12,26 @@ jobs:
     - name: Checkout source
       uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
-
-    - name: Install dependencies
-      run: npm install
-
-    - name: Clear build cache
-      run: |
-        rm -rf .next
-        rm -rf node_modules/.cache
-
-    - name: Run linting (optional)
-      run: npm run lint || echo "Linting failed but continuing deployment"
-      continue-on-error: true
-
-    - name: Build application
-      run: npm run build:prod
-      env:
-        NODE_ENV: production
-
-    - name: Set up SSH private key
+    - name: Set up SSH key
       run: |
         mkdir -p ~/.ssh
         echo "${{ secrets.ENCODED_EC2_SSH_KEY }}" | base64 -d > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
 
-    - name: SSH and deploy
+    - name: Deploy to EC2
       run: |
         ssh -o StrictHostKeyChecking=no ubuntu@3.38.25.129 << 'EOF'
           cd /home/ubuntu/codeplanner/Codeplanner_Frontend
           git pull origin main
-          
-          # 기존 빌드 파일 정리
-          rm -rf .next
-          rm -rf node_modules
-          
-          # 패키지 재설치 (전체 설치)
+
+          rm -rf .next node_modules
           npm install
-          
-          # 빌드 전 검증
-          echo "=== 빌드 전 검증 ==="
-          ls -la
-          npm list --depth=0
-          
-          # 프로덕션 빌드 (에러 발생 시 중단)
-          echo "=== 빌드 시작 ==="
           npm run build:prod
-          
-          # 빌드 후 검증
-          echo "=== 빌드 후 검증 ==="
-          if [ -d ".next" ]; then
-            echo "✅ .next 폴더 생성 확인"
-            ls -la .next/
-          else
-            echo "❌ .next 폴더가 생성되지 않았습니다!"
-            exit 1
-          fi
-          
-          # PM2 재시작 (환경변수와 함께)
-          echo "=== PM2 재시작 ==="
+
           pm2 delete codeplanner-frontend || true
           pm2 start ecosystem.config.js --env production
-          
-          # nginx 재시작
-          sudo nginx -t && sudo systemctl reload nginx
-          
-          echo "Frontend deployment completed successfully!"
-        EOF
 
-    - name: Deployment Status
-      run: |
-        echo "✅ Frontend deployment to EC2 completed!"
-        echo "🌐 Application URL: http://3.38.25.129" 
+          sudo nginx -t && sudo systemctl reload nginx
+
+          echo "✅ Frontend deployment complete"
+        EOF
