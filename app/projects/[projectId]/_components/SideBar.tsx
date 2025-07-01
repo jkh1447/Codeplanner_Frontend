@@ -3,27 +3,30 @@
 import * as React from "react";
 import { usePathname } from "next/navigation";
 import {
-    ChevronDown,
-    FolderOpen,
-    AlertCircle,
-    Users,
-    Settings,
-    Plus,
-    Hand,
-    Globe,
-    ChartNoAxesGantt,
-    Kanban,
-    TableOfContents,
-    Code,
+  ChevronDown,
+  FolderOpen,
+  AlertCircle,
+  Users,
+  Settings,
+  Plus,
+  Hand,
+  Globe,
+  ChartNoAxesGantt,
+  Kanban,
+  TableOfContents,
+  Code,
 } from "lucide-react";
 import Link from "next/link";
 import { getApiUrl } from "@/lib/api";
 
 import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { getApiUrl } from "@/lib/api";
+import { Project } from "@/components/type";
+
 
 interface Project {
     id: number;
@@ -31,42 +34,104 @@ interface Project {
     status: string;
 }
 
-const menuItems = [
+
+export default function SideBar() {
+  const [isProjectsOpen, setIsProjectsOpen] = React.useState(true);
+  const [myIssueCount, setMyIssueCount] = React.useState<number | null>(null);
+  const [myProjects, setMyProjects] = React.useState<Project[]>([]);
+  const pathname = usePathname();
+  const apiUrl = getApiUrl();
+  const match = pathname.match(/\/projects\/([^/]+)/);
+  const projectId = match ? match[1] : null;
+
+  React.useEffect(() => {
+    const fetchMyIssueCount = async () => {
+      try {
+        const res = await fetch(
+          `${apiUrl}/projects/${projectId}/my-issues-count`,
+          {
+            credentials: "include",
+          }
+        );
+        if (!res.ok) throw new Error("Failed to fetch count");
+        const data = await res.json();
+        setMyIssueCount(data.count);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchMyIssueCount();
+  }, [projectId]);
+
+  React.useEffect(() => {
+    fetch(`${apiUrl}/projects`, {
+        credentials: "include",
+    })
+    .then((res) => res.json())
+    .then((data: Project[]) => {
+        setMyProjects(data)
+        console.log("📦 내 프로젝트 데이터:", data);
+    });
+    },[]);
+
+  const projects = myProjects;
+//   {
+//     id: 1,
+//     name: "웹 애플리케이션 개발",
+//     status: "active",
+//   },
+//   {
+//     id: 2,
+//     name: "모바일 앱 프로젝트",
+//     status: "active",
+//   },
+//   {
+//     id: 3,
+//     name: "API 서버 구축",
+//     status: "completed",
+//   },
+//   {
+//     id: 4,
+//     name: "데이터베이스 마이그레이션",
+//     status: "pending",
+//   },];
+
+  const menuItems = [
     {
-        title: "내 이슈",
-        icon: AlertCircle,
-        url: "my-issues",
-        badge: "12",
+      title: "내 이슈",
+      icon: AlertCircle,
+      url: "my-issues",
+      badge: myIssueCount !== null ? String(myIssueCount) : undefined,
     },
     {
-        title: "요약",
-        icon: Globe,
-        url: "summary",
+      title: "요약",
+      icon: Globe,
+      url: "summary",
     },
     {
-        title: "타임라인",
-        icon: ChartNoAxesGantt,
-        url: "timeline",
+      title: "타임라인",
+      icon: ChartNoAxesGantt,
+      url: "timeline",
     },
     {
-        title: "보드",
-        icon: Kanban,
-        url: "board",
+      title: "보드",
+      icon: Kanban,
+      url: "board",
     },
     {
-        title: "목록",
-        icon: TableOfContents,
-        url: "list",
+      title: "목록",
+      icon: TableOfContents,
+      url: "list",
     },
     {
-        title: "코드",
-        icon: Code,
-        url: "code",
+      title: "코드",
+      icon: Code,
+      url: "code",
     },
     {
-        title: "설정",
-        icon: Settings,
-        url: "settings",
+      title: "설정",
+      icon: Settings,
+      url: "settings",
     },
 ];
 
@@ -178,34 +243,35 @@ export default function SideBar() {
                     </div>
                 </Collapsible>
 
-                {/* 메인 메뉴 섹션 */}
-                <div className="space-y-1">
-                    {menuItems.map((item) => {
-                        const isActive = pathname.includes(item.url);
-                        return (
-                            <a
-                                key={item.title}
-                                href={item.url}
-                                className={`flex items-center justify-between p-2 rounded-md transition-colors ${
-                                    isActive
-                                        ? "bg-accent text-accent-foreground font-medium"
-                                        : "hover:bg-accent hover:text-accent-foreground"
-                                }`}
-                            >
-                                <div className="flex items-center gap-2">
-                                    <item.icon className="h-4 w-4" />
-                                    <span>{item.title}</span>
-                                </div>
-                                {item.badge && (
-                                    <span className="bg-accent text-accent-foreground rounded-full px-2 py-0.5 text-xs font-medium">
-                                        {item.badge}
-                                    </span>
-                                )}
-                            </a>
-                        );
-                    })}
+
+        {/* 메인 메뉴 섹션 */}
+        <div className="space-y-1">
+          {menuItems.map((item) => {
+            const isActive = pathname.includes(item.url);
+            return (
+              <a
+                key={item.title}
+                href={item.url}
+                className={`flex items-center justify-between p-2 rounded-md transition-colors ${
+                  isActive
+                    ? "bg-accent text-accent-foreground font-medium"
+                    : "hover:bg-accent hover:text-accent-foreground"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <item.icon className="h-4 w-4" />
+                  <span>{item.title}</span>
                 </div>
-            </div>
+                {item.badge && (
+                  <span className="bg-accent text-accent-foreground rounded-full px-2 py-0.5 text-xs font-medium">
+                    {item.badge}
+                  </span>
+                )}
+              </a>
+            );
+          })}
         </div>
-    );
+      </div>
+    </div>
+  );
 }
