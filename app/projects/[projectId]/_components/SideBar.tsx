@@ -23,12 +23,14 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { getApiUrl } from "@/lib/api";
+import { Project } from "@/components/type";
 
 // 샘플 프로젝트 데이터
 
 export default function SideBar() {
   const [isProjectsOpen, setIsProjectsOpen] = React.useState(true);
   const [myIssueCount, setMyIssueCount] = React.useState<number | null>(null);
+  const [myProjects, setMyProjects] = React.useState<Project[]>([]);
   const pathname = usePathname();
   const apiUrl = getApiUrl();
   const match = pathname.match(/\/projects\/([^/]+)/);
@@ -40,7 +42,7 @@ export default function SideBar() {
         const res = await fetch(
           `${apiUrl}/api/projects/${projectId}/my-issues-count`,
           {
-            credentials: "include", // 👈 요거 넣어야 쿠키(JWT) 같이 감!
+            credentials: "include",
           }
         );
         if (!res.ok) throw new Error("Failed to fetch count");
@@ -53,29 +55,38 @@ export default function SideBar() {
     fetchMyIssueCount();
   }, [projectId]);
 
-  const projects = [
-  {
-    id: 1,
-    name: "웹 애플리케이션 개발",
-    status: "active",
-  },
-  {
-    id: 2,
-    name: "모바일 앱 프로젝트",
-    status: "active",
-  },
-  {
-    id: 3,
-    name: "API 서버 구축",
-    status: "completed",
-  },
-  {
-    id: 4,
-    name: "데이터베이스 마이그레이션",
-    status: "pending",
-  },
-];
+  React.useEffect(() => {
+    fetch(`${apiUrl}/projects`, {
+        credentials: "include",
+    })
+    .then((res) => res.json())
+    .then((data: Project[]) => {
+        setMyProjects(data)
+        console.log("📦 내 프로젝트 데이터:", data);
+    });
+    },[]);
 
+  const projects = myProjects;
+//   {
+//     id: 1,
+//     name: "웹 애플리케이션 개발",
+//     status: "active",
+//   },
+//   {
+//     id: 2,
+//     name: "모바일 앱 프로젝트",
+//     status: "active",
+//   },
+//   {
+//     id: 3,
+//     name: "API 서버 구축",
+//     status: "completed",
+//   },
+//   {
+//     id: 4,
+//     name: "데이터베이스 마이그레이션",
+//     status: "pending",
+//   },];
 
   const menuItems = [
     {
@@ -132,7 +143,6 @@ export default function SideBar() {
                   className="h-5 w-5 rounded-sm hover:bg-accent flex items-center justify-center cursor-pointer"
                   onClick={(e) => {
                     e.stopPropagation();
-                    // 새 프로젝트 추가 로직
                   }}
                 >
                   <Plus className="h-3 w-3" />
@@ -142,20 +152,24 @@ export default function SideBar() {
             </CollapsibleTrigger>
             <CollapsibleContent>
               <div className="ml-6 space-y-1">
-                {projects.map((project) => (
+                {myProjects.map((project) => (
                   <a
                     key={project.id}
-                    href={`/projects/${project.id}`}
+                    href={`/projects/${project.id}/board`}
                     className="flex items-center justify-between p-2 text-sm hover:bg-accent hover:text-accent-foreground rounded-md"
                   >
-                    <span className="truncate">{project.name}</span>
+                    <span className="truncate max-w-[160px] overflow-hidden whitespace-nowrap">
+                      {project.title}
+                    </span>
                     <span
                       className={`h-2 w-2 rounded-full ${
-                        project.status === "active"
+                        project.status === "ACTIVE"
                           ? "bg-green-500"
-                          : project.status === "completed"
+                          : project.status === "COMPLETED"
                           ? "bg-blue-500"
-                          : "bg-yellow-500"
+                          : project.status === "PENDING"
+                          ? "bg-yellow-500"
+                          : "bg-gray-400"
                       }`}
                     />
                   </a>
