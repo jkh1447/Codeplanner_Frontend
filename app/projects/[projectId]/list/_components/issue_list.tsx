@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import TaskDrawer from "../common/TaskDrawer";
 import { useParams } from "next/navigation";
-import AddIssueModal from "../../board/_components/AddIssueModal";
 
 // 이슈 상세 모달
 function IssueDetailModal({ open, onOpenChange, issue, assignee, reporter, labels, comments }: {
@@ -108,7 +107,6 @@ export default function IssueList() {
   const [showDetail, setShowDetail] = useState(false);
   const params = useParams();
   const projectId = params?.projectId as string;
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleCloseDrawer = () => setSelectedTask(null);
 
@@ -143,46 +141,11 @@ export default function IssueList() {
     (issue.description || "").toLowerCase().includes(search.toLowerCase())
   );
 
-  // Add issue logic (similar to board)
-  const createTask = async (formData: any) => {
-    try {
-      const response = await fetch(`${getApiUrl()}/projects/${projectId}/issues/create`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          ...formData,
-          project_id: projectId,
-        }),
-      });
-      if (!response.ok) throw new Error("이슈 생성 실패");
-      // Refresh issues after adding
-      const res = await fetch(`${getApiUrl()}/projects/${projectId}/issues`, { credentials: 'include' });
-      const data = await res.json();
-      setIssues(
-        data.map((issue: any) => ({
-          ...issue,
-          project_id: issue.projectId,
-          assignee_id: issue.assigneeId,
-          reporter_id: issue.reporterId,
-          issue_type: issue.issueType,
-          start_date: issue.startDate,
-          due_date: issue.dueDate,
-        }))
-      );
-    } catch (err) {
-      alert("이슈 생성에 실패했습니다.");
-    }
-  };
-
   return (
     <div className="min-h-screen bg-slate-50">
       <main className="container mx-auto px-6 py-8">
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between mb-6">
-          <Button
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2"
-            onClick={() => setIsModalOpen(true)}
-          >
+          <Button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2">
             <PlusIcon /> 이슈 추가
           </Button>
           <div className="flex-1 max-w-md">
@@ -236,14 +199,6 @@ export default function IssueList() {
         </div>
         {selectedTask && (
           <TaskDrawer task={{ ...selectedTask, project_id: projectId}} onClose={handleCloseDrawer} />
-        )}
-        {isModalOpen && (
-          <AddIssueModal
-            open={isModalOpen}
-            onOpenChange={setIsModalOpen}
-            projectId={projectId}
-            createTask={createTask}
-          />
         )}
       </main>
     </div>
