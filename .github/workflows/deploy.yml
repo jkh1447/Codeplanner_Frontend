@@ -28,7 +28,7 @@ jobs:
           npm install
           npm run build:prod
 
-          pm2 delete codeplanner-frontend || true
+          pm2 delete Codeplanner_Frontend || true
           pm2 start ecosystem.config.js --env production
 
           sudo nginx -t && sudo systemctl reload nginx
