@@ -8,9 +8,10 @@ export default function TaskDrawer({
   task,
   onClose,
 }: {
-  task: Task;
-  onClose: () => void;
+  task: Task; // 전달받은 task 객체 초기화
+  onClose: () => void; // 전달받은 Drawer 닫기 함수
 }) {
+  // 폼 상태 관리 - task로부터 초기 값 설정
   const [form, setForm] = useState({
     id: task.project_id,
     title: task.title || "",
@@ -22,15 +23,20 @@ export default function TaskDrawer({
     startDate: task.start_date || "",
     dueDate: task.due_date || "",
   });
+
+  // 로딩 및 에러 상태값 정의
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // 폼 값 변경해주는 핸들러
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  // 저장 버튼 클릭시 PATCH 요청
   const handleSave = async () => {
+    // UI 로딩 실행중 -> setLoading
     setLoading(true);
     setError("");
     try {
@@ -50,10 +56,11 @@ export default function TaskDrawer({
         }),
       });
       if (!res.ok) throw new Error("저장 실패");
-      onClose();
+      onClose(); // -> 저장 완료하면, drawer 닫는다.
     } catch (err: any) {
-      setError(err.message || "저장 중 오류 발생");
+      setError(err.message || "저장 중 오류 발생"); // 저장 실패시 오류
     } finally {
+      // UI 로딩 실행 종료 -> setLoading
       setLoading(false);
     }
   };
