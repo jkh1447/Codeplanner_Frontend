@@ -154,7 +154,7 @@ function KanbanBoard({
                         </button> */}
                         </div>
 
-                        {createPortal(
+                        {/* {createPortal(
                             <DragOverlay>
                                 {activeColumn && (
                                     <ColumnContainer
@@ -180,7 +180,7 @@ function KanbanBoard({
                                 )}
                             </DragOverlay>,
                             document.body
-                        )}
+                        )} */}
                     </DndContext>
                 )}
 
