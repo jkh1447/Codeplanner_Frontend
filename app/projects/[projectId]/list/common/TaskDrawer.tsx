@@ -27,6 +27,7 @@ export default function TaskDrawer({
   // 로딩 및 에러 상태값 정의
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const apiUrl = getApiUrl();
 
   // 폼 값 변경해주는 핸들러
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
