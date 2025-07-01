@@ -6,11 +6,9 @@ import { Task } from "@/components/type";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { getApiUrl } from "@/lib/api";
-import TaskDrawer from "../../list/common/TaskDrawer";
 
 export default function MyIssuesPage() {
   const [issues, setIssues] = useState<Task[]>([]);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const params = useParams();
   const projectId = params?.projectId as string;
   const apiUrl = getApiUrl();
@@ -20,38 +18,10 @@ export default function MyIssuesPage() {
       credentials: "include",
     })
       .then((res) => res.json())
-      .then((data: any[]) => {
-        setIssues(data.map(issue => ({
-          ...issue,
-          project_id: issue.projectId,
-          assignee_id: issue.assigneeId,
-          reporter_id: issue.reporterId,
-          issue_type: issue.issueType,
-          start_date: issue.startDate,
-          due_date: issue.dueDate,
-        })));
+      .then((data: Task[]) => {setIssues(data)
+        console.log("넣어진 데이터: ", data);
       });
   }, [projectId]);
-
-  const handleCloseDrawer = () => {
-    setSelectedTask(null);
-    // Refresh issues after editing
-    fetch(`${getApiUrl()}/projects/${projectId}/my-issues`, {
-      credentials: "include",
-    })
-      .then((res) => res.json())
-      .then((data: any[]) => {
-        setIssues(data.map(issue => ({
-          ...issue,
-          project_id: issue.projectId,
-          assignee_id: issue.assigneeId,
-          reporter_id: issue.reporterId,
-          issue_type: issue.issueType,
-          start_date: issue.startDate,
-          due_date: issue.dueDate,
-        })));
-      });
-  };
 
   return (
     <div className="space-y-6 p-6">
@@ -64,7 +34,7 @@ export default function MyIssuesPage() {
           <div className="col-span-3 text-center text-gray-400 py-8">내 이슈가 없습니다.</div>
         ) : (
           issues.map((issue) => (
-            <Card key={issue.id} onClick={() => setSelectedTask(issue)} className="cursor-pointer">
+            <Card key={issue.id}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   {issue.status === "DONE" ? "✅" : issue.status === "INPROGRESS" ? "🕒" : "⚠️"}
@@ -82,9 +52,6 @@ export default function MyIssuesPage() {
           ))
         )}
       </div>
-      {selectedTask && (
-        <TaskDrawer task={selectedTask} onClose={handleCloseDrawer} />
-      )}
     </div>
   );
 }
