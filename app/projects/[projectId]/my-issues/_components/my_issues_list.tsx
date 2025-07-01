@@ -6,9 +6,11 @@ import { Task } from "@/components/type";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { getApiUrl } from "@/lib/api";
+import TaskDrawer from "../../list/common/TaskDrawer";
 
 export default function MyIssuesPage() {
   const [issues, setIssues] = useState<Task[]>([]);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const params = useParams();
   const projectId = params?.projectId as string;
   const apiUrl = getApiUrl();
@@ -23,6 +25,16 @@ export default function MyIssuesPage() {
       });
   }, [projectId]);
 
+  const handleCloseDrawer = () => {
+    setSelectedTask(null);
+    // Refresh issues after editing
+    fetch(`${getApiUrl()}/projects/${projectId}/my-issues`, {
+      credentials: "include",
+    })
+      .then((res) => res.json())
+      .then((data: Task[]) => setIssues(data));
+  };
+
   return (
     <div className="space-y-6 p-6">
       <div>
@@ -34,7 +46,7 @@ export default function MyIssuesPage() {
           <div className="col-span-3 text-center text-gray-400 py-8">내 이슈가 없습니다.</div>
         ) : (
           issues.map((issue) => (
-            <Card key={issue.id}>
+            <Card key={issue.id} onClick={() => setSelectedTask(issue)} className="cursor-pointer">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   {issue.status === "DONE" ? "✅" : issue.status === "INPROGRESS" ? "🕒" : "⚠️"}
@@ -52,6 +64,9 @@ export default function MyIssuesPage() {
           ))
         )}
       </div>
+      {selectedTask && (
+        <TaskDrawer task={selectedTask} onClose={handleCloseDrawer} />
+      )}
     </div>
   );
 }

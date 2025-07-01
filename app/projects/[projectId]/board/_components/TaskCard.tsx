@@ -5,6 +5,7 @@ import { Id, Task } from "@/components/type";
 import { useSortable } from "@dnd-kit/sortable";
 import React, { useState } from "react";
 import { CSS } from "@dnd-kit/utilities";
+import TaskDrawer from "../../list/common/TaskDrawer";
 
 interface Props {
     task: Task;
@@ -14,6 +15,7 @@ interface Props {
 
 function TaskCard({ task, deleteTask, projectId }: Props) {
     const [mouseIsOver, setMouseIsOver] = useState(false);
+    const [showDrawer, setShowDrawer] = useState(false);
 
     const {
         setNodeRef,
@@ -47,6 +49,7 @@ function TaskCard({ task, deleteTask, projectId }: Props) {
     }
 
     return (
+        <>
         <div
             ref={setNodeRef}
             style={style}
@@ -55,6 +58,7 @@ function TaskCard({ task, deleteTask, projectId }: Props) {
             className="bg-white p-3 min-h-[100px] flex flex-col rounded-xl shadow-md border border-gray-200 hover:ring-2 hover:ring-inset hover:ring-blue-300 cursor-pointer relative group transition-all"
             onMouseEnter={() => setMouseIsOver(true)}
             onMouseLeave={() => setMouseIsOver(false)}
+            onClick={() => setShowDrawer(true)}
         >
             <div className="flex items-center justify-between mb-1">
                 <span className="font-semibold text-base text-gray-800 truncate max-w-[70%] break-words whitespace-pre-line">
@@ -64,7 +68,6 @@ function TaskCard({ task, deleteTask, projectId }: Props) {
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
-
                             deleteTask(task.id, projectId);
                         }}
                         className="stroke-white absolute right-3 top-3 bg-gray-300 p-1.5 rounded hover:bg-red-400 hover:stroke-white opacity-80 hover:opacity-100 transition"
@@ -79,6 +82,10 @@ function TaskCard({ task, deleteTask, projectId }: Props) {
                 </div>
             </div>
         </div>
+        {showDrawer && (
+            <TaskDrawer task={task} onClose={() => setShowDrawer(false)} />
+        )}
+        </>
     );
 }
 
