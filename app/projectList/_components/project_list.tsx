@@ -174,7 +174,7 @@ export default function ProjectList() {
                             name: created.title,
                             description: created.descrition,
                             status: created.status,
-                            assignee: created.leader_id,
+                            assignee: created.project_leader,
                             dueDate: created.due_date,
                             people: created.project_people,
                         },
