@@ -47,17 +47,36 @@ jobs:
           cd /home/ubuntu/codeplanner/Codeplanner_Frontend
           git pull origin main
           
-          # npm 캐시 사용하여 빠른 설치
-          npm ci --only=production --prefer-offline
-          
-          # 빌드 캐시 클리어
+          # 기존 빌드 파일 정리
           rm -rf .next
+          rm -rf node_modules
           
-          # 프로덕션 빌드
+          # 패키지 재설치 (전체 설치)
+          npm install
+          
+          # 빌드 전 검증
+          echo "=== 빌드 전 검증 ==="
+          ls -la
+          npm list --depth=0
+          
+          # 프로덕션 빌드 (에러 발생 시 중단)
+          echo "=== 빌드 시작 ==="
           npm run build:prod
           
-          # PM2 재시작
-          pm2 restart codeplanner-frontend || pm2 start ecosystem.config.js
+          # 빌드 후 검증
+          echo "=== 빌드 후 검증 ==="
+          if [ -d ".next" ]; then
+            echo "✅ .next 폴더 생성 확인"
+            ls -la .next/
+          else
+            echo "❌ .next 폴더가 생성되지 않았습니다!"
+            exit 1
+          fi
+          
+          # PM2 재시작 (환경변수와 함께)
+          echo "=== PM2 재시작 ==="
+          pm2 delete codeplanner-frontend || true
+          pm2 start ecosystem.config.js --env production
           
           # nginx 재시작
           sudo nginx -t && sudo systemctl reload nginx
