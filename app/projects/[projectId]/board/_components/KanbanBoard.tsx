@@ -47,7 +47,7 @@ function KanbanBoard({
 
     const [tasks, setTasks] = useState<Task[]>(issues);
 
-    let allTasks: Task[] = [];
+    const allTasks = useRef<Task[]>([]);
 
     const [activeColumn, setActiveColumn] = useState<Column | null>(null);
     const [activeTask, setActiveTask] = useState<Task | null>(null);
@@ -72,8 +72,8 @@ function KanbanBoard({
             );
             if (response.ok) {
                 const latestTasks = await response.json();
-                allTasks = [];
-                allTasks.push(...latestTasks);
+                allTasks.current = latestTasks;
+
                 setTasks(latestTasks);
             }
         } catch (error) {
@@ -97,7 +97,6 @@ function KanbanBoard({
 
     return (
         <>
-            
             {/* 검색 기능 */}
             <div className="flex justify-start space-x-4">
                 <div className="pt-2 relative text-gray-600">
@@ -105,7 +104,7 @@ function KanbanBoard({
                         className="border-2 border-gray-300 bg-white h-10 px-5 pr-16 rounded-lg text-sm focus:outline-none"
                         type="search"
                         name="search"
-                        placeholder="Search" 
+                        placeholder="Search"
                         onChange={(e) => searchTasks(e.target.value)}
                     />
                     <button
@@ -175,6 +174,7 @@ function KanbanBoard({
                                     <TaskCard
                                         task={activeTask}
                                         deleteTask={deleteTask}
+                                        projectId={projectId}
                                     />
                                 )}
                             </DragOverlay>,
@@ -234,7 +234,13 @@ function KanbanBoard({
             });
     }
 
-    function deleteTask(id: Id) {
+    function deleteTask(id: Id, projectId: string) {
+        fetch(`http://localhost:5000/api/projects/${projectId}/issues/${id}`, {
+            method: "DELETE",
+        }).then((res) => {
+            if (!res.ok) throw new Error("Failed to delete issue");
+            fetchLatestTasks();
+        });
         setTasks(tasks.filter((task) => task.id !== id));
     }
 
@@ -398,7 +404,7 @@ function KanbanBoard({
 
         if (isActiveATask && isOverTask) {
             setTasks((tasks) => {
-                console.log("onDragOver1");
+                // console.log("onDragOver1");
                 const activeIndex = tasks.findIndex((t) => t.id === activeId);
                 const overIndex = tasks.findIndex((t) => t.id === overId);
 
@@ -415,7 +421,7 @@ function KanbanBoard({
 
         if (isActiveATask && isOverAColumn) {
             setTasks((tasks) => {
-                console.log("onDragOver2");
+                // console.log("onDragOver2");
                 const activeIndex = tasks.findIndex((t) => t.id === activeId);
 
                 tasks[activeIndex].status = overId as string;
@@ -429,8 +435,7 @@ function KanbanBoard({
     }
 
     function searchTasks(searchTerm: string) {
-        
-        const filteredTasks = allTasks.filter((task) =>
+        const filteredTasks = allTasks.current.filter((task) =>
             task.title.toLowerCase().includes(searchTerm.toLowerCase())
         );
         setTasks(filteredTasks);
