@@ -54,7 +54,7 @@ export default function ProjectList() {
           status: project.status,
           assignee: project.project_leader ?? project.assignee ?? "",
           dueDate: project.due_date ?? project.dueDate ?? "",
-          description: project.descrition ?? project.description ?? "",
+          description: project.description ?? project.description ?? "",
           people: project.project_people ?? project.people ?? 0,
         }));
 
@@ -131,7 +131,7 @@ export default function ProjectList() {
     if (newProject.name && newProject.dueDate) {
       const payload = {
         title: newProject.name,
-        descrition: newProject.description,
+        description: newProject.description,
         status: "대기중",
         project_people: 1, // 실제 인원 입력 구조 있으면 바꾸세요
         due_date: newProject.dueDate,
@@ -162,7 +162,7 @@ export default function ProjectList() {
             {
               id: created.id,
               name: created.title,
-              description: created.descrition,
+              description: created.description,
               status: created.status,
               assignee: created.project_leader,
               dueDate: created.due_date,
