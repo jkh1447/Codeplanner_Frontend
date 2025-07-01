@@ -82,7 +82,7 @@ export default function SignupPage() {
     setError("");
 
     try {
-      const response = await fetch(`${getApiUrl()}/user/create`, {
+      const response = await fetch(`${getApiUrl()}/api/user/create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

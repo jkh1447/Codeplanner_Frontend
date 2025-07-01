@@ -43,7 +43,7 @@ export default function MyPage() {
   const fetchUserProfile = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${getApiUrl()}/user/mypage`, {
+      const response = await fetch(`${getApiUrl()}/api/user/mypage`, {
         method: "GET",
         credentials: "include",
       });
@@ -95,7 +95,7 @@ export default function MyPage() {
 
     try {
       const response = await fetch(
-        `${getApiUrl()}/user/mypage/updateDisplayName`,
+        `${getApiUrl()}/api/user/mypage/updateDisplayName`,
         {
           method: "POST",
           headers: {
@@ -136,7 +136,7 @@ export default function MyPage() {
 
   const handleLogout = async () => {
     try {
-      const response = await fetch(`${getApiUrl()}/auth/logout`, {
+      const response = await fetch(`${getApiUrl()}/api/auth/logout`, {
         method: "POST",
         credentials: "include",
       });

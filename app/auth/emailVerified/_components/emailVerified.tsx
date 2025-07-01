@@ -13,7 +13,7 @@ export default function EmailVerifiedPage() {
       const email = searchParams.get("email");
       const verifyToken = searchParams.get("verifyToken");
       const response = await fetch(
-        `${apiUrl}/user/email-verify?email=${encodeURIComponent(
+        `${apiUrl}/api/user/email-verify?email=${encodeURIComponent(
           email ?? ""
         )}&verifyToken=${encodeURIComponent(verifyToken ?? "")}`,
         {
