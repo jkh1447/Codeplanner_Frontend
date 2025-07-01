@@ -23,7 +23,7 @@ export default function ProjectList() {
     useEffect(() => {
         console.log("백엔드 서버에 연결 시도 중...");
         console.log("API URL:", apiUrl);
-        fetch(`${apiUrl}/projects`, {
+        fetch(`${apiUrl}/api/projects`, {
             method: "GET",
             credentials: "include",
             headers: {
