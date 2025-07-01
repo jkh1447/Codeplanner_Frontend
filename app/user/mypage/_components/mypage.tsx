@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getApiUrl } from "@/lib/api";
 import { Loader2, User, Mail, Edit3, Check, X } from "lucide-react";
 
 interface UserProfile {
@@ -42,7 +43,7 @@ export default function MyPage() {
   const fetchUserProfile = async () => {
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:5000/user/mypage", {
+      const response = await fetch(`${getApiUrl()}/user/mypage`, {
         method: "GET",
         credentials: "include",
       });
@@ -94,7 +95,7 @@ export default function MyPage() {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/user/mypage/updateDisplayName",
+        `${getApiUrl()}/user/mypage/updateDisplayName`,
         {
           method: "POST",
           headers: {
@@ -135,7 +136,7 @@ export default function MyPage() {
 
   const handleLogout = async () => {
     try {
-      const response = await fetch("http://localhost:5000/auth/logout", {
+      const response = await fetch(`${getApiUrl()}/auth/logout`, {
         method: "POST",
         credentials: "include",
       });

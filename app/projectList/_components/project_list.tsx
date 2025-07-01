@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Header from "../../../components/header";
+import { getApiUrl } from "@/lib/api";
 
 // 프로젝트 데이터 타입 정의
 interface Project {
@@ -18,9 +19,10 @@ interface Project {
 // 프로젝트 목록 컴포넌트
 export default function ProjectList() {
   const [projects, setProjects] = useState<Project[]>([]);
+  const apiUrl = getApiUrl();
   useEffect(() => {
     console.log("백엔드 서버에 연결 시도 중...");
-    fetch("http://localhost:5000/projects", {
+    fetch(`${apiUrl}/projects`, {
       method: "GET",
       credentials: "include",
       headers: {
@@ -38,12 +40,14 @@ export default function ProjectList() {
           throw new Error(
             `HTTP error! status: ${res.status} ${res.statusText}`
           );
+          throw new Error(
+            `HTTP error! status: ${res.status} ${res.statusText}`
+          );
         }
         return res.json();
       })
       .then((data) => {
         console.log("백엔드에서 데이터를 성공적으로 받았습니다:", data);
-
         // 데이터가 없거나 빈 배열인 경우 처리
         if (!data || !Array.isArray(data) || data.length === 0) {
           console.log("백엔드에서 데이터가 없습니다.");
@@ -141,12 +145,11 @@ export default function ProjectList() {
         due_date: newProject.dueDate,
         repository_url: "",
       };
-
       try {
         console.log("백엔드 서버에 프로젝트 생성 요청 중...");
         console.log("전송할 데이터:", payload);
 
-        const res = await fetch("http://localhost:5000/projects/create", {
+        const res = await fetch(`${apiUrl}/projects/create`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),

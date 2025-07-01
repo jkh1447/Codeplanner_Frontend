@@ -2,6 +2,20 @@
 
 프로젝트 디렉토리에서 다음을 실행할 수 있습니다.
 
+### 환경변수 설정
+
+프로젝트 루트에 `.env.local` 파일을 생성하고 다음 내용을 추가하세요:
+
+```bash
+# 개발 환경 설정
+NEXT_PUBLIC_API_URL=http://localhost:5000
+NEXT_PUBLIC_ENV=development
+
+# 배포 환경 설정 (EC2 IP 주소로 변경)
+# NEXT_PUBLIC_API_URL=http://your-ec2-ip:5000
+# NEXT_PUBLIC_ENV=production
+```
+
 ### `npm install`
 
 npm 패키지를 프로젝트에 설치합니다.

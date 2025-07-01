@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getApiUrl } from '@/lib/api';
 
 interface ProjectSummary {
   totalTasks: number;
@@ -41,7 +42,7 @@ interface TimelineData {
   error: string | null;
 }
 
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = getApiUrl();
 
 export const useTimelineData = (projectId: string): TimelineData => {
   const [data, setData] = useState<TimelineData>({

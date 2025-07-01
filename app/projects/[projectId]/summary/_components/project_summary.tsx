@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { getApiUrl } from "@/lib/api";
 import { ResponsivePie } from "@nivo/pie";
 import { ResponsiveWaffle } from "@nivo/waffle";
 import { PieChart } from "lucide-react";
@@ -30,8 +31,7 @@ export default function SummaryPage() {
   useEffect(() => {
     const fetchMemberCount = async () => {
       const response = await fetch(
-        // 나중에 도메인 추가
-        `http://localhost:5000/api/summary/${projectId}/members`,
+        `${getApiUrl()}/api/summary/${projectId}/members`,
         {
           method: "GET",
           credentials: "include",
@@ -43,8 +43,7 @@ export default function SummaryPage() {
 
     const fetchAllIssue = async () => {
       const response = await fetch(
-        // 나중에 도메인 추가
-        `http://localhost:5000/api/summary/${projectId}/issues`,
+        `${getApiUrl()}/api/summary/${projectId}/issues`,
         {
           method: "GET",
           credentials: "include",
