@@ -20,8 +20,16 @@ export default function MyIssuesPage() {
       credentials: "include",
     })
       .then((res) => res.json())
-      .then((data: Task[]) => {setIssues(data)
-        console.log("넣어진 데이터: ", data);
+      .then((data: any[]) => {
+        setIssues(data.map(issue => ({
+          ...issue,
+          project_id: issue.projectId,
+          assignee_id: issue.assigneeId,
+          reporter_id: issue.reporterId,
+          issue_type: issue.issueType,
+          start_date: issue.startDate,
+          due_date: issue.dueDate,
+        })));
       });
   }, [projectId]);
 
@@ -32,7 +40,17 @@ export default function MyIssuesPage() {
       credentials: "include",
     })
       .then((res) => res.json())
-      .then((data: Task[]) => setIssues(data));
+      .then((data: any[]) => {
+        setIssues(data.map(issue => ({
+          ...issue,
+          project_id: issue.projectId,
+          assignee_id: issue.assigneeId,
+          reporter_id: issue.reporterId,
+          issue_type: issue.issueType,
+          start_date: issue.startDate,
+          due_date: issue.dueDate,
+        })));
+      });
   };
 
   return (
