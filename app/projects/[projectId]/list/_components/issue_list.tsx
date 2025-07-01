@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Header from "../../../../../components/header";
 import { Issue, User, Label, Comment, Id, Task } from "@/components/type";
 import PlusIcon from "@/components/icons/PlusIcon";
+import { getApiUrl } from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -110,7 +111,7 @@ export default function IssueList() {
   const handleCloseDrawer = () => setSelectedTask(null);
 
   useEffect(() => {
-  fetch(`http://localhost:5000/api/projects/${projectId}/issues`, {
+        fetch(`${getApiUrl()}/api/projects/${projectId}/issues`, {
     credentials: 'include',
   })
     .then((res) => {

@@ -1,6 +1,7 @@
 "use client";
 import { Task } from "@/components/type";
 import { useState } from "react";
+import { getApiUrl } from "@/lib/api";
 
 {/* 이슈에 대한 카드 Drawer */}
 export default function TaskDrawer({
@@ -34,7 +35,7 @@ export default function TaskDrawer({
     setError("");
     try {
       console.log("project_id: ", task.project_id, "task_id: ", task.id);
-      const res = await fetch(`http://localhost:5000/api/projects/${task.project_id}/${task.id}`, {
+      const res = await fetch(`${getApiUrl()}/api/projects/${task.project_id}/${task.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -43,18 +43,29 @@ jobs:
 
     - name: SSH and deploy
       run: |
-        ssh -o StrictHostKeyChecking=no ubuntu@43.201.107.10 << 'EOF'
+        ssh -o StrictHostKeyChecking=no ubuntu@3.38.25.129 << 'EOF'
           cd /home/ubuntu/codeplanner/Codeplanner_Frontend
           git pull origin main
-          npm ci --production
+          
+          # npm 캐시 사용하여 빠른 설치
+          npm ci --only=production --prefer-offline
+          
+          # 빌드 캐시 클리어
           rm -rf .next
+          
+          # 프로덕션 빌드
           npm run build:prod
+          
+          # PM2 재시작
           pm2 restart codeplanner-frontend || pm2 start ecosystem.config.js
+          
+          # nginx 재시작
           sudo nginx -t && sudo systemctl reload nginx
+          
           echo "Frontend deployment completed successfully!"
         EOF
 
     - name: Deployment Status
       run: |
         echo "✅ Frontend deployment to EC2 completed!"
-        echo "🌐 Application URL: http://43.201.107.10" 
+        echo "🌐 Application URL: http://3.38.25.129" 

@@ -1,7 +1,11 @@
 // API URL 관리 유틸리티
 export const getApiUrl = () => {
   // 환경변수에서 직접 가져오기
-  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (!apiUrl) {
+    throw new Error('NEXT_PUBLIC_API_URL 환경변수가 설정되지 않았습니다.');
+  }
+  return apiUrl;
 };
 
 // API 호출 헬퍼 함수
