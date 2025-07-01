@@ -2,7 +2,7 @@ module.exports = {
   apps: [{
     name: 'codeplanner-frontend',
     script: 'npm',
-    args: 'start:prod',
+    args: 'start',
     cwd: '/home/ubuntu/codeplanner-frontend',
     env: {
       NODE_ENV: 'development',
