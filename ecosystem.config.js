@@ -5,8 +5,16 @@ module.exports = {
     args: 'start:prod',
     cwd: '/home/ubuntu/codeplanner-frontend',
     env: {
+      NODE_ENV: 'development',
+      PORT: 3000,
+      NEXT_PUBLIC_API_URL: 'http://localhost:5000',
+      NEXT_PUBLIC_ENV: 'development'
+    },
+    env_production: {
       NODE_ENV: 'production',
-      PORT: 3000
+      PORT: 3000,
+      NEXT_PUBLIC_API_URL: 'http://3.38.25.129:5000',
+      NEXT_PUBLIC_ENV: 'production'
     },
     instances: 1,
     autorestart: true,
