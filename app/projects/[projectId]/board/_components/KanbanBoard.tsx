@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useMemo, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
+import { getApiUrl } from "@/lib/api";
 import ColumnContainer from "./ColumnContainer";
 import {
     DndContext,
@@ -47,7 +48,7 @@ function KanbanBoard({
 
     const [tasks, setTasks] = useState<Task[]>(issues);
 
-    let allTasks: Task[] = [];
+    const allTasks = useRef<Task[]>([]);
 
     const [activeColumn, setActiveColumn] = useState<Column | null>(null);
     const [activeTask, setActiveTask] = useState<Task | null>(null);
@@ -68,12 +69,12 @@ function KanbanBoard({
     const fetchLatestTasks = React.useCallback(async () => {
         try {
             const response = await fetch(
-                `http://localhost:5000/api/projects/${projectId}/issues`
+                `${getApiUrl()}/api/projects/${projectId}/issues`
             );
             if (response.ok) {
                 const latestTasks = await response.json();
-                allTasks = [];
-                allTasks.push(...latestTasks);
+                allTasks.current = latestTasks;
+
                 setTasks(latestTasks);
             }
         } catch (error) {
@@ -97,7 +98,6 @@ function KanbanBoard({
 
     return (
         <>
-            
             {/* 검색 기능 */}
             <div className="flex justify-start space-x-4">
                 <div className="pt-2 relative text-gray-600">
@@ -105,7 +105,7 @@ function KanbanBoard({
                         className="border-2 border-gray-300 bg-white h-10 px-5 pr-16 rounded-lg text-sm focus:outline-none"
                         type="search"
                         name="search"
-                        placeholder="Search" 
+                        placeholder="Search"
                         onChange={(e) => searchTasks(e.target.value)}
                     />
                     <button
@@ -175,6 +175,7 @@ function KanbanBoard({
                                     <TaskCard
                                         task={activeTask}
                                         deleteTask={deleteTask}
+                                        projectId={projectId}
                                     />
                                 )}
                             </DragOverlay>,
@@ -220,7 +221,7 @@ function KanbanBoard({
     );
 
     function createTask(taskData: any) {
-        fetch(`http://localhost:5000/api/projects/${projectId}/issues/create`, {
+        fetch(`${getApiUrl()}/api/projects/${projectId}/issues/create`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(taskData),
@@ -234,7 +235,13 @@ function KanbanBoard({
             });
     }
 
-    function deleteTask(id: Id) {
+    function deleteTask(id: Id, projectId: string) {
+        fetch(`${getApiUrl()}/api/projects/${projectId}/issues/${id}`, {
+            method: "DELETE",
+        }).then((res) => {
+            if (!res.ok) throw new Error("Failed to delete issue");
+            fetchLatestTasks();
+        });
         setTasks(tasks.filter((task) => task.id !== id));
     }
 
@@ -360,7 +367,7 @@ function KanbanBoard({
     ) {
         try {
             const response = await fetch(
-                `http://localhost:5000/api/projects/${projectId}/issues/updateOrder`,
+                `${getApiUrl()}/api/projects/${projectId}/issues/updateOrder`,
                 {
                     method: "PATCH",
                     headers: {
@@ -398,7 +405,7 @@ function KanbanBoard({
 
         if (isActiveATask && isOverTask) {
             setTasks((tasks) => {
-                console.log("onDragOver1");
+                // console.log("onDragOver1");
                 const activeIndex = tasks.findIndex((t) => t.id === activeId);
                 const overIndex = tasks.findIndex((t) => t.id === overId);
 
@@ -415,7 +422,7 @@ function KanbanBoard({
 
         if (isActiveATask && isOverAColumn) {
             setTasks((tasks) => {
-                console.log("onDragOver2");
+                // console.log("onDragOver2");
                 const activeIndex = tasks.findIndex((t) => t.id === activeId);
 
                 tasks[activeIndex].status = overId as string;
@@ -429,8 +436,7 @@ function KanbanBoard({
     }
 
     function searchTasks(searchTerm: string) {
-        
-        const filteredTasks = allTasks.filter((task) =>
+        const filteredTasks = allTasks.current.filter((task) =>
             task.title.toLowerCase().includes(searchTerm.toLowerCase())
         );
         setTasks(filteredTasks);
