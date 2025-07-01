@@ -56,3 +56,17 @@ export type Comment = {
   created_at: string;
   updated_at: string;
 };  
+
+export type Project = {
+  id: Id;
+  title: string;
+  description: string;
+  due_date: string;
+  expires_at: string | null;
+  leader_id: Id;
+  project_key: string;
+  project_leader: string;
+  project_people: number;
+  repository_url: string;
+  status: "ACTIVE" | "COMPLETED" | "PENDING";
+};
