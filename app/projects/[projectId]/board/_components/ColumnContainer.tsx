@@ -18,7 +18,7 @@ interface Props {
     updateColumn: (id: Id, title: string) => void;
     createTask: (formData: any) => void;
     updateTask: (id: Id, content: string) => void;
-    deleteTask: (id: Id) => void;
+    deleteTask: (id: Id, projectId: string) => void;
     tasks: Task[];
 }
 
