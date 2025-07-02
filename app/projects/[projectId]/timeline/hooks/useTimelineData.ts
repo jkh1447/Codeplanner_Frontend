@@ -61,10 +61,18 @@ export const useTimelineData = (projectId: string): TimelineData => {
 
         // 병렬로 모든 API 호출
         const [summaryRes, statisticsRes, ganttRes, overviewRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/timeline/${projectId}/summary`),
-          fetch(`${API_BASE_URL}/timeline/${projectId}/statistics`),
-          fetch(`${API_BASE_URL}/timeline/${projectId}/gantt-data`),
-          fetch(`${API_BASE_URL}/timeline/${projectId}/overview`),
+          fetch(`${getApiUrl()}/timeline/${projectId}/summary`, {
+            credentials: "include"
+          }),
+          fetch(`${getApiUrl()}/timeline/${projectId}/statistics`, {
+            credentials: "include"
+          }),
+          fetch(`${getApiUrl()}/timeline/${projectId}/gantt-data`, {
+            credentials: "include"
+          }),
+          fetch(`${getApiUrl()}/timeline/${projectId}/overview`, {
+            credentials: "include"
+          }),
         ]);
 
         // 응답 확인
