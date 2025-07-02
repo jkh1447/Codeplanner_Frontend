@@ -16,6 +16,8 @@ import {
     TableOfContents,
     Code,
 } from "lucide-react";
+import Link from "next/link";
+import { getApiUrl } from "@/lib/api";
 
 import {
     Collapsible,
@@ -23,36 +25,86 @@ import {
     CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
-// 샘플 프로젝트 데이터
-const projects = [
-    {
-        id: 1,
-        name: "웹 애플리케이션 개발",
-        status: "active",
-    },
-    {
-        id: 2,
-        name: "모바일 앱 프로젝트",
-        status: "active",
-    },
-    {
-        id: 3,
-        name: "API 서버 구축",
-        status: "completed",
-    },
-    {
-        id: 4,
-        name: "데이터베이스 마이그레이션",
-        status: "pending",
-    },
-];
+interface Project {
+    id: number;
+    name: string;
+    status: string;
+}
 
-const menuItems = [
+export default function SideBar() {
+    const [projects, setProjects] = React.useState<Project[]>([]);
+    const [loading, setLoading] = React.useState<boolean>(true);
+    const [error, setError] = React.useState<string | null>(null);
+    const [isProjectsOpen, setIsProjectsOpen] = React.useState(true);
+    const pathname = usePathname();
+    const match = pathname.match(/\/projects\/([^/]+)/);
+    const projectId = match ? match[1] : null;
+    const [myIssueCount, setMyIssueCount] = React.useState<number | null>(null);
+
+    React.useEffect(() => {
+        async function fetchProjects() {
+            try {
+                setLoading(true);
+                setError(null);
+                const res = await fetch(`${getApiUrl()}/projects`, {
+                    method: "GET",
+                    credentials: "include",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                });
+                if (!res.ok) throw new Error("프로젝트 목록을 불러오지 못했습니다.");
+                const data = await res.json();
+
+                // 데이터가 없거나 빈 배열인 경우 처리
+                if (!data || !Array.isArray(data) || data.length === 0) {
+                    setProjects([]);
+                    setLoading(false);
+                    return;
+                }
+
+                // 백엔드 데이터를 프론트엔드 형식으로 변환
+                const transformedProjects: Project[] = data.map((project: any) => ({
+                    id: project.id,
+                    name: project.title ?? project.name ?? "",
+                    status: project.status,
+                    // 사이드바에서는 assignee, people, description 등은 사용하지 않으므로 생략
+                }));
+                setProjects(transformedProjects);
+            } catch (e: any) {
+                setError(e.message || "알 수 없는 오류");
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchProjects();
+    }, []);
+
+    React.useEffect(() => {
+    const fetchMyIssueCount = async () => {
+      try {
+        const res = await fetch(
+          `${getApiUrl()}/projects/${projectId}/my-issues-count`,
+          {
+            credentials: "include", // 👈 요거 넣어야 쿠키(JWT) 같이 감!
+          }
+        );
+        if (!res.ok) throw new Error("Failed to fetch count");
+        const data = await res.json();
+        setMyIssueCount(data.count);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchMyIssueCount();
+  }, [projectId]);
+
+  const menuItems = [
     {
         title: "내 이슈",
         icon: AlertCircle,
         url: "my-issues",
-        badge: "12",
+        badge: myIssueCount !== null ? String(myIssueCount) : undefined,
     },
     {
         title: "요약",
@@ -86,10 +138,6 @@ const menuItems = [
     },
 ];
 
-export default function SideBar() {
-    const [isProjectsOpen, setIsProjectsOpen] = React.useState(true);
-    const pathname = usePathname();
-
     return (
         <div className="w-64 border-r bg-background text-foreground h-screen overflow-y-auto">
             <div className="p-4 space-y-4">
@@ -119,27 +167,34 @@ export default function SideBar() {
                         </CollapsibleTrigger>
                         <CollapsibleContent>
                             <div className="ml-6 space-y-1">
-                                {projects.map((project) => (
-                                    <a
-                                        key={project.id}
-                                        href={`/projects/${project.id}`}
-                                        className="flex items-center justify-between p-2 text-sm hover:bg-accent hover:text-accent-foreground rounded-md"
-                                    >
-                                        <span className="truncate">
-                                            {project.name}
-                                        </span>
-                                        <span
-                                            className={`h-2 w-2 rounded-full ${
-                                                project.status === "active"
-                                                    ? "bg-green-500"
-                                                    : project.status ===
-                                                      "completed"
-                                                    ? "bg-blue-500"
-                                                    : "bg-yellow-500"
-                                            }`}
-                                        />
-                                    </a>
-                                ))}
+                                {loading ? (
+                                    <div className="text-xs text-muted-foreground">불러오는 중...</div>
+                                ) : error ? (
+                                    <div className="text-xs text-red-500">{error}</div>
+                                ) : projects.length === 0 ? (
+                                    <div className="text-xs text-muted-foreground">프로젝트가 없습니다.</div>
+                                ) : (
+                                    projects.map((project) => (
+                                        <Link
+                                            key={project.id}
+                                            href={`/projects/${project.id}/summary`}
+                                            className="flex items-center justify-between p-2 text-sm hover:bg-accent hover:text-accent-foreground rounded-md"
+                                        >
+                                            <span className="truncate">
+                                                {project.name}
+                                            </span>
+                                            <span
+                                                className={`h-2 w-2 rounded-full ${
+                                                    project.status === "ACTIVE"
+                                                        ? "bg-green-500"
+                                                        : project.status === "COMPLETED"
+                                                        ? "bg-blue-500"
+                                                        : "bg-yellow-500"
+                                                }`}
+                                            />
+                                        </Link>
+                                    ))
+                                )}
                             </div>
                         </CollapsibleContent>
                     </div>

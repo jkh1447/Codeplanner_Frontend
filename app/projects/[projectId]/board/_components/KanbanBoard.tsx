@@ -75,7 +75,15 @@ function KanbanBoard({
                 const latestTasks = await response.json();
                 allTasks.current = latestTasks;
 
-                setTasks(latestTasks);
+                setTasks(latestTasks.map((issue: any) => ({
+                  ...issue,
+                  project_id: issue.projectId,
+                  assignee_id: issue.assigneeId,
+                  reporter_id: issue.reporterId,
+                  issue_type: issue.issueType,
+                  start_date: issue.startDate,
+                  due_date: issue.dueDate,
+                })));
             }
         } catch (error) {
             console.error("Error fetching latest tasks:", error);
@@ -92,7 +100,15 @@ function KanbanBoard({
     // 초기 데이터 설정 (서버에서 가져온 데이터가 없을 때만)
     useEffect(() => {
         if (issues && issues.length > 0 && tasks.length === 0) {
-            setTasks(issues);
+            setTasks(issues.map((issue: any) => ({
+              ...issue,
+              project_id: issue.projectId,
+              assignee_id: issue.assigneeId,
+              reporter_id: issue.reporterId,
+              issue_type: issue.issueType,
+              start_date: issue.startDate,
+              due_date: issue.dueDate,
+            })));
         }
     }, [issues]);
 
@@ -235,7 +251,7 @@ function KanbanBoard({
             });
     }
 
-    function deleteTask(id: Id, projectId: string) {
+    function deleteTask(id: Id) {
         fetch(`${getApiUrl()}/projects/${projectId}/issues/${id}`, {
             method: "DELETE",
         }).then((res) => {
