@@ -257,18 +257,7 @@ export default function SummaryPage() {
                 columns={20}
                 motionStagger={2}
                 fillDirection="right"
-                colors={[
-                  "#FF9980",
-                  "#FBE870",
-                  "#76D7EA",
-                  "#EBB0D7",
-                  "#C9C0BB",
-                  "#000000",
-                  "#FF00FF",
-                  "#00FFFF",
-                  "#FFFF00",
-                  "#FF00FF",
-                ]}
+                colors={{ scheme: "set3" }}
                 legends={[
                   {
                     anchor: "top-left",

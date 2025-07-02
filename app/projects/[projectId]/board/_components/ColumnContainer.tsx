@@ -88,9 +88,7 @@ function ColumnContainer(props: Props) {
                 className="flex items-center justify-between bg-[#f8f8f8] text-md h-[60px] cursor-grab rounded-md rounded-b-none p-3 font-bold border-[#f8f8f8] border-4"
             >
                 <div className="flex gap-2">
-                    <div className="flex justify-center items-center bg-[#f8f8f8] px-2 py-1 text-sm rounded-full">
-                        
-                    </div>
+                    <div className="flex justify-center items-center bg-[#f8f8f8] px-2 py-1 text-sm rounded-full"></div>
                     {!editMode && column.title}
                     {editMode && (
                         <input

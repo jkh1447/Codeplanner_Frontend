@@ -3,14 +3,18 @@ import { Task } from "@/components/type";
 import "./page.css";
 import { getApiUrl } from "@/lib/api";
 
-export default async function Page({params}: {params: {projectId: string}}) {
+
+export default async function Page({
+    params,
+}: {
+    params: { projectId: string };
+}) {
     const { projectId } = await params;
     console.log(projectId);
 
-    const res = await fetch(
-        `${getApiUrl()}/projects/${projectId}/issues`,
-        { next: { revalidate: 60 } }
-    );
+    const res = await fetch(`${getApiUrl()}/projects/${projectId}/issues`, {
+        next: { revalidate: 60 },
+    });
     if (!res.ok) {
         console.log(res);
         throw new Error("Failed to fetch issues");
@@ -22,6 +26,7 @@ export default async function Page({params}: {params: {projectId: string}}) {
             <h1 className="text-2xl font-bold text-slate-800">프로젝트 Demo</h1>
             <div className="text-slate-600 mt-2">
                 <KanbanBoard issues={issues} projectId={projectId} />
+                {/* <Board /> */}
             </div>
         </div>
     );

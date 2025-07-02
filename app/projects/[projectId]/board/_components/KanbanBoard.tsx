@@ -2,7 +2,6 @@
 
 import React, { useState, useRef, useMemo, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { getApiUrl } from "@/lib/api";
 import ColumnContainer from "./ColumnContainer";
 import {
     DndContext,
@@ -19,8 +18,10 @@ import { createPortal } from "react-dom";
 import TaskCard from "./TaskCard";
 import { useParams } from "next/navigation";
 import BoardMenu from "./BoardMenu";
-import PlusIcon from "@/components/icons/PlusIcon"
+import PlusIcon from "@/components/icons/PlusIcon";
 import { Column, Id, Task } from "@/components/type";
+import { useDebouncedCallback } from "use-debounce";
+import { getApiUrl } from "@/lib/api";
 
 function KanbanBoard({
     issues,
@@ -111,6 +112,37 @@ function KanbanBoard({
             })));
         }
     }, [issues]);
+
+    // 기존 onDragOver의 setTasks 로직을 함수로 분리
+    const moveTask = (activeId: Id, overId: Id, overType: string) => {
+        setTasks((tasks) => {
+            const activeIndex = tasks.findIndex((t) => t.id === activeId);
+            if (activeIndex === -1) return tasks;
+            if (overType === "Task") {
+                const overIndex = tasks.findIndex((t) => t.id === overId);
+                if (overIndex === -1) return tasks;
+                // status 변경
+                const updatedTasks = tasks.map((task, idx) =>
+                    idx === activeIndex
+                        ? { ...task, status: tasks[overIndex].status }
+                        : task
+                );
+                return arrayMove(updatedTasks, activeIndex, overIndex);
+            } else if (overType === "Column") {
+                // status만 변경, 위치는 그대로
+                const updatedTasks = tasks.map((task, idx) =>
+                    idx === activeIndex
+                        ? { ...task, status: overId as string }
+                        : task
+                );
+                return arrayMove(updatedTasks, activeIndex, activeIndex);
+            }
+            return tasks;
+        });
+    };
+
+    // 0ms 디바운스된 moveTask
+    const debouncedMoveTask = useDebouncedCallback(moveTask, 0);
 
     return (
         <>
@@ -411,43 +443,15 @@ function KanbanBoard({
         if (!over) return;
         const activeId = active.id;
         const overId = over.id;
-
         if (activeId === overId) return;
-
         const isActiveATask = active.data.current?.type === "Task";
-        const isOverTask = over.data.current?.type === "Task";
-
-        if (!isActiveATask) return;
-
-        if (isActiveATask && isOverTask) {
-            setTasks((tasks) => {
-                // console.log("onDragOver1");
-                const activeIndex = tasks.findIndex((t) => t.id === activeId);
-                const overIndex = tasks.findIndex((t) => t.id === overId);
-
-                tasks[activeIndex].status = tasks[overIndex].status;
-
-                const newTasks = arrayMove(tasks, activeIndex, overIndex);
-
-                // UI 업데이트만 수행, 서버 업데이트는 onDragEnd에서 처리
-                return newTasks;
-            });
-        }
-
+        const isOverATask = over.data.current?.type === "Task";
         const isOverAColumn = over.data.current?.type === "Column";
-
-        if (isActiveATask && isOverAColumn) {
-            setTasks((tasks) => {
-                // console.log("onDragOver2");
-                const activeIndex = tasks.findIndex((t) => t.id === activeId);
-
-                tasks[activeIndex].status = overId as string;
-
-                const newTasks = arrayMove(tasks, activeIndex, activeIndex);
-
-                // UI 업데이트만 수행, 서버 업데이트는 onDragEnd에서 처리
-                return newTasks;
-            });
+        if (!isActiveATask) return;
+        if (isOverATask) {
+            debouncedMoveTask(activeId, overId, "Task");
+        } else if (isOverAColumn) {
+            debouncedMoveTask(activeId, overId, "Column");
         }
     }
 
