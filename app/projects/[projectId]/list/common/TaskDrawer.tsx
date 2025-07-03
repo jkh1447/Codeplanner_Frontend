@@ -222,7 +222,7 @@ export default function TaskDrawer({
               name="description"
               value={form.description}
               onChange={handleChange}
-              className="p-4 bg-gray-50 rounded-md border border-gray-200 w-full min-h-[80px] text-sm"
+              className="p-4 bg-gray-50 rounded-md border border-gray-200 w-full min-h-[400px] text-sm"
             />
           </div>
           {/* Assignee & Reporter */}
