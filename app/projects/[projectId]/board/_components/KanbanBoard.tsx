@@ -49,7 +49,9 @@ function KanbanBoard({
     const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
     const [isClient, setIsClient] = useState(false);
     const [current_user, setCurrent_user] = useState<any>("");
+
     const [tasks, setTasks] = useState<Task[]>([]);
+
     const [project_title_name, setProject_title_name] = useState<string>("");
     const allTasks = useRef<Task[]>([]);
 
@@ -65,8 +67,6 @@ function KanbanBoard({
 
     
 
-
-    
 
 
     // 클라이언트에서만 렌더링되도록 설정
@@ -112,8 +112,7 @@ function KanbanBoard({
             fetchLatestTasks();
             getCurrentUser();
             getProjectTitle();
-            getCurrentUser();
-            getProjectTitle();
+
         }
     }, [isClient, projectId, fetchLatestTasks]);
 
@@ -153,7 +152,7 @@ function KanbanBoard({
 
     return (
         <>  
-            
+
             <h6 className="text-sm text-slate-500 mb-2">프로젝트</h6>
             <h1 className="text-2xl font-bold text-slate-800 mb-4">{project_title_name}</h1>
             {/* 검색 기능 */}
@@ -493,7 +492,9 @@ function KanbanBoard({
     }
 
     async function getProjectTitle() {
+
         console.log("getProjectTitle");
+
         const project_title = await fetch(`${getApiUrl()}/projects/${projectId}`, {
             method: "GET",
             headers: {
