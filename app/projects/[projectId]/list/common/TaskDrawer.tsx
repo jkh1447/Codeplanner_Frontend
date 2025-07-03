@@ -33,6 +33,28 @@ export default function TaskDrawer({
   const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
   const [showReporterDropdown, setShowReporterDropdown] = useState(false);
 
+  // 드롭다운 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      
+      // 담당자 드롭다운 외부 클릭 시 닫기
+      if (showAssigneeDropdown && !target.closest('.assignee-dropdown')) {
+        setShowAssigneeDropdown(false);
+      }
+      
+      // 보고자 드롭다운 외부 클릭 시 닫기
+      if (showReporterDropdown && !target.closest('.reporter-dropdown')) {
+        setShowReporterDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showAssigneeDropdown, showReporterDropdown]);
+
   // 멤버 리스트 불러오기
   useEffect(() => {
     const fetchMembers = async () => {
@@ -207,7 +229,7 @@ export default function TaskDrawer({
           <div className="flex gap-4">
             <div className="space-y-1 flex-1">
               <label className="text-sm font-medium text-gray-700">담당자</label>
-              <div className="relative">
+              <div className="relative assignee-dropdown">
                 <input
                   type="text"
                   placeholder="담당자 검색..."
@@ -236,7 +258,7 @@ export default function TaskDrawer({
             </div>
             <div className="space-y-1 flex-1">
               <label className="text-sm font-medium text-gray-700">보고자</label>
-              <div className="relative">
+              <div className="relative reporter-dropdown">
                 <input
                   type="text"
                   placeholder="보고자 검색..."
