@@ -24,11 +24,11 @@ import { useDebouncedCallback } from "use-debounce";
 import { getApiUrl } from "@/lib/api";
 
 function KanbanBoard({
-    issues,
+    
     projectId,
     
 }: {
-    issues: Task[];
+    
     projectId: string;
     
 }) {
@@ -49,7 +49,9 @@ function KanbanBoard({
     const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
     const [isClient, setIsClient] = useState(false);
     const [current_user, setCurrent_user] = useState<any>("");
-    const [tasks, setTasks] = useState<Task[]>(issues);
+
+    const [tasks, setTasks] = useState<Task[]>([]);
+
     const [project_title_name, setProject_title_name] = useState<string>("");
     const allTasks = useRef<Task[]>([]);
 
@@ -66,6 +68,7 @@ function KanbanBoard({
     
 
 
+
     // 클라이언트에서만 렌더링되도록 설정
     useEffect(() => {
         setIsClient(true);
@@ -75,7 +78,14 @@ function KanbanBoard({
     const fetchLatestTasks = React.useCallback(async () => {
         try {
             const response = await fetch(
-                `${getApiUrl()}/projects/${projectId}/issues`
+                `${getApiUrl()}/projects/${projectId}/issues`, 
+                {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    credentials: "include",
+                }
             );
             if (response.ok) {
                 const latestTasks = await response.json();
@@ -102,23 +112,12 @@ function KanbanBoard({
             fetchLatestTasks();
             getCurrentUser();
             getProjectTitle();
+
         }
     }, [isClient, projectId, fetchLatestTasks]);
 
     // 초기 데이터 설정 (서버에서 가져온 데이터가 없을 때만)
-    useEffect(() => {
-        if (issues && issues.length > 0 && tasks.length === 0) {
-            setTasks(issues.map((issue: any) => ({
-              ...issue,
-              project_id: issue.projectId,
-              assignee_id: issue.assigneeId,
-              reporter_id: issue.reporterId,
-              issue_type: issue.issueType,
-              start_date: issue.startDate,
-              due_date: issue.dueDate,
-            })));
-        }
-    }, [issues]);
+    
 
     // 기존 onDragOver의 setTasks 로직을 함수로 분리
     const moveTask = (activeId: Id, overId: Id, overType: string) => {
@@ -153,6 +152,7 @@ function KanbanBoard({
 
     return (
         <>  
+
             <h6 className="text-sm text-slate-500 mb-2">프로젝트</h6>
             <h1 className="text-2xl font-bold text-slate-800 mb-4">{project_title_name}</h1>
             {/* 검색 기능 */}
@@ -492,6 +492,9 @@ function KanbanBoard({
     }
 
     async function getProjectTitle() {
+
+        console.log("getProjectTitle");
+
         const project_title = await fetch(`${getApiUrl()}/projects/${projectId}`, {
             method: "GET",
             headers: {

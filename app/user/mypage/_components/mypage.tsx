@@ -34,10 +34,12 @@ export default function MyPage() {
   const [updateLoading, setUpdateLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [isGithubConnected, setIsGithubConnected] = useState(false);
 
   // 사용자 정보 불러오기
   useEffect(() => {
     fetchUserProfile();
+    fetchGithubConnected();
   }, []);
 
   const fetchUserProfile = async () => {
@@ -69,6 +71,24 @@ export default function MyPage() {
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchGithubConnected = async () => {
+    const response = await fetch(
+      `${getApiUrl()}/user/mypage/isGithubConnected`,
+      {
+        method: "GET",
+        credentials: "include",
+      }
+    );
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log(data);
+      setIsGithubConnected(data.isConnected);
+    } else {
+      setIsGithubConnected(false);
     }
   };
 
@@ -160,6 +180,11 @@ export default function MyPage() {
     );
   }
 
+  const githubOauth = () => {
+    const clientId = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID;
+    const redirectUri = `${getApiUrl()}/auth/github-oauth`;
+    window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}`;
+  };
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-2xl mx-auto">
@@ -307,8 +332,13 @@ export default function MyPage() {
               </h3>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="p-4 bg-blue-50 rounded-lg">
-                  <h4 className="font-medium text-blue-900 mb-1">가입일</h4>
-                  <p className="text-sm text-blue-700">2024년 12월 31일</p>
+                  <Button
+                    onClick={githubOauth}
+                    className="w-full"
+                    disabled={isGithubConnected}
+                  >
+                    {isGithubConnected ? "Github 연동 완료" : "Github 연동"}
+                  </Button>
                 </div>
                 <div className="p-4 bg-green-50 rounded-lg">
                   <h4 className="font-medium text-green-900 mb-1">계정 상태</h4>
