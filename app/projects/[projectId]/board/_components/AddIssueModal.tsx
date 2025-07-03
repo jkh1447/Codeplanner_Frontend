@@ -86,7 +86,7 @@ interface AddIssueModalProps {
     projectId: string;
     taskCount?: number;
     createTask: (formData: IssueFormData) => void;
-    current_user: string;
+    current_user: any;
 }
 
 export default function  AddIssueModal({
