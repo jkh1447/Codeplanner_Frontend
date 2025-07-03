@@ -13,7 +13,7 @@ module.exports = {
     env_production: {
       NODE_ENV: 'production',
       PORT: 3000,
-      NEXT_PUBLIC_API_URL: 'http://3.38.25.129:5000',
+      NEXT_PUBLIC_API_URL: 'https://code-planner.com/api',
       NEXT_PUBLIC_ENV: 'production'
     },
     instances: 1,
