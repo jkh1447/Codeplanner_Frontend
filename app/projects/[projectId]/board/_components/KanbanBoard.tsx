@@ -283,7 +283,7 @@ function KanbanBoard({
             });
     }
 
-    function deleteTask(id: Id, projectId: string) {
+    function deleteTask(id: Id) {
         fetch(`${getApiUrl()}/projects/${projectId}/issues/${id}`, {
             method: "DELETE",
         }).then((res) => {
