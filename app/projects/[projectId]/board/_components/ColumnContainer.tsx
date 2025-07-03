@@ -20,6 +20,7 @@ interface Props {
     updateTask: (id: Id, content: string) => void;
     deleteTask: (id: Id, projectId: string) => void;
     tasks: Task[];
+    current_user: any;
 }
 
 function ColumnContainer(props: Props) {
@@ -32,6 +33,7 @@ function ColumnContainer(props: Props) {
         tasks,
         deleteTask,
         updateTask,
+        current_user,
     } = props;
 
     const [editMode, setEditMode] = useState(false);
@@ -84,26 +86,15 @@ function ColumnContainer(props: Props) {
             <div
                 {...attributes}
                 {...listeners}
-                onClick={() => setEditMode(true)}
                 className="flex items-center justify-between bg-[#f8f8f8] text-md h-[60px] cursor-grab rounded-md rounded-b-none p-3 font-bold border-[#f8f8f8] border-4"
             >
                 <div className="flex gap-2">
-                    <div className="flex justify-center items-center bg-[#f8f8f8] px-2 py-1 text-sm rounded-full"></div>
-                    {!editMode && column.title}
-                    {editMode && (
-                        <input
-                            className="bg-white focus:border-gray-500 border rounded outline-none px-2"
-                            value={column.title}
-                            onChange={(e) =>
-                                updateColumn(column.id, e.target.value)
-                            }
-                            onBlur={() => setEditMode(false)}
-                            onKeyDown={(e) => {
-                                if (e.key !== "Enter") return;
-                                setEditMode(false);
-                            }}
-                        />
-                    )}
+                    <div className="flex justify-center items-center bg-[#f8f8f8]  py-1 text-sm rounded-full"></div>
+
+                    <span className="flex outline-none px-2">
+                        {column.title} &nbsp;{" "}
+                        <h6 className="bg-[#e9eaeb] px-2">{tasks.length}</h6>
+                    </span>
                 </div>
                 {/* <button
                     onClick={() => {
@@ -153,6 +144,7 @@ function ColumnContainer(props: Props) {
                             taskCount={tasks.length}
                             projectId={projectId}
                             createTask={createTask}
+                            current_user={current_user}
                         />
                     </div>
                 </div>

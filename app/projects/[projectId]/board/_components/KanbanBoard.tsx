@@ -26,9 +26,11 @@ import { getApiUrl } from "@/lib/api";
 function KanbanBoard({
     issues,
     projectId,
+    
 }: {
     issues: Task[];
     projectId: string;
+    
 }) {
     const [columns, setColumns] = useState<Column[]>([
         {
@@ -46,9 +48,9 @@ function KanbanBoard({
     ]);
     const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
     const [isClient, setIsClient] = useState(false);
-
+    const [current_user, setCurrent_user] = useState<any>("");
     const [tasks, setTasks] = useState<Task[]>(issues);
-
+    const [project_title_name, setProject_title_name] = useState<string>("");
     const allTasks = useRef<Task[]>([]);
 
     const [activeColumn, setActiveColumn] = useState<Column | null>(null);
@@ -60,6 +62,9 @@ function KanbanBoard({
             },
         })
     );
+
+    
+
 
     // 클라이언트에서만 렌더링되도록 설정
     useEffect(() => {
@@ -95,6 +100,8 @@ function KanbanBoard({
     useEffect(() => {
         if (isClient && projectId) {
             fetchLatestTasks();
+            getCurrentUser();
+            getProjectTitle();
         }
     }, [isClient, projectId, fetchLatestTasks]);
 
@@ -145,7 +152,9 @@ function KanbanBoard({
     const debouncedMoveTask = useDebouncedCallback(moveTask, 0);
 
     return (
-        <>
+        <>  
+            <h6 className="text-sm text-slate-500 mb-2">프로젝트</h6>
+            <h1 className="text-2xl font-bold text-slate-800 mb-4">{project_title_name}</h1>
             {/* 검색 기능 */}
             <div className="flex justify-start space-x-4">
                 <div className="pt-2 relative text-gray-600">
@@ -187,6 +196,7 @@ function KanbanBoard({
                                             )}
                                             deleteTask={deleteTask}
                                             updateTask={updateTask}
+                                            current_user={current_user}
                                         />
                                     ))}
                                 </SortableContext>
@@ -217,6 +227,7 @@ function KanbanBoard({
                                         )}
                                         deleteTask={deleteTask}
                                         updateTask={updateTask}
+                                        current_user={current_user}
                                     />
                                 )}
                                 {activeTask && (
@@ -273,6 +284,7 @@ function KanbanBoard({
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(taskData),
+            credentials: "include",
         })
             .then((res) => {
                 if (!res.ok) throw new Error("Failed to add issue");
@@ -283,7 +295,7 @@ function KanbanBoard({
             });
     }
 
-    function deleteTask(id: Id) {
+    function deleteTask(id: Id, projectId: string) {
         fetch(`${getApiUrl()}/projects/${projectId}/issues/${id}`, {
             method: "DELETE",
         }).then((res) => {
@@ -460,6 +472,40 @@ function KanbanBoard({
             task.title.toLowerCase().includes(searchTerm.toLowerCase())
         );
         setTasks(filteredTasks);
+    }
+
+    async function getCurrentUser() {
+        const current_user = await fetch(`${getApiUrl()}/user/me`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            credentials: "include",
+        });
+        if (!current_user.ok) {
+            console.log(current_user);
+            throw new Error("Failed to fetch current user");
+        }
+        const current_user_data = await current_user.json();
+        console.log(current_user_data);
+        setCurrent_user(current_user_data);
+    }
+
+    async function getProjectTitle() {
+        const project_title = await fetch(`${getApiUrl()}/projects/${projectId}`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            credentials: "include",
+        });
+        if (!project_title.ok) {
+                console.log("status", project_title.status, project_title.statusText);
+                throw new Error("Failed to fetch project title");
+            }
+            const project_title_data = await project_title.json();
+            const project_title_name = project_title_data.title;
+            setProject_title_name(project_title_name);
     }
 }
 
