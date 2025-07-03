@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { usePathname } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import {
     ChevronDown,
     FolderOpen,
@@ -40,8 +40,11 @@ export default function SideBar() {
     const match = pathname.match(/\/projects\/([^/]+)/);
     const projectId = match ? match[1] : null;
     const [myIssueCount, setMyIssueCount] = React.useState<number | null>(null);
-
+    
+    const project_id = usePathname().split("/");
+    console.log("project_id", project_id);
     React.useEffect(() => {
+        
         async function fetchProjects() {
             try {
                 setLoading(true);
@@ -53,7 +56,16 @@ export default function SideBar() {
                         "Content-Type": "application/json",
                     },
                 });
-                if (!res.ok) throw new Error("프로젝트 목록을 불러오지 못했습니다.");
+                if (!res.ok) {
+                    console.log("status", res.status, res.statusText);
+
+                    if (res.status == 401) {
+                        alert("로그인 후 이용해주세요.");
+                        window.location.href = "/auth/login?redirect=" + project_id[2] + "/" + project_id[3];
+                    }
+
+                    throw new Error("프로젝트 목록을 불러오지 못했습니다.");
+                }
                 const data = await res.json();
 
                 // 데이터가 없거나 빈 배열인 경우 처리
@@ -64,12 +76,14 @@ export default function SideBar() {
                 }
 
                 // 백엔드 데이터를 프론트엔드 형식으로 변환
-                const transformedProjects: Project[] = data.map((project: any) => ({
-                    id: project.id,
-                    name: project.title ?? project.name ?? "",
-                    status: project.status,
-                    // 사이드바에서는 assignee, people, description 등은 사용하지 않으므로 생략
-                }));
+                const transformedProjects: Project[] = data.map(
+                    (project: any) => ({
+                        id: project.id,
+                        name: project.title ?? project.name ?? "",
+                        status: project.status,
+                        // 사이드바에서는 assignee, people, description 등은 사용하지 않으므로 생략
+                    })
+                );
                 setProjects(transformedProjects);
             } catch (e: any) {
                 setError(e.message || "알 수 없는 오류");
@@ -81,62 +95,62 @@ export default function SideBar() {
     }, []);
 
     React.useEffect(() => {
-    const fetchMyIssueCount = async () => {
-      try {
-        const res = await fetch(
-          `${getApiUrl()}/projects/${projectId}/my-issues-count`,
-          {
-            credentials: "include", // 👈 요거 넣어야 쿠키(JWT) 같이 감!
-          }
-        );
-        if (!res.ok) throw new Error("Failed to fetch count");
-        const data = await res.json();
-        setMyIssueCount(data.count);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    fetchMyIssueCount();
-  }, [projectId]);
+        const fetchMyIssueCount = async () => {
+            try {
+                const res = await fetch(
+                    `${getApiUrl()}/projects/${projectId}/my-issues-count`,
+                    {
+                        credentials: "include", // 👈 요거 넣어야 쿠키(JWT) 같이 감!
+                    }
+                );
+                if (!res.ok) throw new Error("Failed to fetch count");
+                const data = await res.json();
+                setMyIssueCount(data.count);
+            } catch (err) {
+                console.error(err);
+            }
+        };
+        fetchMyIssueCount();
+    }, [projectId]);
 
-  const menuItems = [
-    {
-        title: "내 이슈",
-        icon: AlertCircle,
-        url: "my-issues",
-        badge: myIssueCount !== null ? String(myIssueCount) : undefined,
-    },
-    {
-        title: "요약",
-        icon: Globe,
-        url: "summary",
-    },
-    {
-        title: "타임라인",
-        icon: ChartNoAxesGantt,
-        url: "timeline",
-    },
-    {
-        title: "보드",
-        icon: Kanban,
-        url: "board",
-    },
-    {
-        title: "목록",
-        icon: TableOfContents,
-        url: "list",
-    },
-    {
-        title: "코드",
-        icon: Code,
-        url: "code",
-    },
-    {
-        title: "설정",
-        icon: Settings,
-        url: "settings",
-    },
-];
+    const menuItems = [
+        {
+            title: "내 이슈",
+            icon: AlertCircle,
+            url: "my-issues",
+            badge: myIssueCount !== null ? String(myIssueCount) : undefined,
+        },
+        {
+            title: "요약",
+            icon: Globe,
+            url: "summary",
+        },
+        {
+            title: "타임라인",
+            icon: ChartNoAxesGantt,
+            url: "timeline",
+        },
+        {
+            title: "보드",
+            icon: Kanban,
+            url: "board",
+        },
+        {
+            title: "목록",
+            icon: TableOfContents,
+            url: "list",
+        },
+        {
+            title: "코드",
+            icon: Code,
+            url: "code",
+        },
+        {
+            title: "설정",
+            icon: Settings,
+            url: "settings",
+        },
+    ];
 
     return (
         <div className="w-64 border-r bg-background text-foreground h-screen overflow-y-auto">
@@ -168,11 +182,17 @@ export default function SideBar() {
                         <CollapsibleContent>
                             <div className="ml-6 space-y-1">
                                 {loading ? (
-                                    <div className="text-xs text-muted-foreground">불러오는 중...</div>
+                                    <div className="text-xs text-muted-foreground">
+                                        불러오는 중...
+                                    </div>
                                 ) : error ? (
-                                    <div className="text-xs text-red-500">{error}</div>
+                                    <div className="text-xs text-red-500">
+                                        {error}
+                                    </div>
                                 ) : projects.length === 0 ? (
-                                    <div className="text-xs text-muted-foreground">프로젝트가 없습니다.</div>
+                                    <div className="text-xs text-muted-foreground">
+                                        프로젝트가 없습니다.
+                                    </div>
                                 ) : (
                                     projects.map((project) => (
                                         <Link
@@ -187,7 +207,8 @@ export default function SideBar() {
                                                 className={`h-2 w-2 rounded-full ${
                                                     project.status === "ACTIVE"
                                                         ? "bg-green-500"
-                                                        : project.status === "COMPLETED"
+                                                        : project.status ===
+                                                          "COMPLETED"
                                                         ? "bg-blue-500"
                                                         : "bg-yellow-500"
                                                 }`}
