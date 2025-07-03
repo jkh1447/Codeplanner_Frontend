@@ -33,6 +33,7 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const redirect = searchParams.get("redirect");
 
   useEffect(() => {
     const success = searchParams.get("success");
@@ -77,7 +78,11 @@ export default function LoginPage() {
         // 로그인 성공 후 리다이렉트 (필요에 따라 수정)
         console.log(result.user.is_verified);
         if (result.user.is_verified) {
-          router.push("/projectList");
+          if (redirect) {
+            router.push("/projects/" + redirect);
+          } else {
+            router.push("/projectList");
+          }
         } else {
           router.push("/auth/needEmail");
         }

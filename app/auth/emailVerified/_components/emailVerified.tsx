@@ -7,18 +7,23 @@ import { useEffect } from "react";
 export default function EmailVerifiedPage() {
   useEffect(() => {
     const verifyEmail = async () => {
-      // URLSearchParams를 사용해서 쿼리스트링을 붙여서 GET 요청을 보냅니다.
       const searchParams = new URLSearchParams(window.location.search);
       const email = searchParams.get("email");
       const verifyToken = searchParams.get("verifyToken");
-      const response = await fetch(`${getApiUrl()}/user/email-verify?email=${encodeURIComponent(
+      console.log("email", email);
+      console.log("verifyToken", verifyToken);
+
+      // URL 경로 파라미터로 요청
+      const response = await fetch(
+        `${getApiUrl()}/user/email-verify/${encodeURIComponent(
           email ?? ""
-        )}&verifyToken=${encodeURIComponent(verifyToken ?? "")}`,
+        )}/${encodeURIComponent(verifyToken ?? "")}`,
         {
           method: "GET",
         }
       );
       if (response.ok) {
+        // 성공 처리
       } else {
         alert("이메일 인증에 실패했습니다.");
       }
