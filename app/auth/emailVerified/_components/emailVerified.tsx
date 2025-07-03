@@ -14,7 +14,9 @@ export default function EmailVerifiedPage() {
       console.log("email", email);
       console.log("verifyToken", verifyToken);
       const response = await fetch(
-        `${getApiUrl()}/user/email-verify?email=${email}&verifyToken=${verifyToken}`,
+        `${getApiUrl()}/user/email-verify/${encodeURIComponent(
+          email ?? ""
+        )}/${encodeURIComponent(verifyToken ?? "")}`,
         {
           method: "GET",
         }
