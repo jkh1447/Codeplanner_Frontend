@@ -21,11 +21,13 @@ export default async function Page({
     }
     const issues: Task[] = await res.json();
 
+    
+
     return (
         <div className="min-h-screen p-8">
             <h1 className="text-2xl font-bold text-slate-800">프로젝트 Demo</h1>
             <div className="text-slate-600 mt-2">
-                <KanbanBoard issues={issues} projectId={projectId} />
+                <KanbanBoard issues={issues} projectId={projectId}  />
                 {/* <Board /> */}
             </div>
         </div>

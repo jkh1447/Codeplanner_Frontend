@@ -26,9 +26,11 @@ import { getApiUrl } from "@/lib/api";
 function KanbanBoard({
     issues,
     projectId,
+    
 }: {
     issues: Task[];
     projectId: string;
+    
 }) {
     const [columns, setColumns] = useState<Column[]>([
         {
@@ -46,7 +48,7 @@ function KanbanBoard({
     ]);
     const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
     const [isClient, setIsClient] = useState(false);
-
+    const [current_user, setCurrent_user] = useState<any>("");
     const [tasks, setTasks] = useState<Task[]>(issues);
 
     const allTasks = useRef<Task[]>([]);
@@ -60,6 +62,9 @@ function KanbanBoard({
             },
         })
     );
+
+    
+
 
     // 클라이언트에서만 렌더링되도록 설정
     useEffect(() => {
@@ -95,6 +100,7 @@ function KanbanBoard({
     useEffect(() => {
         if (isClient && projectId) {
             fetchLatestTasks();
+            getCurrentUser();
         }
     }, [isClient, projectId, fetchLatestTasks]);
 
@@ -187,6 +193,7 @@ function KanbanBoard({
                                             )}
                                             deleteTask={deleteTask}
                                             updateTask={updateTask}
+                                            current_user={current_user}
                                         />
                                     ))}
                                 </SortableContext>
@@ -217,6 +224,7 @@ function KanbanBoard({
                                         )}
                                         deleteTask={deleteTask}
                                         updateTask={updateTask}
+                                        current_user={current_user}
                                     />
                                 )}
                                 {activeTask && (
@@ -273,6 +281,7 @@ function KanbanBoard({
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(taskData),
+            credentials: "include",
         })
             .then((res) => {
                 if (!res.ok) throw new Error("Failed to add issue");
@@ -460,6 +469,23 @@ function KanbanBoard({
             task.title.toLowerCase().includes(searchTerm.toLowerCase())
         );
         setTasks(filteredTasks);
+    }
+
+    async function getCurrentUser() {
+        const current_user = await fetch(`${getApiUrl()}/user/me`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            credentials: "include",
+        });
+        if (!current_user.ok) {
+            console.log(current_user);
+            throw new Error("Failed to fetch current user");
+        }
+        const current_user_data = await current_user.json();
+        console.log(current_user_data);
+        setCurrent_user(current_user_data);
     }
 }
 

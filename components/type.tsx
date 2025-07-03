@@ -39,8 +39,9 @@ export type Issue = {
 
 export type User = {
   id: Id;
-  email: string;
   display_name: string;
+  email: string;
+  role: string;
 };
 
 export type Label = {
