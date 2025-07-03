@@ -1,7 +1,6 @@
 "use client";
 
 import { getApiUrl } from "@/lib/api";
-import { useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 
 export default function GithubOAuth() {
@@ -9,6 +8,7 @@ export default function GithubOAuth() {
     const fetchGithubToken = async () => {
       const searchParams = new URLSearchParams(window.location.search);
       const code = searchParams.get("code");
+
       const response = await fetch(`${getApiUrl()}/auth/github-oauth`, {
         method: "POST",
         headers: {
@@ -28,5 +28,6 @@ export default function GithubOAuth() {
     };
     fetchGithubToken();
   }, []);
+
   return <div>Github 인증 중</div>;
 }
