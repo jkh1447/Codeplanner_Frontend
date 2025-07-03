@@ -25,7 +25,7 @@ export default function SettingsPage() {
         startDate: "",
         endDate: "",
         repositoryUrl: "",
-        status: "ACTIVE",
+        status: "진행중",
     });
     const [members, setMembers] = useState<any[]>([]);
     const [showMemberModal, setShowMemberModal] = useState(false);
@@ -35,10 +35,10 @@ export default function SettingsPage() {
 
     // 상태 옵션 (DDL 및 기존 코드 참고)
     const statusOptions = [
-        { value: "ACTIVE", label: "진행중" },
-        { value: "COMPLETED", label: "완료" },
-        { value: "PENDING", label: "대기중" },
-        { value: "ON_HOLD", label: "보류" },
+        { value: "진행중", label: "진행중" },
+        { value: "완료", label: "완료" },
+        { value: "대기중", label: "대기중" },
+        { value: "보류", label: "보류" },
     ];
 
     // 날짜를 YYYY-MM-DD로 변환

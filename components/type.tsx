@@ -68,5 +68,5 @@ export type Project = {
   project_leader: string;
   project_people: number;
   repository_url: string;
-  status: "ACTIVE" | "COMPLETED" | "PENDING";
+  status: "진행중" | "완료" | "대기중" | "보류";
 };
