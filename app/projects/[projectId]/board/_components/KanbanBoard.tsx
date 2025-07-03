@@ -66,6 +66,9 @@ function KanbanBoard({
     
 
 
+    
+
+
     // 클라이언트에서만 렌더링되도록 설정
     useEffect(() => {
         setIsClient(true);
@@ -109,6 +112,8 @@ function KanbanBoard({
             fetchLatestTasks();
             getCurrentUser();
             getProjectTitle();
+            getCurrentUser();
+            getProjectTitle();
         }
     }, [isClient, projectId, fetchLatestTasks]);
 
@@ -148,6 +153,7 @@ function KanbanBoard({
 
     return (
         <>  
+            
             <h6 className="text-sm text-slate-500 mb-2">프로젝트</h6>
             <h1 className="text-2xl font-bold text-slate-800 mb-4">{project_title_name}</h1>
             {/* 검색 기능 */}
