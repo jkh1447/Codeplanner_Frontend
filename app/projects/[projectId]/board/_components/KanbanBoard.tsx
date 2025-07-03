@@ -49,7 +49,7 @@ function KanbanBoard({
     const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
     const [isClient, setIsClient] = useState(false);
     const [current_user, setCurrent_user] = useState<any>("");
-    const [tasks, setTasks] = useState<Task[]>(issues);
+    const [tasks, setTasks] = useState<Task[]>([]);
     const [project_title_name, setProject_title_name] = useState<string>("");
     const allTasks = useRef<Task[]>([]);
 
@@ -75,7 +75,14 @@ function KanbanBoard({
     const fetchLatestTasks = React.useCallback(async () => {
         try {
             const response = await fetch(
-                `${getApiUrl()}/projects/${projectId}/issues`
+                `${getApiUrl()}/projects/${projectId}/issues`, 
+                {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    credentials: "include",
+                }
             );
             if (response.ok) {
                 const latestTasks = await response.json();
