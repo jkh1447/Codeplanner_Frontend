@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { usePathname } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import {
     ChevronDown,
     FolderOpen,
@@ -40,8 +40,11 @@ export default function SideBar() {
     const match = pathname.match(/\/projects\/([^/]+)/);
     const projectId = match ? match[1] : null;
     const [myIssueCount, setMyIssueCount] = React.useState<number | null>(null);
-
+    
+    const project_id = usePathname().split("/");
+    console.log("project_id", project_id);
     React.useEffect(() => {
+        
         async function fetchProjects() {
             try {
                 setLoading(true);
@@ -58,7 +61,7 @@ export default function SideBar() {
 
                     if (res.status == 401) {
                         alert("로그인 후 이용해주세요.");
-                        window.location.href = "/auth/login";
+                        window.location.href = "/auth/login?redirect=" + project_id[2] + "/" + project_id[3];
                     }
 
                     throw new Error("프로젝트 목록을 불러오지 못했습니다.");

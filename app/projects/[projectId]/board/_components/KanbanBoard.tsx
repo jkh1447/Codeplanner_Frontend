@@ -24,11 +24,11 @@ import { useDebouncedCallback } from "use-debounce";
 import { getApiUrl } from "@/lib/api";
 
 function KanbanBoard({
-    issues,
+    
     projectId,
     
 }: {
-    issues: Task[];
+    
     projectId: string;
     
 }) {
@@ -113,19 +113,7 @@ function KanbanBoard({
     }, [isClient, projectId, fetchLatestTasks]);
 
     // 초기 데이터 설정 (서버에서 가져온 데이터가 없을 때만)
-    useEffect(() => {
-        if (issues && issues.length > 0 && tasks.length === 0) {
-            setTasks(issues.map((issue: any) => ({
-              ...issue,
-              project_id: issue.projectId,
-              assignee_id: issue.assigneeId,
-              reporter_id: issue.reporterId,
-              issue_type: issue.issueType,
-              start_date: issue.startDate,
-              due_date: issue.dueDate,
-            })));
-        }
-    }, [issues]);
+    
 
     // 기존 onDragOver의 setTasks 로직을 함수로 분리
     const moveTask = (activeId: Id, overId: Id, overType: string) => {
@@ -499,6 +487,7 @@ function KanbanBoard({
     }
 
     async function getProjectTitle() {
+        console.log("getProjectTitle");
         const project_title = await fetch(`${getApiUrl()}/projects/${projectId}`, {
             method: "GET",
             headers: {
