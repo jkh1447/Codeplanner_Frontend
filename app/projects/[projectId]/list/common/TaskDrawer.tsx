@@ -1,7 +1,7 @@
 "use client";
 import { Task } from "@/components/type";
 import { getApiUrl } from "@/lib/api";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 {/* 이슈에 대한 카드 Drawer */}
 export default function TaskDrawer({
@@ -27,12 +27,59 @@ export default function TaskDrawer({
   // 로딩 및 에러 상태값 정의
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [memberList, setMemberList] = useState<any[]>([]);
+  const [assigneeSearch, setAssigneeSearch] = useState("");
+  const [reporterSearch, setReporterSearch] = useState("");
+  const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
+  const [showReporterDropdown, setShowReporterDropdown] = useState(false);
+
+  // 멤버 리스트 불러오기
+  useEffect(() => {
+    const fetchMembers = async () => {
+      try {
+        const response = await fetch(`${getApiUrl()}/projects/${task.project_id}/members`, {
+          credentials: 'include',
+        });
+        if (!response.ok) {
+          throw new Error("프로젝트 멤버를 불러오는 데 실패했습니다.");
+        }
+        const data = await response.json();
+        setMemberList(data);
+      } catch (err: any) {
+        setError(err.message || "멤버 목록을 불러오는 중 오류 발생");
+      }
+    };
+    fetchMembers();
+  }, [task.project_id]);
 
   // 폼 값 변경해주는 핸들러
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
+
+  // 담당자 선택 핸들러
+  const handleAssigneeSelect = (memberId: string, displayName: string) => {
+    setForm(prev => ({ ...prev, assigneeId: memberId }));
+    setAssigneeSearch(displayName);
+    setShowAssigneeDropdown(false);
+  };
+
+  // 보고자 선택 핸들러
+  const handleReporterSelect = (memberId: string, displayName: string) => {
+    setForm(prev => ({ ...prev, reporterId: memberId }));
+    setReporterSearch(displayName);
+    setShowReporterDropdown(false);
+  };
+
+  // 필터링된 멤버 리스트
+  const filteredAssignees = memberList.filter(member =>
+    member.display_name.toLowerCase().includes(assigneeSearch.toLowerCase())
+  );
+
+  const filteredReporters = memberList.filter(member =>
+    member.display_name.toLowerCase().includes(reporterSearch.toLowerCase())
+  );
 
   // 저장 버튼 클릭시 PATCH 요청
   const handleSave = async () => {
@@ -44,6 +91,7 @@ export default function TaskDrawer({
       const res = await fetch(`${getApiUrl()}/projects/${task.project_id}/${task.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: 'include',
         body: JSON.stringify({
           title: form.title,
           description: form.description,
@@ -73,6 +121,7 @@ export default function TaskDrawer({
       await fetch(`${getApiUrl()}/projects/${task.project_id}/issues/${task.id}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
+        credentials: 'include',
       });
       onClose(); // 삭제 후 drawer 닫기
     } catch (err: any) {
@@ -100,8 +149,6 @@ export default function TaskDrawer({
               value={form.title} // 제목
               onChange={handleChange} // ID
             />
-            {/* Task_ID */}
-            <p className="text-sm text-gray-500 mt-1">Task ID: {task.id}</p>
           </div>
           <button 
             onClick={onClose}
@@ -158,27 +205,63 @@ export default function TaskDrawer({
           </div>
           {/* Assignee & Reporter */}
           <div className="flex gap-4">
-            <div className="space-y-1">
-              {/* 지금 불러오는건 ID 값 자체를 불러오기 때문에, ID로 넣어야함. 더미데이터 추가되면, 그 아이디로 넣어서 확인해야 하고, 추후 변경 필요 
-                  나중에 이메일도 좋을 것 같고, 닉네임이나 이런걸로 변경하는걸 얘기해보면 될 듯 - 윤호가 해결할 문제임 */}
+            <div className="space-y-1 flex-1">
               <label className="text-sm font-medium text-gray-700">담당자</label>
-              <input
-                name="assigneeId"
-                value={form.assigneeId}
-                onChange={handleChange}
-                className="px-3 py-1 bg-gray-100 text-gray-700 rounded-md text-xs w-full"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="담당자 검색..."
+                  value={assigneeSearch}
+                  onChange={(e) => setAssigneeSearch(e.target.value)}
+                  onFocus={() => setShowAssigneeDropdown(true)}
+                  className="px-3 py-1 bg-gray-100 text-gray-700 rounded-md text-xs w-full"
+                />
+                {showAssigneeDropdown && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-40 overflow-y-auto">
+                    {filteredAssignees.map((member) => (
+                      <div
+                        key={member.id}
+                        onClick={() => handleAssigneeSelect(member.id, member.display_name)}
+                        className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-xs"
+                      >
+                        {member.display_name}
+                      </div>
+                    ))}
+                    {filteredAssignees.length === 0 && (
+                      <div className="px-3 py-2 text-gray-500 text-xs">검색 결과가 없습니다.</div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="space-y-1">
-              {/* 지금 불러오는건 ID 값 자체를 불러오기 때문에, ID로 넣어야함. 더미데이터 추가되면, 그 아이디로 넣어서 확인해야 하고, 추후 변경 필요 
-                  나중에 이메일도 좋을 것 같고, 닉네임이나 이런걸로 변경하는걸 얘기해보면 될 듯 - 윤호가 해결할 문제임 */}
+            <div className="space-y-1 flex-1">
               <label className="text-sm font-medium text-gray-700">보고자</label>
-              <input
-                name="reporterId"
-                value={form.reporterId}
-                onChange={handleChange}
-                className="px-3 py-1 bg-gray-100 text-gray-700 rounded-md text-xs w-full"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="보고자 검색..."
+                  value={reporterSearch}
+                  onChange={(e) => setReporterSearch(e.target.value)}
+                  onFocus={() => setShowReporterDropdown(true)}
+                  className="px-3 py-1 bg-gray-100 text-gray-700 rounded-md text-xs w-full"
+                />
+                {showReporterDropdown && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-40 overflow-y-auto">
+                    {filteredReporters.map((member) => (
+                      <div
+                        key={member.id}
+                        onClick={() => handleReporterSelect(member.id, member.display_name)}
+                        className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-xs"
+                      >
+                        {member.display_name}
+                      </div>
+                    ))}
+                    {filteredReporters.length === 0 && (
+                      <div className="px-3 py-2 text-gray-500 text-xs">검색 결과가 없습니다.</div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           {/* Dates */}
