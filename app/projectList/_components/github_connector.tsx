@@ -49,7 +49,7 @@ export default function GitHubConnector({ setRepositoryUrl }: { setRepositoryUrl
             try {
                 const encodedRepoUrl = encodeURIComponent(repoUrl);
                 const response = await fetch(
-                    `${getApiUrl()}/api/github/connect/${encodedRepoUrl}`,
+                    `${getApiUrl()}/github/connect/${encodedRepoUrl}`,
                     {
                         method: "GET",
                         credentials: "include",
@@ -79,7 +79,7 @@ export default function GitHubConnector({ setRepositoryUrl }: { setRepositoryUrl
             setErrorMessage("");
 
             try {
-                const response = await fetch(`${getApiUrl()}/api/github/create-repo`, {
+                const response = await fetch(`${getApiUrl()}/github/create-repo`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     credentials: "include",
