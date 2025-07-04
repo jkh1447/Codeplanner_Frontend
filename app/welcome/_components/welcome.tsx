@@ -306,13 +306,13 @@ export default function Welcome() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="/auth/login">
-                  <button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors shadow-lg">
+                  <button className="bg-slate-500 hover:bg-slate-600 text-white px-8 py-3 rounded-lg font-semibold transition-colors shadow-lg">
                     로그인하여 시작하기
                   </button>
                 </Link>
                 <Link
                   href="/projectList"
-                  className="border border-slate-300 hover:border-blue-600 text-slate-700 hover:text-blue-600 px-8 py-3 rounded-lg font-semibold transition-colors inline-block text-center"
+                  className="border border-blue-600 hover:border-slate-300 text-blue-600 hover:text-slate-700 px-8 py-3 rounded-lg font-semibold transition-colors inline-block text-center"
                 >
                   데모 보기
                 </Link>
@@ -517,7 +517,7 @@ export default function Welcome() {
               </div>
               <div className="text-center">
                 <Link href="/user/create">
-                  <button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors shadow-lg">
+                  <button className="bg-slate-500 hover:bg-slate-600 text-white px-8 py-3 rounded-lg font-semibold transition-colors shadow-lg">
                     지금 시작하기
                   </button>
                 </Link>

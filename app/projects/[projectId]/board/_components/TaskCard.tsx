@@ -50,41 +50,44 @@ function TaskCard({ task, deleteTask, projectId }: Props) {
 
     return (
         <>
-        <div
-            ref={setNodeRef}
-            style={style}
-            {...attributes}
-            {...listeners}
-            className="bg-white p-3 min-h-[100px] flex flex-col rounded-xl shadow-md border border-gray-200 hover:ring-2 hover:ring-inset hover:ring-blue-300 cursor-pointer relative group transition-all"
-            onMouseEnter={() => setMouseIsOver(true)}
-            onMouseLeave={() => setMouseIsOver(false)}
-            onClick={() => setShowDrawer(true)}
-        >
-            <div className="flex items-center justify-between mb-1">
-                <span className="font-semibold text-base text-gray-800 truncate max-w-[70%] break-words whitespace-pre-line">
-                    {task.title}
-                </span>
-                {mouseIsOver && (
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            deleteTask(task.id, projectId);
-                        }}
-                        className="stroke-white absolute right-3 top-3 bg-gray-300 p-1.5 rounded hover:bg-red-400 hover:stroke-white opacity-80 hover:opacity-100 transition"
-                    >
-                        <TrashIcon />
-                    </button>
-                )}
-            </div>
-            <div className="absolute bottom-3 right-3">
-                <div className="w-7 h-7 rounded-full border-2 border-white shadow bg-gray-200 flex items-center justify-center">
-                    <UserIcon className="w-4 h-4 text-gray-500" />
+            <div
+                ref={setNodeRef}
+                style={style}
+                {...attributes}
+                {...listeners}
+                className="bg-white p-3 min-h-[100px] flex flex-col rounded-xl shadow-md border border-gray-200 hover:ring-2 hover:ring-inset hover:ring-blue-300 cursor-pointer relative group transition-all"
+                onMouseEnter={() => setMouseIsOver(true)}
+                onMouseLeave={() => setMouseIsOver(false)}
+                onClick={() => setShowDrawer(true)}
+            >
+                <div className="flex items-center justify-between mb-1">
+                    <span className="font-semibold text-base text-gray-800 truncate max-w-[70%] break-words whitespace-pre-line">
+                        {task.title}
+                        <span className="ml-4 px-3 py-1 rounded-full bg-purple-200 text-purple-800 text-sm font-semibold mr-4">
+                            {task.tag}
+                        </span>
+                    </span>
+                    {mouseIsOver && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                deleteTask(task.id, projectId);
+                            }}
+                            className="stroke-white absolute right-3 top-3 bg-gray-300 p-1.5 rounded hover:bg-red-400 hover:stroke-white opacity-80 hover:opacity-100 transition"
+                        >
+                            <TrashIcon />
+                        </button>
+                    )}
+                </div>
+                <div className="absolute bottom-3 right-3">
+                    <div className="w-7 h-7 rounded-full border-2 border-white shadow bg-gray-200 flex items-center justify-center">
+                        <UserIcon className="w-4 h-4 text-gray-500" />
+                    </div>
                 </div>
             </div>
-        </div>
-        {showDrawer && (
-            <TaskDrawer task={task} onClose={() => setShowDrawer(false)} />
-        )}
+            {showDrawer && (
+                <TaskDrawer task={task} onClose={() => setShowDrawer(false)} />
+            )}
         </>
     );
 }

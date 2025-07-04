@@ -25,7 +25,7 @@ jobs:
           git pull origin main
 
           rm -rf .next node_modules
-          npm install
+          npm install --production
           npm run build:prod
 
           pm2 delete Codeplanner_Frontend || true

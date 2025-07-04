@@ -99,6 +99,7 @@ function KanbanBoard({
                   issue_type: issue.issueType,
                   start_date: issue.startDate,
                   due_date: issue.dueDate,
+                  tag: issue.tag,
                 })));
             }
         } catch (error) {
