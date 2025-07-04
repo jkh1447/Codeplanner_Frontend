@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Header from "../../../components/header";
 import { getApiUrl } from "@/lib/api";
+import GitHubConnector from "./github_connector";
 
 // 프로젝트 데이터 타입 정의
 interface Project {
@@ -80,6 +81,8 @@ export default function ProjectList() {
     assignee: "",
     dueDate: "",
     description: "",
+    repository_url: "",
+    tag: "",
   });
 
   // 상태 관리 함수
@@ -135,12 +138,13 @@ export default function ProjectList() {
         status: "대기중",
         project_people: 1, // 실제 인원 입력 구조 있으면 바꾸세요
         due_date: newProject.dueDate,
-        repository_url: "",
+        tag: newProject.tag,
+        repository_url: repositoryUrl,
       };
       try {
         console.log("백엔드 서버에 프로젝트 생성 요청 중...");
         console.log("전송할 데이터:", payload);
-
+        
         const res = await fetch(`${getApiUrl()}/projects/create`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -174,6 +178,8 @@ export default function ProjectList() {
             assignee: "",
             dueDate: "",
             description: "",
+            tag: "",
+            repository_url: "",
           });
           setShowCreateModal(false);
           alert("프로젝트가 성공적으로 생성되었습니다!");
@@ -194,6 +200,8 @@ export default function ProjectList() {
           assignee: "",
           dueDate: "",
           description: "",
+          tag: "",
+          repository_url: "",
         });
         setShowCreateModal(false);
         alert("백엔드 서버가 실행되지 않았습니다.");
@@ -202,6 +210,9 @@ export default function ProjectList() {
       alert("필수 필드를 모두 입력해주세요.");
     }
   };
+
+  // github webhook 설정 
+  const [repositoryUrl, setRepositoryUrl] = useState<string>("");
 
   // 프로젝트 목록 컴포넌트 반환
   return (
@@ -469,6 +480,31 @@ export default function ProjectList() {
                     placeholder="프로젝트 설명을 입력하세요"
                   />
                 </div>
+
+                
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2 ">
+                    프로젝트 태그 
+                  </label>
+                  <input
+                    type="text"
+                    value={newProject.tag}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // 영어(대소문자)와 공백만 허용
+                      if (/^[a-zA-Z\s]*$/.test(value)) {
+                        setNewProject({
+                          ...newProject,
+                          tag: value,
+                        });
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="태그를 입력하세요(영어만 입력 가능)."
+                  />
+                </div>
+
+                <GitHubConnector setRepositoryUrl={setRepositoryUrl} />
               </div>
 
               <div className="flex gap-3 mt-6">
