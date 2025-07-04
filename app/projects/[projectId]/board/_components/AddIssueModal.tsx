@@ -77,6 +77,7 @@ interface IssueFormData {
     startDate: Date | undefined;
     dueDate: Date | undefined;
     position: number;
+    tag: string;
 }
 
 interface AddIssueModalProps {
@@ -89,7 +90,7 @@ interface AddIssueModalProps {
     current_user: any;
 }
 
-export default function  AddIssueModal({
+export default function AddIssueModal({
     open,
     onOpenChange,
     selectedColumn,
@@ -110,11 +111,12 @@ export default function  AddIssueModal({
         startDate: undefined,
         dueDate: undefined,
         position: taskCount || 0,
+        tag: "",
     });
 
     const [projectMembers, setProjectMembers] = useState<User[]>([]);
-  const [current_member, setCurrent_member] = useState<any | null>(null);
-  
+    const [current_member, setCurrent_member] = useState<any | null>(null);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -134,6 +136,8 @@ export default function  AddIssueModal({
             return;
         }
 
+        formData.tag = projectTag;
+
         // createTask에 formData 전체를 넘김 (KanbanBoard에서 서버에 POST 후 fetchLatestTasks 실행)
         createTask(formData);
 
@@ -149,6 +153,7 @@ export default function  AddIssueModal({
             startDate: undefined,
             dueDate: undefined,
             position: 0,
+            tag: "",
         });
         onOpenChange(false);
 
@@ -175,23 +180,50 @@ export default function  AddIssueModal({
         );
         const data = await response.json();
         if (response.ok) {
-          setProjectMembers(data);
-          
+            setProjectMembers(data);
         } else {
             console.error("Failed to fetch project members:", data);
         }
     };
 
+    const [projectTag, setProjectTag] = useState<string>("");
+    const getProjectTag = async (projectId: string) => {
+        const response = await fetch(
+            `${getApiUrl()}/projects/${projectId}/tag`,
+            {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
+            }
+        );
+        const data = await response.json();
+        if (response.ok) {
+            setProjectTag(data.issue_tag);
+        } else {
+            console.error("Failed to fetch project tag:", data);
+        }
+    };
+
     useEffect(() => {
-      getProjectMembers(projectId);
-      console.log("current_user", current_user);
+        getProjectMembers(projectId);
+        getProjectTag(projectId);
+        console.log("current_user", current_user);
     }, []);
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>새 이슈 추가</DialogTitle>
+                    <div className="flex items-center justify-between">
+                        <DialogTitle>새 이슈 추가</DialogTitle>
+                        {projectTag && (
+                            <span className="ml-4 px-3 py-1 rounded-full bg-purple-200 text-purple-800 text-sm font-semibold mr-4">
+                                {projectTag}
+                            </span>
+                        )}
+                    </div>
                     <DialogDescription>
                         새로운 이슈를 등록합니다. 필수 항목을 모두 입력해주세요.
                     </DialogDescription>
@@ -311,22 +343,21 @@ export default function  AddIssueModal({
                             <div className="space-y-2">
                                 <Label>보고자</Label>
                                 <Select
-                                    
                                     onValueChange={(value) =>
                                         handleInputChange("reporterId", value)
                                     }
-                                    defaultValue={current_user.id|| ""}
+                                    defaultValue={current_user.id || ""}
                                 >
                                     <SelectTrigger>
                                         <SelectValue placeholder="보고자 선택" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {projectMembers.map((user) => ( 
+                                        {projectMembers.map((user) => (
                                             <SelectItem
                                                 key={user.id}
                                                 value={user.id.toString()}
                                             >
-                                                {user.display_name} 
+                                                {user.display_name}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
