@@ -27,7 +27,9 @@ export default async function Page({
         <div className="min-h-screen p-5">
             
             <div className="text-slate-600 mt-2">
+
                 <KanbanBoard  projectId={projectId}  />
+
                 {/* <Board /> */}
             </div>
         </div>
