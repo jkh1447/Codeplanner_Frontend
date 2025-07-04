@@ -43,7 +43,6 @@ export default function ProjectList() {
                 // 데이터가 없거나 빈 배열인 경우 처리
         if (!data || !Array.isArray(data) || data.length === 0) {
           console.log("백엔드에서 데이터가 없습니다.");
-          alert("백엔드에서 데이터가 없습니다.");
           return;
         }
 
@@ -216,7 +215,8 @@ export default function ProjectList() {
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             <button
               onClick={() => setShowCreateModal(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
+              className="text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
+              style={{ backgroundColor: "#64748b" }}
             >
               <svg
                 className="w-5 h-5"
@@ -480,8 +480,8 @@ export default function ProjectList() {
                 </button>
                 <button
                   onClick={handleCreateProject}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
+                  className="flex-1 px-4 py-2 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  style={{ backgroundColor: "#64748b" }}>
                   생성
                 </button>
               </div>

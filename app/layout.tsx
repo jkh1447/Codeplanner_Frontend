@@ -15,7 +15,11 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="ko">
+      <head>
+        {/* 파비콘 설정 */}
+        <link rel="icon" href="/CodePlannerIconPAV.png" type="image/png" />
+      </head>
       <body suppressHydrationWarning={true}>{children}</body>
     </html>
   )
