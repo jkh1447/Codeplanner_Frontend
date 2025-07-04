@@ -17,6 +17,30 @@ interface Project {
   people: number;
 }
 
+async function createRepoOnGitHub({
+  repoName,
+  description,
+  isPrivate
+}: {
+  repoName: string;
+  description: string;
+  isPrivate: boolean;
+}): Promise<string> {
+  const res = await fetch(`${getApiUrl()}/github/create-repo`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ repoName, description, isPrivate })
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    let msg = text;
+    try { msg = JSON.parse(text).message; } catch { }
+    throw new Error(`GitHub 저장소 생성 실패: ${msg}`);
+  }
+  const { repositoryUrl } = await res.json();
+  return repositoryUrl;
+}
 // 프로젝트 목록 컴포넌트
 export default function ProjectList() {
     const [projects, setProjects] = useState<Project[]>([]);
@@ -44,7 +68,6 @@ export default function ProjectList() {
                 // 데이터가 없거나 빈 배열인 경우 처리
         if (!data || !Array.isArray(data) || data.length === 0) {
           console.log("백엔드에서 데이터가 없습니다.");
-          alert("백엔드에서 데이터가 없습니다.");
           return;
         }
 
@@ -83,6 +106,9 @@ export default function ProjectList() {
     description: "",
     repository_url: "",
     tag: "",
+    createRepo: false,
+    orgName: "",
+    isPrivate: false,
   });
 
   // 상태 관리 함수
@@ -132,6 +158,30 @@ export default function ProjectList() {
   // 프로젝트 생성 함수
   const handleCreateProject = async () => {
     if (newProject.name && newProject.dueDate) {
+      let finalRepositoryUrl = newProject.repository_url;
+      
+      // GitHub 저장소 생성이 필요한 경우
+      if (newProject.createRepo && newProject.name) {
+        try {
+          console.log("GitHub 저장소 생성 중...");
+          const repoName = newProject.name.replace(/\s+/g, '-').toLowerCase();
+          const repoDescription = newProject.description || `Project: ${newProject.name}`;
+          
+          const createdRepoUrl = await createRepoOnGitHub({
+            repoName,
+            description: repoDescription,
+            isPrivate: newProject.isPrivate
+          });
+          
+          finalRepositoryUrl = createdRepoUrl;
+          console.log("GitHub 저장소 생성 완료:", createdRepoUrl);
+        } catch (error) {
+          console.error("GitHub 저장소 생성 실패:", error);
+          alert(`GitHub 저장소 생성에 실패했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
+          return;
+        }
+      }
+
       const payload = {
         title: newProject.name,
         description: newProject.description,
@@ -139,8 +189,9 @@ export default function ProjectList() {
         project_people: 1, // 실제 인원 입력 구조 있으면 바꾸세요
         due_date: newProject.dueDate,
         tag: newProject.tag,
-        repository_url: repositoryUrl,
+        repository_url: finalRepositoryUrl,
       };
+      
       try {
         console.log("백엔드 서버에 프로젝트 생성 요청 중...");
         console.log("전송할 데이터:", payload);
@@ -180,6 +231,9 @@ export default function ProjectList() {
             description: "",
             tag: "",
             repository_url: "",
+            createRepo: false,
+            orgName: "",
+            isPrivate: false,
           });
           setShowCreateModal(false);
           alert("프로젝트가 성공적으로 생성되었습니다!");
@@ -202,6 +256,9 @@ export default function ProjectList() {
           description: "",
           tag: "",
           repository_url: "",
+          createRepo: false,
+          orgName: "",
+          isPrivate: false,
         });
         setShowCreateModal(false);
         alert("백엔드 서버가 실행되지 않았습니다.");
@@ -211,8 +268,7 @@ export default function ProjectList() {
     }
   };
 
-  // github webhook 설정 
-  const [repositoryUrl, setRepositoryUrl] = useState<string>("");
+
 
   // 프로젝트 목록 컴포넌트 반환
   return (
@@ -227,7 +283,8 @@ export default function ProjectList() {
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             <button
               onClick={() => setShowCreateModal(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
+              className="text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
+              style={{ backgroundColor: "#64748b" }}
             >
               <svg
                 className="w-5 h-5"
@@ -504,7 +561,12 @@ export default function ProjectList() {
                   />
                 </div>
 
-                <GitHubConnector setRepositoryUrl={setRepositoryUrl} />
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    GitHub 저장소
+                  </label>
+                  <GitHubConnector setRepositoryUrl={(url) => setNewProject({...newProject, repository_url: url})} />
+                </div>
               </div>
 
               <div className="flex gap-3 mt-6">
@@ -516,8 +578,8 @@ export default function ProjectList() {
                 </button>
                 <button
                   onClick={handleCreateProject}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
+                  className="flex-1 px-4 py-2 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  style={{ backgroundColor: "#64748b" }}>
                   생성
                 </button>
               </div>

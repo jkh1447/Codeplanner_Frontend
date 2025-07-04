@@ -61,7 +61,7 @@ export default function NeedEmailPage() {
             </p>
           </div>
           <div className="mt-4 text-center" onClick={handleResendEmail}>
-            <Button>인증 메일 다시 보내기</Button>
+            <Button className="bg-slate-500 hover:bg-slate-600">인증 메일 다시 보내기</Button>
           </div>
         </CardContent>
       </Card>
