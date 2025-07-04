@@ -17,6 +17,7 @@ export type Task = {
     start_date: string;
     due_date: string;
     position: number;
+    tag: string;
 };
 
 export type ColumnWithTasks = Column & {
