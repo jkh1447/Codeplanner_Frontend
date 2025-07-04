@@ -15,6 +15,7 @@ export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isEmailSent, setIsEmailSent] = useState(false)
   const [error, setError] = useState("")
+  const [isEmailFocused, setIsEmailFocused] = useState(false);
 
   const emailInputRef = useRef<HTMLInputElement>(null)
 
@@ -120,14 +121,18 @@ export default function ForgotPasswordPage() {
                       setEmail(e.target.value)
                       if (error) validateEmail(e.target.value)
                     }}
-                    onBlur={(e) => validateEmail(e.target.value)}
+                    onFocus={() => setIsEmailFocused(true)}
+                    onBlur={(e) => {
+                      setIsEmailFocused(false);
+                      validateEmail(e.target.value);
+                    }}
                     placeholder=" "
                     required
                   />
                   <Label
                     htmlFor="email"
                     className={`absolute left-10 transition-all duration-300 pointer-events-none ${
-                      email || document.activeElement?.id === "email"
+                      email || isEmailFocused
                         ? "top-1 text-xs text-[#64748b] font-medium"
                         : "top-1/2 -translate-y-1/2 text-gray-500"
                     }`}
