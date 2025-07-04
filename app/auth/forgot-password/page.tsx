@@ -17,6 +17,7 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState("")
   const [isEmailFocused, setIsEmailFocused] = useState(false);
 
+
   const emailInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -126,6 +127,7 @@ export default function ForgotPasswordPage() {
                       setIsEmailFocused(false);
                       validateEmail(e.target.value);
                     }}
+
                     placeholder=" "
                     required
                   />
