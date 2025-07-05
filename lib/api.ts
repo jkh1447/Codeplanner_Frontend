@@ -49,7 +49,10 @@ export const checkBackendHealth = async (): Promise<boolean> => {
   try {
     // 환경변수에서 직접 URL 구성하여 중복 방지
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-    const healthUrl = `${baseUrl}/api/health`;
+    
+    // /api가 이미 포함되어 있으면 제거하고 다시 추가
+    const cleanBaseUrl = baseUrl.replace(/\/api$/, '');
+    const healthUrl = `${cleanBaseUrl}/api/health`;
     
     const response = await fetch(healthUrl, {
       method: 'GET',
