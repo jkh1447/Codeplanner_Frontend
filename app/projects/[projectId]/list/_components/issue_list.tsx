@@ -243,6 +243,7 @@ export default function IssueList() {
             onOpenChange={setIsModalOpen}
             projectId={projectId}
             createTask={createTask}
+            
           />
         )}
       </main>

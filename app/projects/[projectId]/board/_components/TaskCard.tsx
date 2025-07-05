@@ -60,13 +60,19 @@ function TaskCard({ task, deleteTask, projectId }: Props) {
                 onMouseLeave={() => setMouseIsOver(false)}
                 onClick={() => setShowDrawer(true)}
             >
-                <div className="flex items-center justify-between mb-1">
-                    <span className="font-semibold text-base text-gray-800 truncate max-w-[70%] break-words whitespace-pre-line">
+                <div className="flex flex-col h-full min-h-[120px] relative">
+                    <span
+                        className="font-semibold text-base text-gray-800 break-words whitespace-pre-line block"
+                        style={{ wordBreak: "break-all" }}
+                    >
                         {task.title}
-                        <span className="ml-4 px-3 py-1 rounded-full bg-purple-200 text-purple-800 text-sm font-semibold mr-4">
+                    </span>
+                    <div className="flex-1" />
+                    <div className="flex items-end">
+                        <span className="px-3 py-1 rounded-full bg-purple-200 text-purple-800 text-sm font-semibold">
                             {task.tag}
                         </span>
-                    </span>
+                    </div>
                     {mouseIsOver && (
                         <button
                             onClick={(e) => {
