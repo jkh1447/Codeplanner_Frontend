@@ -5,6 +5,7 @@ import { Bell } from "lucide-react";
 import { useState } from "react";
 import { getApiUrl } from "@/lib/api";
 import { Alert, AlertDescription } from "./ui/alert";
+import HealthCheck from "./health-check";
 
 // 헤더 컴포넌트
 export default function Header() {
@@ -56,6 +57,9 @@ export default function Header() {
             </span>
           </div>
           <div className="flex items-center gap-3">
+            {/* 헬스체크 */}
+            <HealthCheck />
+            
             {/* 알림 */}
             <div className="relative group">
               <button className="p-2 text-slate-600 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors relative">

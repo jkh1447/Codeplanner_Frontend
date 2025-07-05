@@ -42,4 +42,27 @@ export const isProduction = () => {
 
 export const isDevelopment = () => {
   return process.env.NEXT_PUBLIC_ENV === 'development';
+};
+
+// 백엔드 서버 헬스체크 함수
+export const checkBackendHealth = async (): Promise<boolean> => {
+  try {
+    const response = await fetch(`${getApiUrl()}/api/health`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (response.ok) {
+      console.log('✅ 백엔드 서버 정상 동작');
+      return true;
+    } else {
+      console.error('❌ 백엔드 서버 응답 오류:', response.status);
+      return false;
+    }
+  } catch (error) {
+    console.error('❌ 백엔드 서버 연결 실패:', error);
+    return false;
+  }
 }; 
