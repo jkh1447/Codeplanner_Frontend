@@ -47,7 +47,11 @@ export const isDevelopment = () => {
 // 백엔드 서버 헬스체크 함수
 export const checkBackendHealth = async (): Promise<boolean> => {
   try {
-    const response = await fetch(`${getApiUrl()}/health`, {
+    // 환경변수에서 직접 URL 구성하여 중복 방지
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    const healthUrl = `${baseUrl}/api/health`;
+    
+    const response = await fetch(healthUrl, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
