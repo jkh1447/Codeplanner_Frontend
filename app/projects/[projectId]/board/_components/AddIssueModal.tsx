@@ -157,7 +157,7 @@ export default function AddIssueModal({
         });
         onOpenChange(false);
 
-        alert("이슈가 성공적으로 등록되었습니다!");
+        // alert("이슈가 성공적으로 등록되었습니다!");삭제 0705진혁 github 브랜치 생성 알림 추가에 포함함
     };
 
     const handleInputChange = (field: keyof IssueFormData, value: any) => {

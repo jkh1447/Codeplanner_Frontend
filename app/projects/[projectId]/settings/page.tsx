@@ -332,7 +332,7 @@ export default function SettingsPage() {
                             )}
                             
                             <div className="space-y-2 max-h-48 overflow-y-auto">
-                                {members.slice(0, 3).map(member => (
+                                {members.map(member => (
                                     <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
                                         <div>
                                             <p className="font-medium">{member.display_name}</p>

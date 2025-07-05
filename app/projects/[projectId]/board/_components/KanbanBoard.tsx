@@ -287,12 +287,23 @@ function KanbanBoard({
             body: JSON.stringify(taskData),
             credentials: "include",
         })
-            .then((res) => {
+            .then(async (res) => {
                 if (!res.ok) throw new Error("Failed to add issue");
+                const result = await res.json();
                 fetchLatestTasks();
+                
+                // 브랜치 생성 결과 알림
+                if (result.branchName) {
+                    alert(`이슈가 성공적으로 등록되었습니다!\n\n이슈 제목을 기반으로 GitHub 브랜치가 자동으로 생성되었습니다.\n브랜치 이름: ${result.branchName}`);
+                } else if (result.branchError) {
+                    alert(`이슈가 성공적으로 등록되었습니다!\n\n브랜치 생성에 실패했습니다:\n${result.branchError}`);
+                } else {
+                    alert(`이슈가 성공적으로 등록되었습니다!\n\n브랜치 생성에 실패했습니다. (저장소 URL이 설정되지 않았거나 GitHub 연결에 문제가 있을 수 있습니다.)`);
+                }
             })
             .catch((err) => {
                 console.error("Error adding issue:", err);
+                alert("이슈 생성에 실패했습니다.");
             });
     }
 
