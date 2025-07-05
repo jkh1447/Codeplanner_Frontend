@@ -17,7 +17,11 @@ import { getApiUrl } from "@/lib/api";
 type ConnectionStatus = "idle" | "loading" | "success" | "error";
 type ConnectionMode = "connect" | "create";
 
-export default function GitHubConnector({ setRepositoryUrl }: { setRepositoryUrl: (repositoryUrl: string) => void }) {
+export default function GitHubConnector({
+    setRepositoryUrl,
+}: {
+    setRepositoryUrl: (repositoryUrl: string) => void;
+}) {
     const [repoUrl, setRepoUrl] = useState("");
     const [status, setStatus] = useState<ConnectionStatus>("idle");
     const [errorMessage, setErrorMessage] = useState("");
@@ -46,20 +50,25 @@ export default function GitHubConnector({ setRepositoryUrl }: { setRepositoryUrl
             setStatus("loading");
             setErrorMessage("");
 
-            try {
-                const encodedRepoUrl = encodeURIComponent(repoUrl);
-                const response = await fetch(
-                    `${getApiUrl()}/github/connect/${encodedRepoUrl}`,
-                    {
-                        method: "GET",
-                        credentials: "include",
-                    }
-                );
-                if (!response.ok) {
-                    throw new Error("Failed to connect to GitHub");
-                }
-                const data = await response.json();
+        try {
+            // 실제 연결 로직을 시뮬레이션 (2-3초 대기)
+            const match = repoUrl.match(
+                /^https?:\/\/github\.com\/([^\/]+)\/([^\/]+?)(?:\.git)?\/?$/i
+            );
+            const [, owner, repo] = match || [];
 
+            const response = await fetch(
+                `${getApiUrl()}/github/connect/${owner}/${repo}`,
+                {
+                    method: "GET",
+                    credentials: "include",
+                }
+            );
+            if (!response.ok) {
+                throw new Error("Failed to connect to GitHub");
+            }
+            const data = await response.json();
+            console.log("data", data);
                 // 성공적으로 연결됨
                 setStatus("success");
                 setRepositoryUrl(repoUrl);
