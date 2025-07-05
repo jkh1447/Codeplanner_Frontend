@@ -52,9 +52,13 @@ export default function GitHubConnector({
 
         try {
             // 실제 연결 로직을 시뮬레이션 (2-3초 대기)
-            const encodedRepoUrl = encodeURIComponent(repoUrl);
+            const match = repoUrl.match(
+                /^https?:\/\/github\.com\/([^\/]+)\/([^\/]+?)(?:\.git)?\/?$/i
+            );
+            const [, owner, repo] = match || [];
+
             const response = await fetch(
-                `${getApiUrl()}/github/connect/${encodedRepoUrl}`,
+                `${getApiUrl()}/github/connect/${owner}/${repo}`,
                 {
                     method: "GET",
                     credentials: "include",
@@ -64,7 +68,7 @@ export default function GitHubConnector({
                 throw new Error("Failed to connect to GitHub");
             }
             const data = await response.json();
-
+            console.log("data", data);
                 // 성공적으로 연결됨
                 setStatus("success");
                 setRepositoryUrl(repoUrl);
