@@ -56,7 +56,6 @@ export default function GitHubConnector({
                 /^https?:\/\/github\.com\/([^\/]+)\/([^\/]+?)(?:\.git)?\/?$/i
             );
             const [, owner, repo] = match || [];
-
             const response = await fetch(
                 `${getApiUrl()}/github/connect/${owner}/${repo}`,
                 {
@@ -88,7 +87,7 @@ export default function GitHubConnector({
             setErrorMessage("");
 
             try {
-                const response = await fetch(`${getApiUrl()}/github/create-repo`, {
+                const response = await fetch(`${getApiUrl()}/api/github/create-repo`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     credentials: "include",
