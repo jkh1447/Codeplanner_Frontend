@@ -47,7 +47,7 @@ export const isDevelopment = () => {
 // 백엔드 서버 헬스체크 함수
 export const checkBackendHealth = async (): Promise<boolean> => {
   try {
-    const response = await fetch(`${getApiUrl()}/health`, {
+    const response = await fetch(`${getApiUrl()}/api/health`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
