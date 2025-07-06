@@ -55,6 +55,7 @@ function KanbanBoard({
     const [project_title_name, setProject_title_name] = useState<string>("");
     const allTasks = useRef<Task[]>([]);
 
+    // 드래그 상태 관리 변수
     const [activeColumn, setActiveColumn] = useState<Column | null>(null);
     const [activeTask, setActiveTask] = useState<Task | null>(null);
     const sensors = useSensors(
