@@ -122,6 +122,7 @@ function KanbanBoard({
     
 
     // 기존 onDragOver의 setTasks 로직을 함수로 분리
+    // activeId: 
     const moveTask = (activeId: Id, overId: Id, overType: string) => {
         setTasks((tasks) => {
             const activeIndex = tasks.findIndex((t) => t.id === activeId);
