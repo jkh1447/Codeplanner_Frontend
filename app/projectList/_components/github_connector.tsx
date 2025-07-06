@@ -47,6 +47,7 @@ export default function GitHubConnector({ setRepositoryUrl }: { setRepositoryUrl
     const [repoUrl, setRepoUrl] = useState("");
     const [status, setStatus] = useState<ConnectionStatus>("idle");
     const [errorMessage, setErrorMessage] = useState("");
+    const [successMessage, setSuccessMessage] = useState("");
     const [mode, setMode] = useState<ConnectionMode>("connect");
     const [newRepoName, setNewRepoName] = useState("");
     const [newRepoDescription, setNewRepoDescription] = useState("");
@@ -58,6 +59,7 @@ export default function GitHubConnector({ setRepositoryUrl }: { setRepositoryUrl
     const [showHelp, setShowHelp] = useState(false);
     const [helpInfo, setHelpInfo] = useState<HelpInfo | null>(null);
     const [manualOrgName, setManualOrgName] = useState("");
+    const [connecting, setConnecting] = useState(false);
 
     // 조직 목록 가져오기
     const fetchOrganizations = async () => {
@@ -214,7 +216,8 @@ export default function GitHubConnector({ setRepositoryUrl }: { setRepositoryUrl
 
                 const { repositoryUrl } = await response.json();
                 setStatus("success");
-                setRepositoryUrl(repositoryUrl);
+                // 생성된 저장소 URL을 상태에 저장하여 나중에 연결할 때 사용
+                setRepoUrl(repositoryUrl);
             } catch (error) {
                 setStatus("error");
                 setErrorMessage(error instanceof Error ? error.message : "저장소 생성 중 오류가 발생했습니다.");
@@ -229,10 +232,12 @@ export default function GitHubConnector({ setRepositoryUrl }: { setRepositoryUrl
         setNewRepoDescription("");
         setIsPrivate(false);
         setErrorMessage("");
+        setSuccessMessage("");
         setSelectedOrg("");
         setShowHelp(false);
         setHelpInfo(null);
         setManualOrgName("");
+        setConnecting(false);
     };
 
     const getButtonContent = () => {
@@ -600,6 +605,13 @@ export default function GitHubConnector({ setRepositoryUrl }: { setRepositoryUrl
                     </p>
                 )}
 
+                {successMessage && (
+                    <p className="text-sm text-green-600 flex items-center gap-1">
+                        <Check className="w-3 h-3" />
+                        {successMessage}
+                    </p>
+                )}
+
                 <div className="flex gap-2">
                     <Button
                         onClick={
@@ -612,7 +624,65 @@ export default function GitHubConnector({ setRepositoryUrl }: { setRepositoryUrl
                         {getButtonContent()}
                     </Button>
 
-                    {status === "success" && (
+                    {status === "success" && mode === "create" && (
+                        <Button
+                            onClick={async () => {
+                                try {
+                                    // repoUrl이 설정되어 있는지 확인
+                                    if (!repoUrl) {
+                                        setErrorMessage("저장소 URL이 설정되지 않았습니다. 다시 시도해주세요.");
+                                        return;
+                                    }
+                                    
+                                    setConnecting(true);
+                                    setErrorMessage("");
+                                    setSuccessMessage("");
+                                    
+                                    // 저장된 repoUrl을 사용하여 연결
+                                    const encodedRepoUrl = encodeURIComponent(repoUrl);
+                                    const response = await fetch(
+                                        `${getApiUrl()}/github/connect/${encodedRepoUrl}`,
+                                        {
+                                            method: "GET",
+                                            credentials: "include",
+                                        }
+                                    );
+                                    if (!response.ok) {
+                                        throw new Error("Failed to connect to GitHub");
+                                    }
+                                    const data = await response.json();
+                                    
+                                    // 성공적으로 연결됨
+                                    setRepositoryUrl(repoUrl);
+                                    
+                                    // 성공 메시지 표시
+                                    setSuccessMessage("저장소가 성공적으로 연결되었습니다!");
+                                } catch (error) {
+                                    setStatus("error");
+                                    setErrorMessage("연결 중 오류가 발생했습니다. 다시 시도해주세요.");
+                                } finally {
+                                    setConnecting(false);
+                                }
+                            }}
+                            disabled={connecting}
+                            variant="outline"
+                            className="flex items-center gap-2"
+                        >
+                            {connecting ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    연결 중...
+                                </>
+                            ) : (
+                                <>
+                                    <Github className="w-4 h-4" />
+                                    연결하기
+                                </>
+                            )}
+                        </Button>
+                    )}
+
+                    {status === "success" && mode === "connect" && (
                         <Button
                             onClick={handleReset}
                             variant="outline"
@@ -638,6 +708,11 @@ export default function GitHubConnector({ setRepositoryUrl }: { setRepositoryUrl
                                   }`
                             }
                         </p>
+                        {mode === "create" && (
+                            <p className="text-sm text-green-700 mt-2">
+                                오른쪽의 "연결하기" 버튼을 클릭하여 프로젝트에 연결하세요.
+                            </p>
+                        )}
                     </div>
                 )}
             </CardContent>
