@@ -62,21 +62,56 @@ function TreeNode({
   depth?: number;
 }) {
   const [open, setOpen] = React.useState(depth === 0); // 최상위는 기본 open
+  
+  // 파일 확장자에 따른 아이콘 결정
+  const getFileIcon = (fileName: string) => {
+    const ext = fileName.split('.').pop()?.toLowerCase();
+    switch (ext) {
+      case 'js':
+      case 'jsx':
+      case 'ts':
+      case 'tsx':
+        return '📄';
+      case 'json':
+        return '📋';
+      case 'md':
+        return '📝';
+      case 'yml':
+      case 'yaml':
+        return '⚙️';
+      case 'gitignore':
+        return '🚫';
+      case 'lock':
+        return '🔒';
+      default:
+        return '📄';
+    }
+  };
+  
   if (node.__type === "blob") {
-    return <div style={{ marginLeft: depth * 16 }}>📄 {name}</div>;
+    return <div style={{ marginLeft: depth * 16 }}>{getFileIcon(name)} {name}</div>;
   }
+  
   // 폴더(tree)
+  const folderName = name === "." ? "프로젝트 루트" : name;
   return (
     <div style={{ marginLeft: depth * 16 }}>
       <div
         style={{ cursor: "pointer", fontWeight: "bold" }}
         onClick={() => setOpen((o) => !o)}
       >
-        {open ? "📂" : "📁"} {name}
+        {open ? "📂" : "📁"} {folderName}
       </div>
       {open &&
         Object.entries(node.__children)
-          .sort(([a], [b]) => a.localeCompare(b))
+          .sort(([a], [b]) => {
+            // 폴더를 먼저, 그 다음 파일을 알파벳 순으로 정렬
+            const aIsFolder = node.__children[a].__type === "tree";
+            const bIsFolder = node.__children[b].__type === "tree";
+            if (aIsFolder && !bIsFolder) return -1;
+            if (!aIsFolder && bIsFolder) return 1;
+            return a.localeCompare(b);
+          })
           .map(([childName, childNode]) => (
             <TreeNode
               key={childName}
@@ -463,17 +498,10 @@ export default function CodePage() {
           ) : tree && tree.length > 0 ? (
             <div className="space-y-2 text-sm">
               <TreeNode
-                name="src"
+                name="."
                 node={{
                   __type: "tree",
-                  __children: buildTree(
-                    tree
-                      .filter((item) => item.path.startsWith("src/"))
-                      .map((item) => ({
-                        ...item,
-                        path: item.path.replace(/^src\//, ""),
-                      }))
-                  ),
+                  __children: buildTree(tree),
                 }}
               />
             </div>
