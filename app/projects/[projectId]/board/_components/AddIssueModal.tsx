@@ -33,6 +33,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { Id, User } from "@/components/type";
 import { getApiUrl } from "@/lib/api";
@@ -78,6 +79,7 @@ interface IssueFormData {
     dueDate: Date | undefined;
     position: number;
     tag: string;
+    createBranch: boolean;
 }
 
 interface AddIssueModalProps {
@@ -112,6 +114,7 @@ export default function AddIssueModal({
         dueDate: undefined,
         position: taskCount || 0,
         tag: "",
+        createBranch: true, // 기본값으로 브랜치 생성 활성화
     });
 
     const [projectMembers, setProjectMembers] = useState<User[]>([]);
@@ -154,10 +157,11 @@ export default function AddIssueModal({
             dueDate: undefined,
             position: 0,
             tag: "",
+            createBranch: true,
         });
         onOpenChange(false);
 
-        alert("이슈가 성공적으로 등록되었습니다!");
+        // alert("이슈가 성공적으로 등록되었습니다!");삭제 0705진혁 github 브랜치 생성 알림 추가에 포함함
     };
 
     const handleInputChange = (field: keyof IssueFormData, value: any) => {
@@ -459,6 +463,27 @@ export default function AddIssueModal({
                                 </Popover>
                             </div>
                         </div>
+
+                        {/* 브랜치 자동 생성 옵션 */}
+                        <div className="flex items-center space-x-2">
+                            <Checkbox
+                                id="createBranch"
+                                checked={formData.createBranch}
+                                onChange={(e) =>
+                                    handleInputChange("createBranch", e.target.checked)
+                                }
+                            />
+                            <Label htmlFor="createBranch" className="text-sm font-normal">
+                                이슈 제목으로 GitHub 브랜치 자동 생성
+                            </Label>
+                        </div>
+                        {formData.createBranch && (
+                            <div className="text-xs text-muted-foreground bg-blue-50 p-3 rounded-md">
+                                <p>• 이슈 제목을 기반으로 <code>feature/이슈제목</code> 형태의 브랜치가 생성됩니다</p>
+                                <p>• 프로젝트에 GitHub 저장소가 연결되어 있어야 합니다</p>
+                                <p>• 브랜치 생성에 실패해도 이슈는 정상적으로 생성됩니다</p>
+                            </div>
+                        )}
                     </div>
 
                     <DialogFooter className="gap-2">
