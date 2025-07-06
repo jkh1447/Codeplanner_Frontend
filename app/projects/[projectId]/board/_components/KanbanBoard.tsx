@@ -55,6 +55,7 @@ function KanbanBoard({
     const [project_title_name, setProject_title_name] = useState<string>("");
     const allTasks = useRef<Task[]>([]);
 
+    // 드래그 상태 관리 변수
     const [activeColumn, setActiveColumn] = useState<Column | null>(null);
     const [activeTask, setActiveTask] = useState<Task | null>(null);
     const sensors = useSensors(
@@ -121,6 +122,7 @@ function KanbanBoard({
     
 
     // 기존 onDragOver의 setTasks 로직을 함수로 분리
+    // activeId: 
     const moveTask = (activeId: Id, overId: Id, overType: string) => {
         setTasks((tasks) => {
             const activeIndex = tasks.findIndex((t) => t.id === activeId);

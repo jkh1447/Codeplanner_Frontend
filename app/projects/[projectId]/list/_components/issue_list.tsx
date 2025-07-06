@@ -267,7 +267,6 @@ export default function IssueList() {
             projectId={projectId}
             createTask={createTask}
             current_user={null}
-
           />
         )}
       </main>
