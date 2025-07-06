@@ -8,13 +8,14 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import CreatePullRequestModal from "./create_pull_request_modal";
+import PullRequestModal from "./pull_request_modal";
 
 export default function PullRequest() {
   const { projectId } = useParams();
   const [pullRequests, setPullRequests] = useState<any[]>([]);
   const [isPullRequestCreateModalOpen, setIsPullRequestCreateModalOpen] =
     useState(false);
-
+  const [isPullRequestModalOpen, setIsPullRequestModalOpen] = useState(false);
   useEffect(() => {
     const fetchPullRequests = async () => {
       const projectRes = await fetch(`${getApiUrl()}/projects/${projectId}`, {
@@ -48,6 +49,7 @@ export default function PullRequest() {
       }));
       setPullRequests(pullRequestData);
     };
+    console.log("실행!");
     fetchPullRequests();
   }, [projectId]);
 
@@ -86,7 +88,14 @@ export default function PullRequest() {
                 <div className="flex items-center gap-3">
                   <Badge variant="default">{pullRequest.state}</Badge>
                   <span className="font-medium">
-                    <a href="">{pullRequest.title}</a>
+                    <a onClick={() => setIsPullRequestModalOpen(true)}>
+                      {pullRequest.title}
+                    </a>
+                    <PullRequestModal
+                      open={isPullRequestModalOpen}
+                      onOpenChange={setIsPullRequestModalOpen}
+                      number={pullRequest.number}
+                    />
                   </span>
                 </div>
                 <div className="text-sm text-muted-foreground">
