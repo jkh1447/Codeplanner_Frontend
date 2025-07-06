@@ -344,6 +344,7 @@ export default function AddIssueModal({
                                 </Select>
                             </div>
 
+                            
                             <div className="space-y-2">
                                 <Label>보고자</Label>
                                 <Select

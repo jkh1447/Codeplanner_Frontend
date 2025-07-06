@@ -208,30 +208,30 @@ export default function LoginPage() {
               </div>
               <CardTitle className="text-2xl font-bold text-center text-gray-900">로그인</CardTitle>
               <p className="text-center text-gray-600">계정에 로그인하여 프로젝트를 관리하세요</p>
-            </CardHeader>
+        </CardHeader>
             <CardContent className="space-y-6">
-              {showSuccessAlert && (
-                <Alert className="mb-4 border-green-200 bg-green-50">
-                  <AlertDescription className="text-green-800">
-                    회원가입이 완료되었습니다! 로그인해주세요.
-                  </AlertDescription>
-                </Alert>
-              )}
-              {showResendAlert && (
-                <Alert className="mb-4 border-green-200 bg-green-50">
-                  <AlertDescription className="text-green-800">
-                    인증 메일이 다시 보내졌습니다! 인증 이후 로그인 해주세요.
-                  </AlertDescription>
-                </Alert>
-              )}
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
+          {showSuccessAlert && (
+            <Alert className="mb-4 border-green-200 bg-green-50">
+              <AlertDescription className="text-green-800">
+                회원가입이 완료되었습니다! 로그인해주세요.
+              </AlertDescription>
+            </Alert>
+          )}
+          {showResendAlert && (
+            <Alert className="mb-4 border-green-200 bg-green-50">
+              <AlertDescription className="text-green-800">
+                인증 메일이 다시 보내졌습니다! 인증 이후 로그인 해주세요.
+              </AlertDescription>
+            </Alert>
+          )}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 z-10" />
-                    <Input
+              <Input
                       ref={emailInputRef}
-                      id="email"
-                      type="email"
+                id="email"
+                type="email"
                       className={`pl-10 h-11 pt-6 pb-2 transition-all duration-300 peer ${
                         errors.email
                           ? "border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:shadow-lg focus:shadow-red-500/10"
@@ -248,8 +248,8 @@ export default function LoginPage() {
                         validateField("email", e.target.value);
                       }}
                       placeholder=" "
-                      required
-                    />
+                required
+              />
                     <Label
                       htmlFor="email"
                       className={`absolute left-10 transition-all duration-300 pointer-events-none ${
@@ -262,13 +262,13 @@ export default function LoginPage() {
                     </Label>
                   </div>
                   {errors.email && <p className="text-sm text-red-600">{errors.email}</p>}
-                </div>
+            </div>
 
-                <div className="space-y-2">
+            <div className="space-y-2">
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 z-10" />
-                    <Input
-                      id="password"
+              <Input
+                id="password"
                       type={showPassword ? "text" : "password"}
                       className={`pl-10 pr-10 h-11 pt-6 pb-2 transition-all duration-300 peer ${
                         errors.password
@@ -286,8 +286,8 @@ export default function LoginPage() {
                         validateField("password", e.target.value);
                       }}
                       placeholder=" "
-                      required
-                    />
+                required
+              />
                     <Label
                       htmlFor="password"
                       className={`absolute left-10 transition-all duration-300 pointer-events-none ${
@@ -328,13 +328,13 @@ export default function LoginPage() {
                   >
                     비밀번호 찾기
                   </Link>
-                </div>
+            </div>
 
-                <Button
-                  type="submit"
+            <Button
+              type="submit"
                   className="w-full h-11 bg-[#64748b] hover:bg-[#475569] text-white"
-                  disabled={isLoading}
-                >
+              disabled={isLoading}
+            >
                   {isLoading ? (
                     <div className="flex items-center">
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
@@ -346,20 +346,20 @@ export default function LoginPage() {
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </div>
                   )}
-                </Button>
+            </Button>
                 {loginError && (
                   <p className="text-sm text-red-600 text-center mt-2">{loginError}</p>
                 )}
-              </form>
+          </form>
 
               <div className="text-center">
                 <span className="text-gray-600">계정이 없으신가요? </span>
                 <Link href="/user/create" className="text-[#64748b] hover:text-[#475569] font-medium hover:underline">
-                  회원가입
+              회원가입
                 </Link>
-              </div>
-            </CardContent>
-          </Card>
+          </div>
+        </CardContent>
+      </Card>
         </div>
       </div>
     </div>
