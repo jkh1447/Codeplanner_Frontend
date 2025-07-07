@@ -42,3 +42,6 @@ logs/
 # 임시 파일
 .tmp/
 .temp/
+
+# sonar
+sonar-project.properties
