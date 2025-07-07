@@ -72,3 +72,35 @@ export type Project = {
   repository_url: string;
   status: "진행중" | "완료" | "대기중" | "보류";
 };
+
+
+
+export type Notification_issue = {
+  issueId: string;
+  issueTitle: string;
+  projectName: string;
+  projectId: string;
+  createdAt: string;
+};
+
+
+
+export type Issue_detail = {
+    id: Id;
+    projectId: Id;
+    title: string;
+    description?: string;
+    issueType: "bug" | "task" | "story";
+    status: "TODO" | "IN_PROGRESS" | "DONE";
+    assigneeId?: Id;
+    reporterId: Id;
+    startDate?: string;
+    dueDate?: string;
+};
+
+export type User_detail = {
+    id: string;
+    displayName: string;
+    
+};
+

@@ -235,7 +235,7 @@ export default function SideBar() {
                         return (
                             <a
                                 key={item.title}
-                                href={item.url}
+                                href={`/projects/${projectId}/${item.url}`}
                                 className={`flex items-center justify-between p-2 rounded-md transition-colors ${
                                     isActive
                                         ? "bg-accent text-accent-foreground font-medium"
