@@ -261,7 +261,6 @@ export default function ProjectList() {
           isPrivate: false,
         });
         setShowCreateModal(false);
-        alert("백엔드 서버가 실행되지 않았습니다.");
       }
     } else {
       alert("필수 필드를 모두 입력해주세요.");
