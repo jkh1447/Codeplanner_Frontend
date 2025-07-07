@@ -45,3 +45,4 @@ logs/
 
 # sonar
 sonar-project.properties
+.scannerwork
