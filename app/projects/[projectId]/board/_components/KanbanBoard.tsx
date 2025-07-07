@@ -23,15 +23,7 @@ import { Column, Id, Task } from "@/components/type";
 import { useDebouncedCallback } from "use-debounce";
 import { getApiUrl } from "@/lib/api";
 
-function KanbanBoard({
-    
-    projectId,
-    
-}: {
-    
-    projectId: string;
-    
-}) {
+function KanbanBoard({ projectId }: { projectId: string }) {
     const [columns, setColumns] = useState<Column[]>([
         {
             id: "TODO",
@@ -66,10 +58,6 @@ function KanbanBoard({
         })
     );
 
-    
-
-
-
     // 클라이언트에서만 렌더링되도록 설정
     useEffect(() => {
         setIsClient(true);
@@ -79,7 +67,7 @@ function KanbanBoard({
     const fetchLatestTasks = React.useCallback(async () => {
         try {
             const response = await fetch(
-                `${getApiUrl()}/projects/${projectId}/issues`, 
+                `${getApiUrl()}/projects/${projectId}/issues`,
                 {
                     method: "GET",
                     headers: {
@@ -92,16 +80,18 @@ function KanbanBoard({
                 const latestTasks = await response.json();
                 allTasks.current = latestTasks;
 
-                setTasks(latestTasks.map((issue: any) => ({
-                  ...issue,
-                  project_id: issue.projectId,
-                  assignee_id: issue.assigneeId,
-                  reporter_id: issue.reporterId,
-                  issue_type: issue.issueType,
-                  start_date: issue.startDate,
-                  due_date: issue.dueDate,
-                  tag: issue.tag,
-                })));
+                setTasks(
+                    latestTasks.map((issue: any) => ({
+                        ...issue,
+                        project_id: issue.projectId,
+                        assignee_id: issue.assigneeId,
+                        reporter_id: issue.reporterId,
+                        issue_type: issue.issueType,
+                        start_date: issue.startDate,
+                        due_date: issue.dueDate,
+                        tag: issue.tag,
+                    }))
+                );
             }
         } catch (error) {
             console.error("Error fetching latest tasks:", error);
@@ -114,29 +104,36 @@ function KanbanBoard({
             fetchLatestTasks();
             getCurrentUser();
             getProjectTitle();
-
         }
     }, [isClient, projectId, fetchLatestTasks]);
 
     // 초기 데이터 설정 (서버에서 가져온 데이터가 없을 때만)
-    
 
     // 기존 onDragOver의 setTasks 로직을 함수로 분리
-    // activeId: 
+    // activeId: 현재 드래그 중인 task의 id
+    // overId: 드래그 중인 task가 드롭될 위치의 id
+    // overType: 드롭될 위치의 타입 (Task 또는 Column)
     const moveTask = (activeId: Id, overId: Id, overType: string) => {
         setTasks((tasks) => {
+            // 현재 드래그 중인 task의 id가 tasks 배열에 있는지 확인하고 저장.
             const activeIndex = tasks.findIndex((t) => t.id === activeId);
+            // 없으면 task배열 그대로 반환
             if (activeIndex === -1) return tasks;
+            // 드롭될 위치의 타입이 "Task"인 경우, 드래그 중인 테스크가 속한 컬럼을 드롭될 위치의 컬럼의 status로 변경
             if (overType === "Task") {
+                // tasks배열 안에서 드롭될 위치에 있는 task의 인덱스 찾기   
                 const overIndex = tasks.findIndex((t) => t.id === overId);
+                // 없으면 task배열 그대로 반환
                 if (overIndex === -1) return tasks;
-                // status 변경
+                //  테스크 배열의 테스크 마다 반복하면서 현재 테스크의 인덱스와 드롭될 위치의 인덱스가 같으면 현재 테스크의 status를 드롭될 위치의 테스크의 status로 변경
+                // 그렇지 않으면 현재 테스크 그대로 반환
                 const updatedTasks = tasks.map((task, idx) =>
                     idx === activeIndex
                         ? { ...task, status: tasks[overIndex].status }
                         : task
                 );
                 return arrayMove(updatedTasks, activeIndex, overIndex);
+            // 테스크 위에 있지 않고 컬럼위에 있는 경우, 현재 테스크의 status를 드롭될 위치의 컬럼의 id로 변경
             } else if (overType === "Column") {
                 // status만 변경, 위치는 그대로
                 const updatedTasks = tasks.map((task, idx) =>
@@ -154,10 +151,11 @@ function KanbanBoard({
     const debouncedMoveTask = useDebouncedCallback(moveTask, 0);
 
     return (
-        <>  
-
+        <>
             <h6 className="text-sm text-slate-500 mb-2">프로젝트</h6>
-            <h1 className="text-2xl font-bold text-slate-800 mb-4">{project_title_name}</h1>
+            <h1 className="text-2xl font-bold text-slate-800 mb-4">
+                {project_title_name}
+            </h1>
             {/* 검색 기능 */}
             <div className="flex justify-start space-x-4">
                 <div className="pt-2 relative text-gray-600">
@@ -292,25 +290,31 @@ function KanbanBoard({
             .then(async (res) => {
                 if (!res.ok) throw new Error("Failed to add issue");
                 const result = await res.json();
-                console.log('이슈 생성 응답:', result);
-                console.log('taskData.createBranch:', taskData.createBranch);
+                console.log("이슈 생성 응답:", result);
+                console.log("taskData.createBranch:", taskData.createBranch);
                 fetchLatestTasks();
-                
+
                 // 브랜치 생성 결과 알림 (createBranch 옵션이 활성화된 경우에만)
                 if (taskData.createBranch !== false) {
-                    console.log('브랜치 생성 옵션 활성화됨');
-                    console.log('result.branchName:', result.branchName);
-                    console.log('result.branchError:', result.branchError);
-                    
+                    console.log("브랜치 생성 옵션 활성화됨");
+                    console.log("result.branchName:", result.branchName);
+                    console.log("result.branchError:", result.branchError);
+
                     if (result.branchName) {
-                        alert(`이슈가 성공적으로 등록되었습니다!\n\n이슈 제목을 기반으로 GitHub 브랜치가 자동으로 생성되었습니다.\n브랜치 이름: ${result.branchName}`);
+                        alert(
+                            `이슈가 성공적으로 등록되었습니다!\n\n이슈 제목을 기반으로 GitHub 브랜치가 자동으로 생성되었습니다.\n브랜치 이름: ${result.branchName}`
+                        );
                     } else if (result.branchError) {
-                        alert(`이슈가 성공적으로 등록되었습니다!\n\n브랜치 생성에 실패했습니다:\n${result.branchError}`);
+                        alert(
+                            `이슈가 성공적으로 등록되었습니다!\n\n브랜치 생성에 실패했습니다:\n${result.branchError}`
+                        );
                     } else {
-                        alert(`이슈가 성공적으로 등록되었습니다!\n\n브랜치 생성에 실패했습니다. (저장소 URL이 설정되지 않았거나 GitHub 연결에 문제가 있을 수 있습니다.)`);
+                        alert(
+                            `이슈가 성공적으로 등록되었습니다!\n\n브랜치 생성에 실패했습니다. (저장소 URL이 설정되지 않았거나 GitHub 연결에 문제가 있을 수 있습니다.)`
+                        );
                     }
                 } else {
-                    console.log('브랜치 생성 옵션 비활성화됨');
+                    console.log("브랜치 생성 옵션 비활성화됨");
                     alert("이슈가 성공적으로 등록되었습니다!");
                 }
             })
@@ -380,29 +384,39 @@ function KanbanBoard({
 
         const activeId = active.id;
         const overId = over.id;
-
+        // 드래그중인 요소가 테스크인지 확인
         const isActiveTask = active.data.current?.type === "Task";
+        // 드롭될 위치가 테스크인지 확인
         const isOverTask = over.data.current?.type === "Task";
+        // 드롭될 위치가 컬럼인지 확인
         const isOverAColumn = over.data.current?.type === "Column";
 
+        // 드래그중인 요소가 테스크이고 드롭될 위치가 테스크 또는 컬럼인 경우
         if (isActiveTask && (isOverTask || isOverAColumn)) {
             setTasks((tasks) => {
+                // 드래그중인 요소의 인덱스 찾기
                 const activeIndex = tasks.findIndex((t) => t.id === activeId);
                 let newTasks = [...tasks];
 
+                // 드롭될 위치가 테스크인 경우
                 if (isOverTask) {
+                    // 드롭될 위치의 인덱스 찾기
                     const overIndex = tasks.findIndex((t) => t.id === overId);
+                    // 드롭될 위치의 컬럼의 id 찾기
                     const targetColumnId = tasks[overIndex].status;
 
+                    // 같은 컬럼 내에서 순서 이동
                     if (tasks[activeIndex].status === targetColumnId) {
-                        // 같은 컬럼 내에서 순서 이동
                         newTasks = arrayMove(newTasks, activeIndex, overIndex);
                     } else {
-                        // 다른 컬럼으로 이동: 해당 컬럼의 마지막에 추가
+                        // 다른 컬럼으로 이동
+
+                        // 드래그 중인 테스크의 상태를 드롭될 위치의 컬럼의 id로 변경
                         const movedTask = {
                             ...newTasks[activeIndex],
                             status: targetColumnId,
                         };
+                        // newTasks 배열에서 activeIndex 부터 1개 제거
                         newTasks.splice(activeIndex, 1); // 기존 위치에서 제거
                         // 해당 컬럼의 마지막 인덱스 찾기
                         const lastIndex = newTasks.reduce(
@@ -517,23 +531,29 @@ function KanbanBoard({
     }
 
     async function getProjectTitle() {
-
         console.log("getProjectTitle");
 
-        const project_title = await fetch(`${getApiUrl()}/projects/${projectId}`, {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            credentials: "include",
-        });
-        if (!project_title.ok) {
-                console.log("status", project_title.status, project_title.statusText);
-                throw new Error("Failed to fetch project title");
+        const project_title = await fetch(
+            `${getApiUrl()}/projects/${projectId}`,
+            {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
             }
-            const project_title_data = await project_title.json();
-            const project_title_name = project_title_data.title;
-            setProject_title_name(project_title_name);
+        );
+        if (!project_title.ok) {
+            console.log(
+                "status",
+                project_title.status,
+                project_title.statusText
+            );
+            throw new Error("Failed to fetch project title");
+        }
+        const project_title_data = await project_title.json();
+        const project_title_name = project_title_data.title;
+        setProject_title_name(project_title_name);
     }
 }
 
