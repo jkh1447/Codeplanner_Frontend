@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Bot, Send, Loader2 } from "lucide-react";
 import { getApiUrl } from "@/lib/api";
 import { useParams } from "next/navigation";
+import AddIssueModal from "./ai-AddIssueModal";
+import { Task } from "@/components/type";
 
 interface GeneratedIssue {
   id: string;
@@ -17,11 +19,73 @@ interface GeneratedIssue {
   estimated_hours?: number;
 }
 
+
 export default function IssueGenerater() {
   const { projectId } = useParams();
   const [meetingNotes, setMeetingNotes] = useState("");
   const [generatedIssues, setGeneratedIssues] = useState<GeneratedIssue[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedColumn, setSelectedColumn] = useState("");
+  const [current_user, setCurrent_user] = useState<any>(null);
+
+
+  useEffect(() => {
+    async function getCurrentUser() {
+      const current_user = await fetch(`${getApiUrl()}/user/me`, {
+          method: "GET",
+          headers: {
+              "Content-Type": "application/json",
+          },
+          credentials: "include",
+      });
+      if (!current_user.ok) {
+          console.log(current_user);
+          throw new Error("Failed to fetch current user");
+      }
+      const current_user_data = await current_user.json();
+      setCurrent_user(current_user_data);
+  }
+  getCurrentUser();
+  }, []);
+
+  // 이슈 생성 함수
+  function createTask(taskData: any) {
+    fetch(`${getApiUrl()}/projects/${projectId}/issues/create`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(taskData),
+        credentials: "include",
+    })
+        .then(async (res) => {
+            if (!res.ok) throw new Error("Failed to add issue");
+            const result = await res.json();
+            console.log('이슈 생성 응답:', result);
+            console.log('taskData.createBranch:', taskData.createBranch);
+            
+            // 브랜치 생성 결과 알림 (createBranch 옵션이 활성화된 경우에만)
+            if (taskData.createBranch !== false) {
+                console.log('브랜치 생성 옵션 활성화됨');
+                console.log('result.branchName:', result.branchName);
+                console.log('result.branchError:', result.branchError);
+                
+                if (result.branchName) {
+                    alert(`이슈가 성공적으로 등록되었습니다!\n\n이슈 제목을 기반으로 GitHub 브랜치가 자동으로 생성되었습니다.\n브랜치 이름: ${result.branchName}`);
+                } else if (result.branchError) {
+                    alert(`이슈가 성공적으로 등록되었습니다!\n\n브랜치 생성에 실패했습니다:\n${result.branchError}`);
+                } else {
+                    alert(`이슈가 성공적으로 등록되었습니다!\n\n브랜치 생성에 실패했습니다. (저장소 URL이 설정되지 않았거나 GitHub 연결에 문제가 있을 수 있습니다.)`);
+                }
+            } else {
+                console.log('브랜치 생성 옵션 비활성화됨');
+                alert("이슈가 성공적으로 등록되었습니다!");
+            }
+        })
+        .catch((err) => {
+            console.error("Error adding issue:", err);
+            alert("이슈 생성에 실패했습니다.");
+        });
+  }
 
   const handleGenerateIssues = async () => {
     if (!meetingNotes.trim()) {
@@ -122,7 +186,31 @@ export default function IssueGenerater() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {generatedIssues.map((issue) => (
-                <Card key={issue.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                <Card key={issue.id} className="cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => setIsModalOpen(true)}>
+                  { isModalOpen && (
+                  <div onClick={(e) => e.stopPropagation()}>
+                  <AddIssueModal
+                    open={isModalOpen}
+                    onOpenChange={(open) => {
+                      setIsModalOpen(open);
+                      if (!open) {
+                        setSelectedColumn("");
+                      }
+                    }}
+                    selectedColumn={"TODO"}
+                    projectId={projectId as string}
+                    taskCount={0}
+                    createTask={createTask}
+                    current_user={current_user}
+                    title={issue.title}
+                    description={issue.description}
+                    issueType={"task"}
+                    status={"TODO"}
+                  />
+                  </div>
+                  )
+                  }
                   <CardHeader>
                     <CardTitle className="text-base">
                       {issue.title}
@@ -134,6 +222,7 @@ export default function IssueGenerater() {
                     </p>
                   </CardContent>
                 </Card>
+              
               ))}
             </div>
           </CardContent>

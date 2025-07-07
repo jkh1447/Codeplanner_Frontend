@@ -15,6 +15,7 @@ import {
     Kanban,
     TableOfContents,
     Code,
+    Bot
 } from "lucide-react";
 import Link from "next/link";
 import { getApiUrl } from "@/lib/api";
@@ -145,6 +146,12 @@ export default function SideBar() {
             icon: Code,
             url: "code",
         },
+        {
+            title: "AI 이슈 생성",
+            icon: Bot,
+            url: "issue-generater-ai",
+            highlight: true, // ← 추가
+          },
         {
             title: "설정",
             icon: Settings,

@@ -185,13 +185,6 @@ export default function GitHubConnector({ setRepositoryUrl }: { setRepositoryUrl
                     setStatus("error");
                     return;
                 }
-                // GitHub 조직 이름 형식 검증 (소문자, 하이픈, 언더스코어만 허용)
-                const orgNamePattern = /^[a-z0-9-]+$/;
-                if (!orgNamePattern.test(manualOrgName.trim())) {
-                    setErrorMessage("조직 이름은 소문자, 숫자, 하이픈(-)만 사용할 수 있습니다.");
-                    setStatus("error");
-                    return;
-                }
             }
 
             setStatus("loading");

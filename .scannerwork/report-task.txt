@@ -1,0 +1,6 @@
+projectKey=Cord_Planner_Frontend
+serverUrl=http://localhost:9000
+serverVersion=25.6.0.109173
+dashboardUrl=http://localhost:9000/dashboard?id=Cord_Planner_Frontend
+ceTaskId=fab755cf-586f-468e-b492-9c5504e0a260
+ceTaskUrl=http://localhost:9000/api/ce/task?id=fab755cf-586f-468e-b492-9c5504e0a260
