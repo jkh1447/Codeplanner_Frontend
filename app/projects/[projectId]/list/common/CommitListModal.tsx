@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { getApiUrl } from "@/lib/api";
 import GitCommitIcon from "@/components/icons/GitCommitIcon";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface Commit {
     id: string;
@@ -64,6 +65,14 @@ export default function CommitListModal({
     const [nextCursor, setNextCursor] = useState<string | null>(null);
     const [loadingMore, setLoadingMore] = useState(false);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
+    // 파일 모달 상태
+    const [fileModalOpen, setFileModalOpen] = useState(false);
+    const [fileList, setFileList] = useState<string[]>([]);
+    const [fileLoading, setFileLoading] = useState(false);
+    const [fileError, setFileError] = useState("");
+    const [selectedCommit, setSelectedCommit] = useState<{owner: string, repo: string, sha: string} | null>(null);
+    const [projectOwner, setProjectOwner] = useState("");
+    const [projectRepo, setProjectRepo] = useState("");
 
     // 초기 커밋 목록 불러오기
     useEffect(() => {
@@ -93,10 +102,31 @@ export default function CommitListModal({
             }
         };
 
+        // 프로젝트 owner/repo 정보 불러오기
+        const fetchProjectInfo = async () => {
+            try {
+                const response = await fetch(`${getApiUrl()}/projects/${projectId}`, { credentials: "include" });
+                if (response.ok) {
+                    const projectData = await response.json();
+                    // 프로젝트 데이터에서 owner/repo 추출 (필드명은 실제 API 응답에 맞게 수정)
+                    if (projectData.repository_url) {
+                        const match = projectData.repository_url.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+                        if (match) {
+                            setProjectOwner(match[1]);
+                            setProjectRepo(match[2]);
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("프로젝트 정보 불러오기 실패:", err);
+            }
+        };
+
         if (isOpen) {
             fetchInitialCommits();
+            fetchProjectInfo();
         }
-    }, [taskId, isOpen]);
+    }, [taskId, isOpen, projectId]);
 
     // 추가 커밋 목록 불러오기 (무한스크롤)
     const loadMoreCommits = async () => {
@@ -146,6 +176,31 @@ export default function CommitListModal({
             };
         }
     }, [isOpen, hasNextPage, nextCursor, loadingMore]);
+
+    // 파일 목록 불러오기
+    const handleShowFiles = async (sha: string) => {
+        if (!projectOwner || !projectRepo) {
+            alert("프로젝트 정보를 불러오는 중입니다. 잠시 후 다시 시도해주세요.");
+            return;
+        }
+        
+        setFileModalOpen(true);
+        setFileLoading(true);
+        setFileError("");
+        setFileList([]);
+        setSelectedCommit({ owner: projectOwner, repo: projectRepo, sha });
+        try {
+            const res = await fetch(`${getApiUrl()}/github/repos/${projectOwner}/${projectRepo}/commit/${sha}/files`, { credentials: "include" });
+            if (!res.ok) throw new Error("파일 목록을 불러오지 못했습니다.");
+            const data = await res.json();
+            console.log("들어온새끼: ", data)
+            setFileList(data || []);
+        } catch (err: any) {
+            setError(err.message || "파일 목록 오류");
+        } finally {
+            setFileLoading(false);
+        }
+    };
 
     if (!isOpen) return null;
 
@@ -239,6 +294,14 @@ export default function CommitListModal({
                                                     )}
                                                 </span>
                                             </div>
+                                            <button
+                                                className="text-blue-600 underline text-xs ml-4"
+                                                onClick={() => {
+                                                    handleShowFiles(commit.commitHash);
+                                                }}
+                                            >
+                                                파일 보기
+                                            </button>
                                         </div>
                                     ))}
 
@@ -268,6 +331,42 @@ export default function CommitListModal({
                     </div>
                 </div>
             </div>
+
+            {/* 파일 목록 모달 */}
+            <Dialog open={fileModalOpen} onOpenChange={setFileModalOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>커밋 파일 목록</DialogTitle>
+                </DialogHeader>
+                {fileLoading && <div>불러오는 중...</div>}
+                {fileError && <div className="text-red-500">{fileError}</div>}
+                <div className="mt-4 space-y-3">
+                  {fileList.map((file: any, idx) => (
+                    <div key={file.filename + '-' + idx} className="border rounded-lg p-4 shadow-sm hover:shadow-md transition bg-white">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="font-semibold text-base text-gray-800 truncate max-w-[70%]">
+                          {file.filename}
+                        </div>
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                          file.status === 'added' ? 'bg-green-100 text-green-700' :
+                          file.status === 'modified' ? 'bg-yellow-100 text-yellow-700' :
+                          file.status === 'removed' ? 'bg-red-100 text-red-700' :
+                          'bg-gray-100 text-gray-700'
+                        }`}>
+                          {file.status}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <span>언어: {file.language}</span>
+                        <span>•</span>
+                        <span>파일 크기: {file.content ? file.content.length : 0} 문자</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {fileList.length === 0 && !fileLoading && !fileError && <div>파일이 없습니다.</div>}
+              </DialogContent>
+            </Dialog>
         </>
     );
 }
