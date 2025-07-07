@@ -156,6 +156,11 @@ export default function IssueList() {
         }),
       });
       if (!response.ok) throw new Error("이슈 생성 실패");
+      
+      const result = await response.json();
+      console.log('이슈 생성 응답:', result);
+      console.log('formData.createBranch:', formData.createBranch);
+      
       // Refresh issues after adding
       const res = await fetch(`${getApiUrl()}/projects/${projectId}/issues`, { credentials: 'include' });
       const data = await res.json();
@@ -170,6 +175,24 @@ export default function IssueList() {
           due_date: issue.dueDate,
         }))
       );
+      
+      // 브랜치 생성 결과 알림 (createBranch 옵션이 활성화된 경우에만)
+      if (formData.createBranch !== false) {
+        console.log('브랜치 생성 옵션 활성화됨');
+        console.log('result.branchName:', result.branchName);
+        console.log('result.branchError:', result.branchError);
+        
+        if (result.branchName) {
+          alert(`이슈가 성공적으로 등록되었습니다!\n\n이슈 제목을 기반으로 GitHub 브랜치가 자동으로 생성되었습니다.\n브랜치 이름: ${result.branchName}`);
+        } else if (result.branchError) {
+          alert(`이슈가 성공적으로 등록되었습니다!\n\n브랜치 생성에 실패했습니다:\n${result.branchError}`);
+        } else {
+          alert(`이슈가 성공적으로 등록되었습니다!\n\n브랜치 생성에 실패했습니다. (저장소 URL이 설정되지 않았거나 GitHub 연결에 문제가 있을 수 있습니다.)`);
+        }
+      } else {
+        console.log('브랜치 생성 옵션 비활성화됨');
+        alert("이슈가 성공적으로 등록되었습니다!");
+      }
     } catch (err) {
       alert("이슈 생성에 실패했습니다.");
     }
@@ -243,7 +266,7 @@ export default function IssueList() {
             onOpenChange={setIsModalOpen}
             projectId={projectId}
             createTask={createTask}
-            
+            current_user={null}
           />
         )}
       </main>

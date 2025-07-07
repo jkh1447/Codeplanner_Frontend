@@ -38,35 +38,6 @@ import { cn } from "@/lib/utils";
 import { Id, User } from "@/components/type";
 import { getApiUrl } from "@/lib/api";
 
-// 더미 데이터 - 실제로는 서버에서 가져올 예정
-const users = [
-    {
-        id: "123e4567-e89b-12d3-a456-426614174000",
-        name: "김철수",
-        email: "kim@example.com",
-    },
-    {
-        id: "124e4567-e89b-12d3-a456-426614174000",
-        name: "이영희",
-        email: "lee@example.com",
-    },
-    {
-        id: "183e4567-e89b-12d3-a456-426614174000",
-        name: "박민수",
-        email: "park@example.com",
-    },
-    {
-        id: "123e4467-e89b-12d3-a456-426614174000",
-        name: "정수진",
-        email: "jung@example.com",
-    },
-    {
-        id: "ae4ea619-20e5-40b8-92bc-a36c935dff26",
-        name: "츄미밍a",
-        email: "myong2404@gmail.com",
-    },
-];
-
 interface IssueFormData {
     project_id: string;
     title: string;
@@ -90,6 +61,11 @@ interface AddIssueModalProps {
     taskCount?: number;
     createTask: (formData: IssueFormData) => void;
     current_user: any;
+    title: string;
+    description: string;
+    issueType: string;
+    status: string;
+    
 }
 
 export default function AddIssueModal({
@@ -100,19 +76,23 @@ export default function AddIssueModal({
     taskCount,
     createTask,
     current_user,
+    title,
+    description,
+    issueType,
+    status,
 }: AddIssueModalProps) {
-    // console.log("addissueprojectId", projectId);
+    console.log("reporterId", current_user.id);
     const [formData, setFormData] = useState<IssueFormData>({
         project_id: projectId,
-        title: "",
-        description: "",
-        issueType: "",
-        status: selectedColumn || "",
+        title: title,
+        description: description,
+        issueType: issueType,
+        status: status,
         assigneeId: "",
-        reporterId: "",
+        reporterId: current_user.id,
         startDate: undefined,
         dueDate: undefined,
-        position: taskCount || 0,
+        position: 0,
         tag: "",
         createBranch: true, // 기본값으로 브랜치 생성 활성화
     });
