@@ -183,7 +183,7 @@ export default function MyPage() {
   const githubOauth = () => {
     const clientId = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID;
     const redirectUri = `${getApiUrl()}/auth/github-oauth`;
-    window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&scope=repo%20read:org%20write:repo_hook`;
+    window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&scope=repo read:org write:org write:repo_hook`;
   };
   return (
     <div className="min-h-screen bg-gray-50 p-4">
