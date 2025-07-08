@@ -25,11 +25,12 @@ export default function IssueGenerater() {
   const [meetingNotes, setMeetingNotes] = useState("");
   const [generatedIssues, setGeneratedIssues] = useState<GeneratedIssue[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedColumn, setSelectedColumn] = useState("");
   const [current_user, setCurrent_user] = useState<any>(null);
-
-
+  const [createdIssueIds, setCreatedIssueIds] = useState<string[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedIssue, setSelectedIssue] = useState<GeneratedIssue | null>(null);
+  
   useEffect(() => {
     async function getCurrentUser() {
       const current_user = await fetch(`${getApiUrl()}/user/me`, {
@@ -87,6 +88,7 @@ export default function IssueGenerater() {
         });
   }
 
+  
   const handleGenerateIssues = async () => {
     if (!meetingNotes.trim()) {
       alert("회의록을 입력해주세요.");
@@ -120,6 +122,9 @@ export default function IssueGenerater() {
     }
   };
 
+  function handleIssueCreated(issueId: string) {
+    setCreatedIssueIds((prev) => [...prev, issueId]);
+  }
 
 
   return (
@@ -185,45 +190,62 @@ export default function IssueGenerater() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {generatedIssues.map((issue) => (
-                <Card key={issue.id} className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => setIsModalOpen(true)}>
-                  { isModalOpen && (
-                  <div onClick={(e) => e.stopPropagation()}>
-                  <AddIssueModal
-                    open={isModalOpen}
-                    onOpenChange={(open) => {
-                      setIsModalOpen(open);
-                      if (!open) {
-                        setSelectedColumn("");
+              {generatedIssues.map((issue) => {
+                const isCreated = createdIssueIds.includes(issue.id);
+                return (
+                  <Card
+                    key={issue.id}
+                    className={`cursor-pointer hover:shadow-md transition-shadow relative ${
+                      isCreated ? "pointer-events-none opacity-60" : ""
+                    }`}
+                    onClick={() => {
+                      if (!isCreated) {
+                        setIsModalOpen(true);
+                        setSelectedIssue(issue);
                       }
                     }}
-                    selectedColumn={"TODO"}
-                    projectId={projectId as string}
-                    taskCount={0}
-                    createTask={createTask}
-                    current_user={current_user}
-                    title={issue.title}
-                    description={issue.description}
-                    issueType={"task"}
-                    status={"TODO"}
-                  />
-                  </div>
-                  )
-                  }
-                  <CardHeader>
-                    <CardTitle className="text-base">
-                      {issue.title}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <p className="text-sm text-muted-foreground line-clamp-3">
-                      {issue.description}
-                    </p>
-                  </CardContent>
-                </Card>
-              
-              ))}
+                  >
+                    {/* 등록됨 뱃지 */}
+                    {isCreated && (
+                      <div className="absolute top-2 right-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                        등록됨
+                      </div>
+                    )}
+                    {/* 모달 */}
+                    {selectedIssue && selectedIssue.id === issue.id && (
+                      <AddIssueModal
+                        open={isModalOpen}
+                        onOpenChange={(open) => {
+                          setIsModalOpen(open);
+                          if (!open) setSelectedIssue(null);
+                        }}
+                        selectedColumn="TODO"
+                        projectId={projectId as string}
+                        taskCount={0}
+                        createTask={createTask}
+                        current_user={current_user}
+                        title={selectedIssue.title}
+                        description={selectedIssue.description}
+                        issueType="task"
+                        status="TODO"
+                        onSuccess={() => {
+                          handleIssueCreated(selectedIssue.id);
+                          setIsModalOpen(false);
+                          setSelectedIssue(null);
+                        }}
+                      />
+                    )}
+                    <CardHeader>
+                      <CardTitle className="text-base">{issue.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <p className="text-sm text-muted-foreground line-clamp-3">
+                        {issue.description}
+                      </p>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </CardContent>
         </Card>

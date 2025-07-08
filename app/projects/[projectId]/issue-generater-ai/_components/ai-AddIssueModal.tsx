@@ -65,7 +65,7 @@ interface AddIssueModalProps {
     description: string;
     issueType: string;
     status: string;
-    
+    onSuccess?: () => void;
 }
 
 export default function AddIssueModal({
@@ -80,6 +80,7 @@ export default function AddIssueModal({
     description,
     issueType,
     status,
+    onSuccess,
 }: AddIssueModalProps) {
     console.log("reporterId", current_user.id);
     const [formData, setFormData] = useState<IssueFormData>({
@@ -99,6 +100,7 @@ export default function AddIssueModal({
 
     const [projectMembers, setProjectMembers] = useState<User[]>([]);
     const [current_member, setCurrent_member] = useState<any | null>(null);
+    const [createdIssueIds, setCreatedIssueIds] = useState<string[]>([]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -140,7 +142,9 @@ export default function AddIssueModal({
             createBranch: true,
         });
         onOpenChange(false);
-
+        if(onSuccess){
+            onSuccess();
+        }
         // alert("이슈가 성공적으로 등록되었습니다!");삭제 0705진혁 github 브랜치 생성 알림 추가에 포함함
     };
 
