@@ -52,6 +52,12 @@ function formatTimeAgo(dateString: string): string {
     }
 }
 
+function getAnalysisColor(cppcheck: boolean, clangTidy: boolean) {
+    if (cppcheck && clangTidy) return "bg-green-500"; // 초록
+    if (!cppcheck && !clangTidy) return "bg-red-500"; // 빨강
+    return "bg-yellow-400"; // 노랑
+}
+
 export default function CommitListModal({
     isOpen,
     onClose,
@@ -73,6 +79,8 @@ export default function CommitListModal({
     const [selectedCommit, setSelectedCommit] = useState<{owner: string, repo: string, sha: string} | null>(null);
     const [projectOwner, setProjectOwner] = useState("");
     const [projectRepo, setProjectRepo] = useState("");
+    const [analyzeResults, setAnalyzeResults] = useState<{ [filename: string]: {cpp: boolean, clang: boolean} | null }>({});
+    const [analyzing, setAnalyzing] = useState<{ [filename: string]: boolean }>({});
 
     // 초기 커밋 목록 불러오기
     useEffect(() => {
@@ -199,6 +207,39 @@ export default function CommitListModal({
             setError(err.message || "파일 목록 오류");
         } finally {
             setFileLoading(false);
+        }
+    };
+
+    // 분석 함수
+    const handleAnalyze = async (file: any) => {
+        setAnalyzing(prev => ({ ...prev, [file.filename]: true }));
+        setAnalyzeResults(prev => ({ ...prev, [file.filename]: null }));
+        try {
+            const res = await fetch(
+                `${getApiUrl()}/analysis/github/commit/${projectOwner}/${projectRepo}/${selectedCommit?.sha}`,
+                {
+                    method: "GET",
+                    credentials: "include",
+                    headers: { "Content-Type": "application/json" },
+                }
+            );
+            if (!res.ok) throw new Error("분석 실패");
+            const data = await res.json();
+            const result = data.find((r: any) => r.file === file.filename);
+            setAnalyzeResults(prev => ({
+                ...prev,
+                [file.filename]: {
+                    cpp: !!result?.cppcheck?.success,
+                    clang: !!result?.clangTidy?.success,
+                }
+            }));
+        } catch {
+            setAnalyzeResults(prev => ({
+                ...prev,
+                [file.filename]: { cpp: false, clang: false }
+            }));
+        } finally {
+            setAnalyzing(prev => ({ ...prev, [file.filename]: false }));
         }
     };
 
@@ -341,28 +382,51 @@ export default function CommitListModal({
                 {fileLoading && <div>불러오는 중...</div>}
                 {fileError && <div className="text-red-500">{fileError}</div>}
                 <div className="mt-4 space-y-3">
-                  {fileList.map((file: any, idx) => (
-                    <div key={file.filename + '-' + idx} className="border rounded-lg p-4 shadow-sm hover:shadow-md transition bg-white">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="font-semibold text-base text-gray-800 truncate max-w-[70%]">
-                          {file.filename}
+                  {fileList.map((file: any, idx) => {
+                    const result = analyzeResults[file.filename];
+                    let color = "";
+                    if (result) {
+                        if (result.cpp && result.clang) color = "bg-green-500";
+                        else if (!result.cpp && !result.clang) color = "bg-red-500";
+                        else color = "bg-yellow-400";
+                    }
+                    return (
+                        <div key={file.filename + '-' + idx} className="border rounded-lg p-4 shadow-sm hover:shadow-md transition bg-white flex items-center">
+                            <div className="mr-4 flex-shrink-0">
+                                {result && (
+                                    <span className={`inline-block w-4 h-4 rounded-full ${color}`} title="분석 결과" />
+                                )}
+                            </div>
+                            <div className="flex-1">
+                                <div className="flex items-center justify-between mb-2">
+                                    <div className="font-semibold text-base text-gray-800 truncate max-w-[70%]">
+                                        {file.filename}
+                                    </div>
+                                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                        file.status === 'added' ? 'bg-green-100 text-green-700' :
+                                        file.status === 'modified' ? 'bg-yellow-100 text-yellow-700' :
+                                        file.status === 'removed' ? 'bg-red-100 text-red-700' :
+                                        'bg-gray-100 text-gray-700'
+                                    }`}>
+                                        {file.status}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                    <span>언어: {file.language}</span>
+                                    <span>•</span>
+                                    <span>파일 크기: {file.content ? file.content.length : 0} 문자</span>
+                                </div>
+                            </div>
+                            <button
+                                className="ml-4 px-3 py-1 bg-blue-500 text-white rounded text-xs font-medium hover:bg-blue-600 disabled:opacity-50"
+                                onClick={() => handleAnalyze(file)}
+                                disabled={!!analyzing[file.filename]}
+                            >
+                                {analyzing[file.filename] ? "분석 중..." : "분석"}
+                            </button>
                         </div>
-                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                          file.status === 'added' ? 'bg-green-100 text-green-700' :
-                          file.status === 'modified' ? 'bg-yellow-100 text-yellow-700' :
-                          file.status === 'removed' ? 'bg-red-100 text-red-700' :
-                          'bg-gray-100 text-gray-700'
-                        }`}>
-                          {file.status}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <span>언어: {file.language}</span>
-                        <span>•</span>
-                        <span>파일 크기: {file.content ? file.content.length : 0} 문자</span>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
                 {fileList.length === 0 && !fileLoading && !fileError && <div>파일이 없습니다.</div>}
               </DialogContent>
