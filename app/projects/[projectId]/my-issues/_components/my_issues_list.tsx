@@ -32,9 +32,7 @@ export default function MyIssuesPage() {
       });
   }, [projectId]);
 
-  const handleCloseDrawer = () => {
-    setSelectedTask(null);
-    // Refresh issues after editing
+  const refreshIssues = () => {
     fetch(`${getApiUrl()}/projects/${projectId}/my-issues`, {
       credentials: "include",
     })
@@ -50,6 +48,11 @@ export default function MyIssuesPage() {
           due_date: issue.dueDate,
         })));
       });
+  };
+
+  const handleCloseDrawer = () => {
+    setSelectedTask(null);
+    refreshIssues();
   };
 
   return (
@@ -82,7 +85,11 @@ export default function MyIssuesPage() {
         )}
       </div>
       {selectedTask && (
-        <TaskDrawer task={selectedTask} onClose={handleCloseDrawer} />
+        <TaskDrawer 
+          task={selectedTask} 
+          onClose={handleCloseDrawer} 
+          onSave={refreshIssues}
+        />
       )}
     </div>
   );
