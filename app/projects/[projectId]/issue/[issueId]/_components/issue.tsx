@@ -10,6 +10,8 @@ import {
     Clock,
     User,
     Flag,
+    Trash2,
+
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -32,10 +34,16 @@ import { Issue_detail, User_detail } from "@/components/type";
 
 interface Comment {
     id: string;
-    author: string;
-    avatar: string;
+    issueId: string;
+    authorId: string;
     content: string;
     createdAt: string;
+    updatedAt: string;
+    author?: {
+        id: string;
+        displayName: string;
+        avatar?: string;
+    };
 }
 
 export default function IssueDetail() {
@@ -65,6 +73,267 @@ export default function IssueDetail() {
     const [assignee, setAssignee] = useState<User_detail | null>(null);
     const [reporter, setReporter] = useState<User_detail | null>(null);
     const [comments, setComments] = useState<Comment[]>([]);
+    const [isLoadingComments, setIsLoadingComments] = useState(false);
+    const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+    const [editingCommentId, setEditingCommentId] = useState<string | null>(
+        null
+    );
+    const [editingCommentContent, setEditingCommentContent] = useState("");
+    const [currentUser, setCurrentUser] = useState<{
+        id: string;
+        displayName: string;
+    } | null>(null);
+
+    // 현재 사용자 정보 가져오기
+    const getCurrentUser = async () => {
+        try {
+            console.log("현재 사용자 정보 가져오기 시작");
+            const res = await fetch(`${getApiUrl()}/user/me`, {
+                credentials: "include",
+            });
+            console.log("사용자 정보 응답 상태:", res.status, res.statusText);
+
+            if (res.ok) {
+                const userData = await res.json();
+                console.log("사용자 정보 성공:", userData);
+                setCurrentUser(userData);
+            } else {
+                const errorText = await res.text();
+                console.error(
+                    "사용자 정보 가져오기 실패:",
+                    res.status,
+                    errorText
+                );
+            }
+        } catch (error) {
+            console.error("현재 사용자 정보 가져오기 실패:", error);
+        }
+    };
+
+    // 댓글 목록 가져오기
+    const fetchComments = async () => {
+        if (!projectId || !issueId) return;
+
+        setIsLoadingComments(true);
+        try {
+            const res = await fetch(
+                `${getApiUrl()}/comments/${projectId}/${issueId}/`,
+                {
+                    method: "GET",
+                    credentials: "include",
+                }
+            );
+            if (res.ok) {
+                const commentsData = await res.json();
+                console.log("commentsData:", commentsData);
+
+                // 각 댓글의 작성자 정보를 가져오기
+                const commentsWithAuthors = await Promise.all(
+                    commentsData.map(async (comment: any) => {
+                        try {
+                            const userRes = await fetch(
+                                `${getApiUrl()}/user/${comment.authorId}`,
+                                {
+                                    credentials: "include",
+                                }
+                            );
+                            if (userRes.ok) {
+                                const userData = await userRes.json();
+                                return {
+                                    ...comment,
+                                    author: userData,
+                                };
+                            } else {
+                                console.error(
+                                    `사용자 정보 가져오기 실패: ${comment.authorId}`
+                                );
+                                return {
+                                    ...comment,
+                                    author: {
+                                        id: comment.authorId,
+                                        displayName: "알 수 없는 사용자",
+                                    },
+                                };
+                            }
+                        } catch (error) {
+                            console.error(
+                                `사용자 정보 가져오기 오류: ${comment.authorId}`,
+                                error
+                            );
+                            return {
+                                ...comment,
+                                author: {
+                                    id: comment.authorId,
+                                    displayName: "알 수 없는 사용자",
+                                },
+                            };
+                        }
+                    })
+                );
+
+                setComments(commentsWithAuthors);
+            } else {
+                console.error("댓글 가져오기 실패");
+            }
+        } catch (error) {
+            console.error("댓글 가져오기 중 오류:", error);
+        } finally {
+            setIsLoadingComments(false);
+        }
+    };
+
+    // 댓글 생성
+    const createComment = async () => {
+        console.log("댓글 생성 시작:", {
+            newComment: newComment.trim(),
+            projectId,
+            issueId,
+            currentUser: currentUser?.id,
+        });
+
+        if (!newComment.trim() || !projectId || !issueId || !currentUser) {
+            console.log("댓글 생성 조건 불만족:", {
+                hasComment: !!newComment.trim(),
+                hasProjectId: !!projectId,
+                hasIssueId: !!issueId,
+                hasCurrentUser: !!currentUser,
+            });
+            return;
+        }
+
+        setIsSubmittingComment(true);
+        try {
+            const requestBody = {
+                issueId: issueId,
+                authorId: currentUser.id,
+                content: newComment.trim(),
+            };
+
+            console.log("댓글 생성 요청:", requestBody);
+
+            const res = await fetch(
+                `${getApiUrl()}/comments/${projectId}/${issueId}`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(requestBody),
+                    credentials: "include",
+                }
+            );
+
+            console.log("댓글 생성 응답 상태:", res.status, res.statusText);
+
+            if (res.ok) {
+                const newCommentData = await res.json();
+                console.log("댓글 생성 성공:", newCommentData);
+
+                // 새 댓글에 작성자 정보 추가
+                const commentWithAuthor = {
+                    ...newCommentData,
+                    author: currentUser,
+                };
+
+                setComments([...comments, commentWithAuthor]);
+                setNewComment("");
+            } else {
+                const errorText = await res.text();
+                console.error("댓글 생성 실패:", res.status, errorText);
+                alert(`댓글 생성 실패: ${res.status} - ${errorText}`);
+            }
+        } catch (error) {
+            console.error("댓글 생성 중 오류:", error);
+            alert(`댓글 생성 중 오류: ${error}`);
+        } finally {
+            setIsSubmittingComment(false);
+        }
+    };
+
+    // 댓글 수정
+    const updateComment = async (commentId: string) => {
+        if (!editingCommentContent.trim() || !projectId || !issueId) return;
+
+        try {
+            const res = await fetch(
+                `${getApiUrl()}/comments/${projectId}/${issueId}/${commentId}`,
+                {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        content: editingCommentContent.trim(),
+                        updatedAt: new Date(),
+                    }),
+                    credentials: "include",
+                }
+            );
+
+            if (res.ok) {
+                const updatedComment = await res.json();
+
+                // 수정된 댓글에 기존 작성자 정보 유지
+                const commentWithAuthor = {
+                    ...updatedComment,
+                    author:
+                        comments.find((c) => c.id === commentId)?.author ||
+                        currentUser,
+                };
+
+                setComments(
+                    comments.map((comment) =>
+                        comment.id === commentId ? commentWithAuthor : comment
+                    )
+                );
+                setEditingCommentId(null);
+                setEditingCommentContent("");
+            } else {
+                console.error("댓글 수정 실패");
+            }
+        } catch (error) {
+            console.error("댓글 수정 중 오류:", error);
+        }
+    };
+
+    // 댓글 삭제
+    const deleteComment = async (commentId: string) => {
+        if (!projectId || !issueId) return;
+
+        if (!confirm("댓글을 삭제하시겠습니까?")) return;
+
+        try {
+            const res = await fetch(
+                `${getApiUrl()}/comments/${projectId}/${issueId}/${commentId}`,
+                {
+                    method: "DELETE",
+                    credentials: "include",
+                }
+            );
+
+            if (res.ok) {
+                setComments(
+                    comments.filter((comment) => comment.id !== commentId)
+                );
+            } else {
+                console.error("댓글 삭제 실패");
+            }
+        } catch (error) {
+            console.error("댓글 삭제 중 오류:", error);
+        }
+    };
+
+    // 댓글 수정 모드 시작
+    const startEditingComment = (comment: Comment) => {
+        setEditingCommentId(comment.id);
+        setEditingCommentContent(comment.content);
+    };
+
+    // 댓글 수정 모드 취소
+    const cancelEditingComment = () => {
+        setEditingCommentId(null);
+        setEditingCommentContent("");
+    };
 
     // 이슈 업데이트 함수
     const updateIssueField = async (
@@ -123,20 +392,6 @@ export default function IssueDetail() {
         setIsEditingDescription(false);
     };
 
-    const handleAddComment = () => {
-        if (newComment.trim()) {
-            const comment: Comment = {
-                id: Date.now().toString(),
-                author: "현재 사용자",
-                avatar: "/placeholder.svg?height=32&width=32",
-                content: newComment,
-                createdAt: new Date().toLocaleString("ko-KR"),
-            };
-            setComments([...comments, comment]);
-            setNewComment("");
-        }
-    };
-
     const getAssigneeAndReporter = async (
         assigneeId: string,
         reporterId: string
@@ -177,7 +432,9 @@ export default function IssueDetail() {
     };
 
     useEffect(() => {
+        getCurrentUser();
         getIssue();
+        fetchComments();
     }, []);
 
     // issue가 바뀔 때마다 tempTitle/tempDescription도 동기화
@@ -185,6 +442,26 @@ export default function IssueDetail() {
         setTempTitle(issue?.title || "");
         setTempDescription(issue?.description || "");
     }, [issue]);
+
+    // 날짜 포맷팅 함수
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffInMinutes = Math.floor(
+            (now.getTime() - date.getTime()) / (1000 * 60)
+        );
+
+        if (diffInMinutes < 1) return "방금 전";
+        if (diffInMinutes < 60) return `${diffInMinutes}분 전`;
+
+        const diffInHours = Math.floor(diffInMinutes / 60);
+        if (diffInHours < 24) return `${diffInHours}시간 전`;
+
+        const diffInDays = Math.floor(diffInHours / 24);
+        if (diffInDays < 7) return `${diffInDays}일 전`;
+
+        return date.toLocaleDateString("ko-KR");
+    };
 
     return (
         <div className="min-h-screen bg-white p-6">
@@ -316,53 +593,176 @@ export default function IssueDetail() {
                                         onChange={(e) =>
                                             setNewComment(e.target.value)
                                         }
+                                        onKeyDown={(e) => {
+                                            if (
+                                                e.key === "Enter" &&
+                                                (e.ctrlKey || e.metaKey)
+                                            ) {
+                                                e.preventDefault();
+                                                createComment();
+                                            }
+                                        }}
                                         rows={4}
                                         className="border-gray-300 focus:border-blue-400 focus:ring-blue-400"
+                                        disabled={isSubmittingComment}
                                     />
-                                    <Button
-                                        onClick={handleAddComment}
-                                        disabled={!newComment.trim()}
-                                        className="bg-blue-600 hover:bg-blue-700"
-                                    >
-                                        댓글 추가
-                                    </Button>
+                                    <div className="flex items-center justify-between">
+                                        <Button
+                                            onClick={createComment}
+                                            disabled={
+                                                !newComment.trim() ||
+                                                isSubmittingComment ||
+                                                !currentUser
+                                            }
+                                            className="bg-blue-600 hover:bg-blue-700"
+                                        >
+                                            {isSubmittingComment
+                                                ? "댓글 추가 중..."
+                                                : "댓글 추가"}
+                                        </Button>
+                                        {!currentUser && (
+                                            <span className="text-sm text-red-500">
+                                                로그인이 필요합니다
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
 
                                 <Separator className="bg-gray-200" />
 
                                 {/* Comments List */}
                                 <div className="space-y-6">
-                                    {comments.map((comment) => (
-                                        <div
-                                            key={comment.id}
-                                            className="flex gap-4"
-                                        >
-                                            <Avatar className="w-10 h-10 border-2 border-gray-200">
-                                                <AvatarImage
-                                                    src={
-                                                        comment.avatar ||
-                                                        "/placeholder.svg"
-                                                    }
-                                                />
-                                                <AvatarFallback className="bg-blue-100 text-blue-700">
-                                                    {comment.author[0]}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                            <div className="flex-1 space-y-2">
-                                                <div className="flex items-center gap-3">
-                                                    <span className="font-semibold text-gray-800">
-                                                        {comment.author}
-                                                    </span>
-                                                    <span className="text-sm text-gray-500">
-                                                        {comment.createdAt}
-                                                    </span>
-                                                </div>
-                                                <div className="text-sm bg-gray-50 p-4 rounded-lg border border-gray-200 leading-relaxed">
-                                                    {comment.content}
+                                    {isLoadingComments ? (
+                                        <div className="text-center py-8 text-gray-500">
+                                            댓글을 불러오는 중...
+                                        </div>
+                                    ) : comments.length === 0 ? (
+                                        <div className="text-center py-8 text-gray-500">
+                                            아직 댓글이 없습니다.
+                                        </div>
+                                    ) : (
+                                        comments.map((comment) => (
+                                            <div
+                                                key={comment.id}
+                                                className="flex gap-4"
+                                            >
+                                                <Avatar className="w-10 h-10 border-2 border-gray-200">
+                                                    <AvatarImage
+                                                        src={
+                                                            comment.author
+                                                                ?.avatar ||
+                                                            "/placeholder.svg"
+                                                        }
+                                                    />
+                                                    <AvatarFallback className="bg-blue-100 text-blue-700">
+                                                        {comment.author
+                                                            ?.displayName?.[0] ||
+                                                            "U"}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <div className="flex-1 space-y-2">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="font-semibold text-gray-800">
+                                                                {comment.author
+                                                                    ?.displayName ||
+                                                                    "알 수 없는 사용자"}
+                                                            </span>
+                                                            <span className="text-sm text-gray-500">
+                                                                {formatDate(
+                                                                    comment.createdAt
+                                                                )}
+                                                            </span>
+                                                            {comment.updatedAt !==
+                                                                comment.createdAt && (
+                                                                <span className="text-xs text-gray-400">
+                                                                    (수정됨)
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        {currentUser &&
+                                                            comment.authorId ===
+                                                                currentUser.id && (
+                                                                <div className="flex gap-2">
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="ghost"
+                                                                        onClick={() =>
+                                                                            startEditingComment(
+                                                                                comment
+                                                                            )
+                                                                        }
+                                                                        className="h-8 px-2 text-gray-500 hover:text-blue-600"
+                                                                    >
+                                                                        <Edit3 className="w-3 h-3" />
+                                                                    </Button>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="ghost"
+                                                                        onClick={() =>
+                                                                            deleteComment(
+                                                                                comment.id
+                                                                            )
+                                                                        }
+                                                                        className="h-8 px-2 text-gray-500 hover:text-red-600"
+                                                                    >
+                                                                        <Trash2 className="w-3 h-3" />
+                                                                    </Button>
+                                                                </div>
+                                                            )}
+                                                    </div>
+                                                    {editingCommentId ===
+                                                    comment.id ? (
+                                                        <div className="space-y-3">
+                                                            <Textarea
+                                                                value={
+                                                                    editingCommentContent
+                                                                }
+                                                                onChange={(e) =>
+                                                                    setEditingCommentContent(
+                                                                        e.target
+                                                                            .value
+                                                                    )
+                                                                }
+                                                                rows={3}
+                                                                className="border-gray-300 focus:border-blue-400"
+                                                                autoFocus
+                                                            />
+                                                            <div className="flex gap-2">
+                                                                <Button
+                                                                    size="sm"
+                                                                    onClick={() =>
+                                                                        updateComment(
+                                                                            comment.id
+                                                                        )
+                                                                    }
+                                                                    className="bg-blue-600 hover:bg-blue-700"
+                                                                >
+                                                                    <Save className="w-3 h-3 mr-1" />
+                                                                    저장
+                                                                </Button>
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    onClick={
+                                                                        cancelEditingComment
+                                                                    }
+                                                                    className="border-gray-300"
+                                                                >
+                                                                    <X className="w-3 h-3 mr-1" />
+                                                                    취소
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="text-sm bg-gray-50 p-4 rounded-lg border border-gray-200 leading-relaxed">
+                                                            {comment.content}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))
+                                    )}
                                 </div>
                             </CardContent>
                         </Card>

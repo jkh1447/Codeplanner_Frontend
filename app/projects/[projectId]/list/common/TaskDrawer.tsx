@@ -4,7 +4,8 @@ import { getApiUrl } from "@/lib/api";
 import { useState, useEffect } from "react";
 import GitCommitIcon from "@/components/icons/GitCommitIcon";
 import CommitListModal from "./CommitListModal";
-import { GitCommitHorizontal } from "lucide-react";
+import { ArrowBigLeftDash, GitCommitHorizontal } from "lucide-react";
+import Link from "next/link";
 
 {
     /* 이슈에 대한 카드 Drawer */
@@ -184,10 +185,17 @@ export default function TaskDrawer({
             {/* Drawer */}
             <div className="fixed top-0 right-0 h-full w-[500px] bg-white shadow-2xl z-50 drawer-slide-in flex flex-col">
                 {/* Drawer 카드의 헤더 부분,  */}
-                <div className="p-6 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                <div className="p-6 border-b border-gray-200 flex  items-center bg-gray-50">
+                    <div className="flex items-center">
+                        <Link
+                            href={`/projects/${task.project_id}/issue/${task.id}`}
+                        >
+                            <ArrowBigLeftDash className="w-8 h-8 border-2 border-gray-200 rounded-sm p-1 hover:bg-gray-100 transition-colors cursor-pointer" />
+                        </Link>
+                    </div>
                     <div>
                         <input
-                            className="text-xl font-bold text-gray-900 bg-transparent border-b border-gray-200 focus:outline-none focus:border-blue-400 w-full"
+                            className="text-xl ml-4 font-bold text-gray-900 bg-transparent border-b border-gray-200 focus:outline-none focus:border-blue-400 w-full"
                             name="title"
                             value={form.title} // 제목
                             onChange={handleChange} // ID
@@ -272,8 +280,8 @@ export default function TaskDrawer({
                             onClick={() => setShowCommitModal(true)}
                             className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md text-sm transition-colors duration-200"
                         >
-                            <GitCommitHorizontal className="w-4 h-4"/>
-                            
+                            <GitCommitHorizontal className="w-4 h-4" />
+
                             <span>GitHub 커밋 보기</span>
                         </button>
                     </div>
@@ -420,8 +428,8 @@ export default function TaskDrawer({
             <CommitListModal
                 isOpen={showCommitModal}
                 onClose={() => setShowCommitModal(false)}
-          projectId={String(task.project_id)}
-          taskId={String(task.id)}
+                projectId={String(task.project_id)}
+                taskId={String(task.id)}
             />
         </>
     );
