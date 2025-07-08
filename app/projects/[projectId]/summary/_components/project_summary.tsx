@@ -27,6 +27,7 @@ export default function SummaryPage() {
   const [completedIssue, setCompletedIssue] = useState(0);
   const [inProgressIssue, setInProgressIssue] = useState(0);
   const [issueTypeData, setIssueTypeData] = useState<any[]>([]);
+  const [recentActivities, setRecentActivities] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchMemberCount = async () => {
@@ -80,9 +81,73 @@ export default function SummaryPage() {
 
       setIssueTypeData(typeDataArr);
     };
+
+    const fetchRecentActivities = async () => {
+      try {
+        const response = await fetch(
+          `${getApiUrl()}/activity/project/${projectId}/recent?limit=5`,
+          {
+            method: "GET",
+            credentials: "include",
+          }
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setRecentActivities(data);
+        }
+      } catch (error) {
+        console.error('최근 활동 조회 실패:', error);
+      }
+    };
+
     fetchMemberCount();
     fetchAllIssue();
+    fetchRecentActivities();
   }, [projectId]);
+
+  // 활동 타입에 따른 스타일과 메시지 설정
+  const getActivityStyle = (actionType: string) => {
+    switch (actionType) {
+      case 'issue_created':
+        return {
+          color: 'bg-blue-500',
+          message: '이슈 생성',
+        };
+      case 'issue_updated':
+        return {
+          color: 'bg-yellow-500',
+          message: '이슈 업데이트',
+        };
+      case 'issue_deleted':
+        return {
+          color: 'bg-red-500',
+          message: '이슈 삭제',
+        };
+      default:
+        return {
+          color: 'bg-gray-500',
+          message: '활동',
+        };
+    }
+  };
+
+  // 시간 포맷팅 함수
+  const formatTimeAgo = (dateString: string) => {
+    const now = new Date();
+    const activityDate = new Date(dateString);
+    const diffInMinutes = Math.floor((now.getTime() - activityDate.getTime()) / (1000 * 60));
+
+    if (diffInMinutes < 1) return '방금 전';
+    if (diffInMinutes < 60) return `${diffInMinutes}분 전`;
+    
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours}시간 전`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `${diffInDays}일 전`;
+    
+    return activityDate.toLocaleDateString('ko-KR');
+  };
 
   return (
     <div className="space-y-6 p-6">
@@ -203,34 +268,28 @@ export default function SummaryPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">로그인 기능 완료</p>
-                  <p className="text-xs text-muted-foreground">2시간 전</p>
+              {recentActivities.length === 0 ? (
+                <div className="text-center text-gray-400 py-4">
+                  최근 활동이 없습니다.
                 </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">API 문서 업데이트</p>
-                  <p className="text-xs text-muted-foreground">4시간 전</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">UI 테스트 시작</p>
-                  <p className="text-xs text-muted-foreground">1일 전</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">데이터베이스 오류 발생</p>
-                  <p className="text-xs text-muted-foreground">2일 전</p>
-                </div>
-              </div>
+              ) : (
+                recentActivities.map((activity) => {
+                  const style = getActivityStyle(activity.actionType);
+                  return (
+                    <div key={activity.id} className="flex items-center gap-3">
+                      <div className={`w-2 h-2 ${style.color} rounded-full`}></div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">
+                           {style.message}: {activity.issueTitle}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatTimeAgo(activity.createdAt)}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </CardContent>
         </Card>

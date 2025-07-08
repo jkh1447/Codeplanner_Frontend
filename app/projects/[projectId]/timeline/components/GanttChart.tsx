@@ -27,6 +27,7 @@ export default function GanttChart({ tasks, loading = false, error = null }: Gan
   const handleDateChange = useCallback(async (task: GanttTask, start: Date, end: Date) => {
     try {
       const response = await fetch(`${getApiUrl()}/projects/issues/${task.id}/update-dates`, {
+        credentials: "include",
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -21,6 +21,7 @@ interface Props {
     deleteTask: (id: Id, projectId: string) => void;
     tasks: Task[];
     current_user: any;
+    onSave?: () => void;
 }
 
 function ColumnContainer(props: Props) {
@@ -34,6 +35,7 @@ function ColumnContainer(props: Props) {
         deleteTask,
         updateTask,
         current_user,
+        onSave,
     } = props;
 
     const [editMode, setEditMode] = useState(false);
@@ -114,6 +116,7 @@ function ColumnContainer(props: Props) {
                             task={task}
                             deleteTask={deleteTask}
                             projectId={projectId}
+                                onSave={onSave}
                         />
                     ))}
                 </SortableContext>
