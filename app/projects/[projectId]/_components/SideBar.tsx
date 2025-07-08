@@ -212,12 +212,15 @@ export default function SideBar() {
                                             </span>
                                             <span
                                                 className={`h-2 w-2 rounded-full ${
-                                                    project.status === "ACTIVE"
-                                                        ? "bg-green-500"
-                                                        : project.status ===
-                                                          "COMPLETED"
+                                                    project.status === "대기중"
+                                                        ? "bg-yellow-500"
+                                                        : project.status === "진행중"
                                                         ? "bg-blue-500"
-                                                        : "bg-yellow-500"
+                                                        : project.status === "완료"
+                                                        ? "bg-green-500"
+                                                        : project.status === "보류"
+                                                        ? "bg-red-500"
+                                                        : "bg-gray-500"
                                                 }`}
                                             />
                                         </Link>

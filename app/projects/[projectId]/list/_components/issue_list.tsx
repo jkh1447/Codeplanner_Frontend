@@ -112,30 +112,34 @@ export default function IssueList() {
 
   const handleCloseDrawer = () => setSelectedTask(null);
 
-  useEffect(() => {
-        fetch(`${getApiUrl()}/projects/${projectId}/issues`, {
-    credentials: 'include',
-  })
-    .then((res) => {
+  // 이슈 목록 새로고침 함수
+  const refreshIssues = async () => {
+    try {
+      const res = await fetch(`${getApiUrl()}/projects/${projectId}/issues`, {
+        credentials: 'include',
+      });
       if (!res.ok) throw new Error("이슈 목록 불러오기 실패");
-      return res.json();
-    })
-    .then((data: any[]) => setIssues(
-      data.map(issue => ({
-        ...issue,
-        project_id: issue.projectId,
-        assignee_id: issue.assigneeId,
-        reporter_id: issue.reporterId,
-        issue_type: issue.issueType,
-        start_date: issue.startDate,
-        due_date: issue.dueDate,
-      }))
-    ))
-    .catch((err) => {
+      const data = await res.json();
+      setIssues(
+        data.map((issue: any) => ({
+          ...issue,
+          project_id: issue.projectId,
+          assignee_id: issue.assigneeId,
+          reporter_id: issue.reporterId,
+          issue_type: issue.issueType,
+          start_date: issue.startDate,
+          due_date: issue.dueDate,
+        }))
+      );
+    } catch (err) {
       console.error(err);
       setIssues([]);
-    });
-}, [projectId]);
+    }
+  };
+
+  useEffect(() => {
+    refreshIssues();
+  }, [projectId]);
 
   // 검색 필터링
   const filtered = issues.filter(issue =>
@@ -162,19 +166,7 @@ export default function IssueList() {
       console.log('formData.createBranch:', formData.createBranch);
       
       // Refresh issues after adding
-      const res = await fetch(`${getApiUrl()}/projects/${projectId}/issues`, { credentials: 'include' });
-      const data = await res.json();
-      setIssues(
-        data.map((issue: any) => ({
-          ...issue,
-          project_id: issue.projectId,
-          assignee_id: issue.assigneeId,
-          reporter_id: issue.reporterId,
-          issue_type: issue.issueType,
-          start_date: issue.startDate,
-          due_date: issue.dueDate,
-        }))
-      );
+      await refreshIssues();
       
       // 브랜치 생성 결과 알림 (createBranch 옵션이 활성화된 경우에만)
       if (formData.createBranch !== false) {
@@ -258,7 +250,11 @@ export default function IssueList() {
           )}
         </div>
         {selectedTask && (
-          <TaskDrawer task={{ ...selectedTask, project_id: projectId}} onClose={handleCloseDrawer} />
+          <TaskDrawer 
+            task={{ ...selectedTask, project_id: projectId}} 
+            onClose={handleCloseDrawer} 
+            onSave={refreshIssues}
+          />
         )}
         {isModalOpen && (
           <AddIssueModal

@@ -8,6 +8,10 @@ export default function IssueList() {
   const [issues, setIssues] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const handleCloseDrawer = () => setSelectedTask(null);
+  
+  const refreshIssues = () => {
+    // 데이터 새로고침 로직이 필요한 경우 여기에 추가
+  };
 
   return (
     <div className="min-h-screen px-12 py-8">
@@ -46,7 +50,11 @@ export default function IssueList() {
         )}
       </div>
       {selectedTask && (
-        <TaskDrawer task={selectedTask} onClose={handleCloseDrawer} />
+        <TaskDrawer 
+          task={selectedTask} 
+          onClose={handleCloseDrawer} 
+          onSave={refreshIssues}
+        />
       )}
     </div>
   );
