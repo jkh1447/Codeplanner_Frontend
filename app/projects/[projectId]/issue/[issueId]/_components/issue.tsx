@@ -38,11 +38,7 @@ interface Comment {
     content: string;
     createdAt: string;
     updatedAt: string;
-    author?: {
-        id: string;
-        displayName: string;
-        avatar?: string;
-    };
+    displayName?: string;
 }
 
 export default function IssueDetail() {
@@ -80,7 +76,7 @@ export default function IssueDetail() {
     const [editingCommentContent, setEditingCommentContent] = useState("");
     const [currentUser, setCurrentUser] = useState<{
         id: string;
-        displayName: string;
+        display_name: string;
     } | null>(null);
 
     // 현재 사용자 정보 가져오기
@@ -126,51 +122,7 @@ export default function IssueDetail() {
                 const commentsData = await res.json();
                 console.log("commentsData:", commentsData);
 
-                // 각 댓글의 작성자 정보를 가져오기
-                const commentsWithAuthors = await Promise.all(
-                    commentsData.map(async (comment: any) => {
-                        try {
-                            const userRes = await fetch(
-                                `${getApiUrl()}/user/${comment.authorId}`,
-                                {
-                                    credentials: "include",
-                                }
-                            );
-                            if (userRes.ok) {
-                                const userData = await userRes.json();
-                                return {
-                                    ...comment,
-                                    author: userData,
-                                };
-                            } else {
-                                console.error(
-                                    `사용자 정보 가져오기 실패: ${comment.authorId}`
-                                );
-                                return {
-                                    ...comment,
-                                    author: {
-                                        id: comment.authorId,
-                                        displayName: "알 수 없는 사용자",
-                                    },
-                                };
-                            }
-                        } catch (error) {
-                            console.error(
-                                `사용자 정보 가져오기 오류: ${comment.authorId}`,
-                                error
-                            );
-                            return {
-                                ...comment,
-                                author: {
-                                    id: comment.authorId,
-                                    displayName: "알 수 없는 사용자",
-                                },
-                            };
-                        }
-                    })
-                );
-
-                setComments(commentsWithAuthors);
+                setComments(commentsData);
             } else {
                 console.error("댓글 가져오기 실패");
             }
@@ -228,13 +180,14 @@ export default function IssueDetail() {
                 const newCommentData = await res.json();
                 console.log("댓글 생성 성공:", newCommentData);
 
-                // 새 댓글에 작성자 정보 추가
-                const commentWithAuthor = {
-                    ...newCommentData,
-                    author: currentUser,
-                };
-
-                setComments([...comments, commentWithAuthor]);
+                // displayName은 현재 사용자 이름으로 추가
+                setComments([
+                    ...comments,
+                    {
+                        ...newCommentData,
+                        displayName: currentUser.display_name, // 필드명 수정
+                    },
+                ]);
                 setNewComment("");
             } else {
                 const errorText = await res.text();
@@ -272,17 +225,14 @@ export default function IssueDetail() {
             if (res.ok) {
                 const updatedComment = await res.json();
 
-                // 수정된 댓글에 기존 작성자 정보 유지
-                const commentWithAuthor = {
-                    ...updatedComment,
-                    author:
-                        comments.find((c) => c.id === commentId)?.author ||
-                        currentUser,
-                };
-
                 setComments(
                     comments.map((comment) =>
-                        comment.id === commentId ? commentWithAuthor : comment
+                        comment.id === commentId
+                            ? {
+                                  ...updatedComment,
+                                  displayName: comment.displayName,
+                              }
+                            : comment
                     )
                 );
                 setEditingCommentId(null);
@@ -646,16 +596,9 @@ export default function IssueDetail() {
                                                 className="flex gap-4"
                                             >
                                                 <Avatar className="w-10 h-10 border-2 border-gray-200">
-                                                    <AvatarImage
-                                                        src={
-                                                            comment.author
-                                                                ?.avatar ||
-                                                            "/placeholder.svg"
-                                                        }
-                                                    />
                                                     <AvatarFallback className="bg-blue-100 text-blue-700">
-                                                        {comment.author
-                                                            ?.displayName?.[0] ||
+                                                        {comment
+                                                            .displayName?.[0] ||
                                                             "U"}
                                                     </AvatarFallback>
                                                 </Avatar>
@@ -663,8 +606,7 @@ export default function IssueDetail() {
                                                     <div className="flex items-center justify-between">
                                                         <div className="flex items-center gap-3">
                                                             <span className="font-semibold text-gray-800">
-                                                                {comment.author
-                                                                    ?.displayName ||
+                                                                {comment.displayName ||
                                                                     "알 수 없는 사용자"}
                                                             </span>
                                                             <span className="text-sm text-gray-500">
@@ -815,6 +757,9 @@ export default function IssueDetail() {
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
+                                            <SelectItem value="BACKLOG">
+                                                Backlog
+                                            </SelectItem>
                                             <SelectItem value="TODO">
                                                 Todo
                                             </SelectItem>
