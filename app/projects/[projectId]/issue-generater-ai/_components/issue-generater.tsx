@@ -17,6 +17,7 @@ interface GeneratedIssue {
   title: string;
   description: string;
   estimated_hours?: number;
+  status: string;
 }
 
 
@@ -227,7 +228,7 @@ export default function IssueGenerater() {
                         title={selectedIssue.title}
                         description={selectedIssue.description}
                         issueType="task"
-                        status="TODO"
+                        status={selectedIssue.status}
                         onSuccess={() => {
                           handleIssueCreated(selectedIssue.id);
                           setIsModalOpen(false);

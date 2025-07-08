@@ -288,6 +288,9 @@ export default function AddIssueModal({
                                         <SelectValue placeholder="상태 선택" />
                                     </SelectTrigger>
                                     <SelectContent>
+                                        <SelectItem value="BACKLOG">
+                                            Backlog
+                                        </SelectItem>
                                         <SelectItem value="TODO">
                                             Todo
                                         </SelectItem>
@@ -328,7 +331,6 @@ export default function AddIssueModal({
                                 </Select>
                             </div>
 
-                            
                             <div className="space-y-2">
                                 <Label>보고자</Label>
                                 <Select
@@ -454,18 +456,34 @@ export default function AddIssueModal({
                                 id="createBranch"
                                 checked={formData.createBranch}
                                 onChange={(e) =>
-                                    handleInputChange("createBranch", e.target.checked)
+                                    handleInputChange(
+                                        "createBranch",
+                                        e.target.checked
+                                    )
                                 }
                             />
-                            <Label htmlFor="createBranch" className="text-sm font-normal">
+                            <Label
+                                htmlFor="createBranch"
+                                className="text-sm font-normal"
+                            >
                                 이슈 제목으로 GitHub 브랜치 자동 생성
                             </Label>
                         </div>
                         {formData.createBranch && (
                             <div className="text-xs text-muted-foreground bg-blue-50 p-3 rounded-md">
-                                <p>• 이슈 제목을 기반으로 <code>feature/이슈제목</code> 형태의 브랜치가 생성됩니다</p>
-                                <p>• 프로젝트에 GitHub 저장소가 연결되어 있어야 합니다</p>
-                                <p>• 브랜치 생성에 실패해도 이슈는 정상적으로 생성됩니다</p>
+                                <p>
+                                    • 이슈 제목을 기반으로{" "}
+                                    <code>feature/이슈제목</code> 형태의
+                                    브랜치가 생성됩니다
+                                </p>
+                                <p>
+                                    • 프로젝트에 GitHub 저장소가 연결되어 있어야
+                                    합니다
+                                </p>
+                                <p>
+                                    • 브랜치 생성에 실패해도 이슈는 정상적으로
+                                    생성됩니다
+                                </p>
                             </div>
                         )}
                     </div>
