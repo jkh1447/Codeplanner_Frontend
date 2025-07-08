@@ -26,6 +26,10 @@ import { getApiUrl } from "@/lib/api";
 function KanbanBoard({ projectId }: { projectId: string }) {
     const [columns, setColumns] = useState<Column[]>([
         {
+            id: "BACKLOG",
+            title: "Backlog",
+        },
+        {
             id: "TODO",
             title: "Todo",
         },

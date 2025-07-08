@@ -3,9 +3,10 @@ import PlusIcon from "@/components/icons/PlusIcon";
 import UserIcon from "@/components/icons/UserIcon";
 import { Id, Task } from "@/components/type";
 import { useSortable } from "@dnd-kit/sortable";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { CSS } from "@dnd-kit/utilities";
 import TaskDrawer from "../../list/common/TaskDrawer";
+import { getApiUrl } from "@/lib/api";
 
 interface Props {
     task: Task;
@@ -33,6 +34,25 @@ function TaskCard({ task, deleteTask, projectId, onSave }: Props) {
         },
         disabled: false,
     });
+
+
+    const [assignee_display_name, setAssigneeDisplayName] = useState<string>("");
+
+    const getAssigneeDisplayName = async () => {
+        const res = await fetch(`${getApiUrl()}/user/${task.assignee_id}`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        });
+        const data = await res.json();
+        setAssigneeDisplayName(data.displayName);
+        console.log(data);
+    };
+
+    useEffect(() => {
+        getAssigneeDisplayName();
+    }, []);
 
     const style = {
         transition,
@@ -87,8 +107,8 @@ function TaskCard({ task, deleteTask, projectId, onSave }: Props) {
                     )}
                 </div>
                 <div className="absolute bottom-3 right-3">
-                    <div className="w-7 h-7 rounded-full border-2 border-white shadow bg-gray-200 flex items-center justify-center">
-                        <UserIcon className="w-4 h-4 text-gray-500" />
+                    <div className="border-2 px-2 py-1 border-white shadow bg-gray-200 flex items-center justify-center">
+                        {assignee_display_name ? assignee_display_name : "N/A"}
                     </div>
                 </div>
             </div>
