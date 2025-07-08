@@ -13,10 +13,20 @@ import Link from "next/link";
 export default function TaskDrawer({
     task,
     onClose,
+    onSave,
 }: {
     task: Task; // 전달받은 task 객체 초기화
     onClose: () => void; // 전달받은 Drawer 닫기 함수
+    onSave?: () => void; // 저장 후 부모 컴포넌트 데이터 새로고침 콜백
 }) {
+    // 날짜를 YYYY-MM-DD 형식으로 변환하는 함수
+    const formatDateForInput = (dateString: string) => {
+        if (!dateString) return "";
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return "";
+        return date.toISOString().split('T')[0];
+    };
+
     // 폼 상태 관리 - task로부터 초기 값 설정
     const [form, setForm] = useState({
         id: task.project_id,
@@ -26,9 +36,24 @@ export default function TaskDrawer({
         status: task.status || "",
         assigneeId: task.assignee_id || "",
         reporterId: task.reporter_id || "",
-        startDate: task.start_date || "",
-        dueDate: task.due_date || "",
+        startDate: formatDateForInput(task.start_date),
+        dueDate: formatDateForInput(task.due_date),
     });
+
+    // task props가 변경될 때마다 form 상태 업데이트
+    useEffect(() => {
+        setForm({
+            id: task.project_id,
+            title: task.title || "",
+            description: task.description || "",
+            issueType: task.issue_type || "",
+            status: task.status || "",
+            assigneeId: task.assignee_id || "",
+            reporterId: task.reporter_id || "",
+            startDate: formatDateForInput(task.start_date),
+            dueDate: formatDateForInput(task.due_date),
+        });
+    }, [task]);
 
     // 로딩 및 에러 상태값 정의
     const [loading, setLoading] = useState(false);
@@ -62,7 +87,7 @@ export default function TaskDrawer({
         };
     }, [showAssigneeDropdown, showReporterDropdown]);
 
-    // 멤버 리스트 불러오기
+    // 멤버 리스트 불러오기 및 현재 담당자/보고자 이름 설정
     useEffect(() => {
         const fetchMembers = async () => {
             try {
@@ -79,12 +104,23 @@ export default function TaskDrawer({
                 }
                 const data = await response.json();
                 setMemberList(data);
+                
+                // 현재 담당자와 보고자의 이름을 설정
+                const assignee = data.find((member: any) => member.id === task.assignee_id);
+                const reporter = data.find((member: any) => member.id === task.reporter_id);
+                
+                if (assignee) {
+                    setAssigneeSearch(assignee.display_name);
+                }
+                if (reporter) {
+                    setReporterSearch(reporter.display_name);
+                }
             } catch (err: any) {
                 setError(err.message || "멤버 목록을 불러오는 중 오류 발생");
             }
         };
         fetchMembers();
-    }, [task.project_id]);
+    }, [task.project_id, task.assignee_id, task.reporter_id]);
 
     // 폼 값 변경해주는 핸들러
     const handleChange = (
@@ -145,6 +181,12 @@ export default function TaskDrawer({
                 }
             );
             if (!res.ok) throw new Error("저장 실패");
+            
+            // 부모 컴포넌트에게 데이터 새로고침 요청
+            if (onSave) {
+                onSave();
+            }
+            
             onClose(); // -> 저장 완료하면, drawer 닫는다.
         } catch (err: any) {
             setError(err.message || "저장 중 오류 발생"); // 저장 실패시 오류
@@ -167,6 +209,12 @@ export default function TaskDrawer({
                     credentials: "include",
                 }
             );
+            
+            // 부모 컴포넌트에게 데이터 새로고침 요청
+            if (onSave) {
+                onSave();
+            }
+            
             onClose(); // 삭제 후 drawer 닫기
         } catch (err: any) {
             setError(err.message || "삭제 중 오류 발생");
@@ -221,43 +269,44 @@ export default function TaskDrawer({
                     </button>
                 </div>
 
-                {/* 본문 내용 */}
+                                {/* 본문 내용 */}
                 <div className="p-6 space-y-6 max-h-[calc(100vh-180px)] overflow-y-auto flex-1">
                     {/* Type & Status */}
                     <div className="flex gap-4">
-                        <div className="space-y-1">
-                            <label className="text-sm font-medium text-gray-700">
-                                유형
-                            </label>
-                            <select
+                            <div className="space-y-1">
+                                <label className="text-sm font-medium text-gray-700">
+                                    유형
+                                </label>
+                                                            <select
                                 name="issueType"
                                 value={form.issueType}
                                 onChange={handleChange}
                                 className="px-3 py-1 bg-blue-50 text-blue-700 rounded-md text-xs"
                             >
-                                <option value="">선택</option>
+                                {!form.issueType && <option value="">선택</option>}
                                 <option value="bug">버그</option>
                                 <option value="feature">기능</option>
                                 <option value="task">작업</option>
                             </select>
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-sm font-medium text-gray-700">
-                                상태
-                            </label>
-                            <select
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-sm font-medium text-gray-700">
+                                    상태
+                                </label>
+                                                            <select
                                 name="status"
                                 value={form.status}
                                 onChange={handleChange}
                                 className="px-3 py-1 bg-green-50 text-green-700 rounded-md text-xs"
                             >
-                                <option value="">선택</option>
+                                {!form.status && <option value="">선택</option>}
                                 <option value="TODO">TODO</option>
                                 <option value="IN_PROGRESS">IN_PROGRESS</option>
                                 <option value="DONE">DONE</option>
                             </select>
+                            </div>
                         </div>
-                    </div>
+                        
                     {/* Description */}
                     <div className="space-y-1">
                         <label className="text-sm font-medium text-gray-700">
@@ -281,7 +330,6 @@ export default function TaskDrawer({
                             className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md text-sm transition-colors duration-200"
                         >
                             <GitCommitHorizontal className="w-4 h-4" />
-
                             <span>GitHub 커밋 보기</span>
                         </button>
                     </div>

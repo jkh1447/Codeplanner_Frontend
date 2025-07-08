@@ -202,6 +202,7 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                                             deleteTask={deleteTask}
                                             updateTask={updateTask}
                                             current_user={current_user}
+                                            onSave={fetchLatestTasks}
                                         />
                                     ))}
                                 </SortableContext>
@@ -331,6 +332,7 @@ function KanbanBoard({ projectId }: { projectId: string }) {
     function deleteTask(id: Id, projectId: string) {
         fetch(`${getApiUrl()}/projects/${projectId}/issues/${id}`, {
             method: "DELETE",
+            credentials: "include",
         }).then((res) => {
             if (!res.ok) throw new Error("Failed to delete issue");
             fetchLatestTasks();
@@ -476,6 +478,7 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                     headers: {
                         "Content-Type": "application/json",
                     },
+                    credentials: "include",
                     body: JSON.stringify({
                         issueIds,
                         targetColumnId,

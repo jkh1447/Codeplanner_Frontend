@@ -12,9 +12,10 @@ interface Props {
     task: Task;
     deleteTask: (id: Id, projectId: string) => void;
     projectId: string;
+    onSave?: () => void;
 }
 
-function TaskCard({ task, deleteTask, projectId }: Props) {
+function TaskCard({ task, deleteTask, projectId, onSave }: Props) {
     const [mouseIsOver, setMouseIsOver] = useState(false);
     const [showDrawer, setShowDrawer] = useState(false);
 
@@ -112,7 +113,11 @@ function TaskCard({ task, deleteTask, projectId }: Props) {
                 </div>
             </div>
             {showDrawer && (
-                <TaskDrawer task={task} onClose={() => setShowDrawer(false)} />
+                <TaskDrawer 
+                    task={task} 
+                    onClose={() => setShowDrawer(false)} 
+                    onSave={onSave}
+                />
             )}
         </>
     );
