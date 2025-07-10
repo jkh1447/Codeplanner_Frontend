@@ -1,4 +1,5 @@
 # 프로젝트 폴더 구조
+```
 📦Codeplanner_Frontend
  ┣ 📂app                        # Next.js App Router의 메인 폴더
  ┃ ┣ 📂api                       # (비어있음/미정의) API 관련 폴더
@@ -53,6 +54,7 @@
  ┣ README.md
  ┣ tailwind.config.ts
  ┣ tsconfig.json
+```
 
 ## 프로젝트 실행방법
 
