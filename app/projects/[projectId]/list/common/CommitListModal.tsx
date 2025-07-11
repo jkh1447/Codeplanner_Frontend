@@ -79,7 +79,7 @@ export default function CommitListModal({
     const [selectedCommit, setSelectedCommit] = useState<{owner: string, repo: string, sha: string} | null>(null);
     const [projectOwner, setProjectOwner] = useState("");
     const [projectRepo, setProjectRepo] = useState("");
-    const [analyzeResults, setAnalyzeResults] = useState<{ [filename: string]: {cpp: boolean, clang: boolean} | null }>({});
+    const [analyzeResults, setAnalyzeResults] = useState<{ [filename: string]: {cpp: boolean, clang: boolean, format: boolean} | null }>({});
     const [analyzing, setAnalyzing] = useState<{ [filename: string]: boolean }>({});
 
     // 초기 커밋 목록 불러오기
@@ -216,7 +216,7 @@ export default function CommitListModal({
         setAnalyzeResults(prev => ({ ...prev, [file.filename]: null }));
         try {
             const res = await fetch(
-                `${getApiUrl()}/analysis/github/commit/${projectOwner}/${projectRepo}/${selectedCommit?.sha}`,
+                `${getApiUrl()}/analysis/github/commit/${projectOwner}/${projectRepo}/${selectedCommit?.sha}?file=${file.filename}`,
                 {
                     method: "GET",
                     credentials: "include",
