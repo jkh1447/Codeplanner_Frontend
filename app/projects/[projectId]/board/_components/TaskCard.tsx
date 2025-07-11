@@ -8,6 +8,7 @@ import { CSS } from "@dnd-kit/utilities";
 import TaskDrawer from "../../list/common/TaskDrawer";
 import { getApiUrl } from "@/lib/api";
 import { Book, Bug, SquareCheckBig } from "lucide-react";
+import { differenceInDays, parseISO } from "date-fns";
 
 interface Props {
     task: Task;
@@ -75,6 +76,23 @@ function TaskCard({ task, deleteTask, projectId, onSave }: Props) {
         transform: CSS.Transform.toString(transform),
     };
 
+    // 마감일에 따른 테두리 색상 결정 (색상 단계별)
+    let borderClass = "border-gray-200 border"; // 기본: 여유 있음
+    if (task.due_date) {
+        const dueDate = parseISO(task.due_date);
+        const today = new Date();
+        const daysLeft = differenceInDays(dueDate, today);
+        if (daysLeft <= 0) {
+            borderClass = "border-red-600 border"; // 이미 연체/오늘
+        } else if (daysLeft <= 3) {
+            borderClass = "border-orange-400 border"; // 1~3일 임박
+        } else if (daysLeft <= 7) {
+            borderClass = "border-yellow-400 border"; // 4~7일 다가옴
+        } else {
+            borderClass = "border-gray-200 border"; // 8일 이상
+        }
+    }
+
     if (isDragging) {
         return (
             <div
@@ -92,7 +110,7 @@ function TaskCard({ task, deleteTask, projectId, onSave }: Props) {
                 style={style}
                 {...attributes}
                 {...listeners}
-                className="bg-white p-3 min-h-[100px] flex flex-col rounded-xl shadow-md border border-gray-200 hover:ring-2 hover:ring-inset hover:ring-blue-300 cursor-pointer relative group transition-all"
+                className={`bg-white p-3 min-h-[100px] flex flex-col rounded-xl shadow-md ${borderClass} hover:ring-2 hover:ring-inset hover:ring-blue-300 cursor-pointer relative group transition-all`}
                 onMouseEnter={() => setMouseIsOver(true)}
                 onMouseLeave={() => setMouseIsOver(false)}
                 onClick={() => setShowDrawer(true)}
@@ -125,7 +143,7 @@ function TaskCard({ task, deleteTask, projectId, onSave }: Props) {
                     )}
                     <div className="flex-1" />
                     <div className="flex items-end">
-                        <span className="flex items-center gap-1 py-1 rounded-full text-xs font-semibold">
+                        <span className="flex items-center gap-1 py-1 rounded-full text-xs font-semibold mt-1">
                             {task.issue_type === "task" && (
                                 <SquareCheckBig
                                     className="w-5 h-5 mr-1"
