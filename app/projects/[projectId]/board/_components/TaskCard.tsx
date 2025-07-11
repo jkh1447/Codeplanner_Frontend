@@ -7,6 +7,7 @@ import React, { useEffect, useState } from "react";
 import { CSS } from "@dnd-kit/utilities";
 import TaskDrawer from "../../list/common/TaskDrawer";
 import { getApiUrl } from "@/lib/api";
+import { Book, Bug, SquareCheckBig } from "lucide-react";
 
 interface Props {
     task: Task;
@@ -35,8 +36,8 @@ function TaskCard({ task, deleteTask, projectId, onSave }: Props) {
         disabled: false,
     });
 
-
-    const [assignee_display_name, setAssigneeDisplayName] = useState<string>("");
+    const [assignee_display_name, setAssigneeDisplayName] =
+        useState<string>("");
 
     const getAssigneeDisplayName = async () => {
         const res = await fetch(`${getApiUrl()}/user/${task.assignee_id}`, {
@@ -45,9 +46,24 @@ function TaskCard({ task, deleteTask, projectId, onSave }: Props) {
                 "Content-Type": "application/json",
             },
         });
-        const data = await res.json();
-        setAssigneeDisplayName(data.displayName);
-        console.log(data);
+        // 응답 body를 먼저 text로 읽음
+        const text = await res.text();
+
+        if (text) {
+            // body가 비어있지 않으면 JSON 파싱
+            try {
+                const data = JSON.parse(text);
+                setAssigneeDisplayName(data.displayName || "N/A");
+                // console.log("assignee_display_name", data);
+            } catch (e) {
+                setAssigneeDisplayName("N/A");
+                console.error("JSON 파싱 에러:", e);
+            }
+        } else {
+            // body가 비어있으면 N/A로 처리
+            setAssigneeDisplayName("N/A");
+            // console.log("assignee_display_name: N/A (body empty)");
+        }
     };
 
     useEffect(() => {
@@ -81,20 +97,54 @@ function TaskCard({ task, deleteTask, projectId, onSave }: Props) {
                 onMouseLeave={() => setMouseIsOver(false)}
                 onClick={() => setShowDrawer(true)}
             >
-                <div className="flex flex-col h-full min-h-[120px] relative">
+                <div className="flex flex-col h-full min-h-[80px] relative">
                     <span
-                        className="font-semibold text-base text-gray-800 break-words whitespace-pre-line block"
+                        className="font-medium text-base text-gray-800 break-words whitespace-pre-line block"
                         style={{ wordBreak: "break-all" }}
                     >
                         {task.title}
                     </span>
+                    {/* 레이블 뱃지 */}
+                    {Array.isArray(task.labels) && task.labels.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                            {task.labels.map((label: any) => (
+                                <span
+                                    key={label.id.toString()}
+                                    className="px-2 py-0.5 rounded text-xs font-semibold"
+                                    style={{
+                                        backgroundColor: label.color,
+                                        color: "#fff",
+                                        minWidth: "2rem",
+                                        display: "inline-block",
+                                    }}
+                                >
+                                    {label.name}
+                                </span>
+                            ))}
+                        </div>
+                    )}
                     <div className="flex-1" />
                     <div className="flex items-end">
-                        <span className="px-3 py-1 rounded-full bg-purple-200 text-purple-800 text-sm font-semibold">
+                        <span className="flex items-center gap-1 py-1 rounded-full text-xs font-semibold">
+                            {task.issue_type === "task" && (
+                                <SquareCheckBig
+                                    className="w-5 h-5 mr-1"
+                                    color={"#3729ff"}
+                                />
+                            )}
+                            {task.issue_type === "story" && (
+                                <Book
+                                    className="w-5 h-5 mr-1"
+                                    color="#ff9500"
+                                />
+                            )}
+                            {task.issue_type === "bug" && (
+                                <Bug className="w-5 h-5 mr-1" color="#ff0000" />
+                            )}
                             {task.tag}
                         </span>
                     </div>
-                    {mouseIsOver && (
+                    {/* {mouseIsOver && (
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -104,18 +154,18 @@ function TaskCard({ task, deleteTask, projectId, onSave }: Props) {
                         >
                             <TrashIcon />
                         </button>
-                    )}
+                    )} */}
                 </div>
-                <div className="absolute bottom-3 right-3">
+                {/* <div className="absolute bottom-3 right-3">
                     <div className="border-2 px-2 py-1 border-white shadow bg-gray-200 flex items-center justify-center">
                         {assignee_display_name ? assignee_display_name : "N/A"}
                     </div>
-                </div>
+                </div> */}
             </div>
             {showDrawer && (
-                <TaskDrawer 
-                    task={task} 
-                    onClose={() => setShowDrawer(false)} 
+                <TaskDrawer
+                    task={task}
+                    onClose={() => setShowDrawer(false)}
                     onSave={onSave}
                 />
             )}
