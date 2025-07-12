@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,7 +20,22 @@ interface InvitationData {
   token: string;
 }
 
-export default function InvitePage() {
+// 로딩 컴포넌트
+function InviteLoading() {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardContent className="p-8 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">초대 링크를 확인하는 중...</p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// 실제 초대 처리 컴포넌트
+function InviteContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get("token");
@@ -270,4 +285,13 @@ export default function InvitePage() {
       </Card>
     </div>
   );
-} 
+}
+
+// 메인 페이지 컴포넌트
+export default function InvitePage() {
+  return (
+    <Suspense fallback={<InviteLoading />}>
+      <InviteContent />
+    </Suspense>
+  );
+}
