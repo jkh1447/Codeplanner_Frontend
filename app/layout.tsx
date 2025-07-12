@@ -18,7 +18,7 @@ export default function RootLayout({
     <html lang="ko">
       <head>
         {/* 파비콘 설정 */}
-        <link rel="icon" href="/CodePlannerIconPAV.png" type="image/png" />
+        <link rel="icon" href="/CodePlannerIconPAV_Circle.png" type="image/png" />
       </head>
       <body suppressHydrationWarning={true}>{children}</body>
     </html>

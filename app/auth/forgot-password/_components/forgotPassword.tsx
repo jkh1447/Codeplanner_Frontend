@@ -17,6 +17,7 @@ export default function ForgotPasswordPage() {
   const [isEmailSent, setIsEmailSent] = useState(false)
   const [error, setError] = useState("")
   const [isEmailFocused, setIsEmailFocused] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
 
   const emailInputRef = useRef<HTMLInputElement>(null)
@@ -45,6 +46,7 @@ export default function ForgotPasswordPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitted(true);
     if (!validateEmail(email)) return;
 
     setIsLoading(true);
@@ -142,11 +144,6 @@ export default function ForgotPasswordPage() {
                       if (error) validateEmail(e.target.value)
                     }}
                     onFocus={() => setIsEmailFocused(true)}
-                    onBlur={(e) => {
-                      setIsEmailFocused(false);
-                      validateEmail(e.target.value);
-                    }}
-
                     placeholder=" "
                     required
                   />
@@ -161,7 +158,7 @@ export default function ForgotPasswordPage() {
                     이메일 주소
                   </Label>
                 </div>
-                {error && <p className="text-sm text-red-600">{error}</p>}
+                {submitted && error && <p className="text-sm text-red-600">{error}</p>}
               </div>
 
               <Button

@@ -31,9 +31,9 @@ export default function HealthCheck() {
     checkHealth();
     
     // 30초마다 자동 헬스체크 (선택사항)
-    const interval = setInterval(checkHealth, 30000);
+    // const interval = setInterval(checkHealth, 30000);
     
-    return () => clearInterval(interval);
+    // return () => clearInterval(interval);
   }, []);
 
   if (isHealthy === null) {

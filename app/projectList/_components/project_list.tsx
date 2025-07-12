@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import Header from "../../../components/header";
 import { getApiUrl } from "@/lib/api";
@@ -44,6 +44,7 @@ async function createRepoOnGitHub({
 // 프로젝트 목록 컴포넌트
 export default function ProjectList() {
     const [projects, setProjects] = useState<Project[]>([]);
+    const overlayMouseDown = useRef(false);
     useEffect(() => {
         console.log("백엔드 서버에 연결 시도 중...");
         fetch(`${getApiUrl()}/projects`, {
@@ -457,9 +458,21 @@ export default function ProjectList() {
 
         {/* 프로젝트 생성 모달 */}
         {showCreateModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-md w-full p-6">
-              <div className="flex items-center justify-between mb-4">
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            onMouseDown={e => {
+              if (e.target === e.currentTarget) overlayMouseDown.current = true;
+            }}
+            onMouseUp={e => {
+              if (e.target === e.currentTarget && overlayMouseDown.current) {
+                setShowCreateModal(false);
+              }
+              overlayMouseDown.current = false;
+            }}
+          >
+            <div className="bg-white rounded-lg max-w-md w-full flex flex-col p-0" onClick={e => e.stopPropagation()}>
+              {/* 헤더 고정 */}
+              <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b">
                 <h2 className="text-xl font-semibold text-slate-800">
                   새 프로젝트 생성
                 </h2>
@@ -482,93 +495,95 @@ export default function ProjectList() {
                   </svg>
                 </button>
               </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    프로젝트 이름
-                  </label>
-                  <input
-                    type="text"
-                    value={newProject.name}
-                    onChange={(e) =>
-                      setNewProject({
-                        ...newProject,
-                        name: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="프로젝트 이름을 입력하세요"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    마감일
-                  </label>
-                  <input
-                    type="date"
-                    value={newProject.dueDate}
-                    onChange={(e) =>
-                      setNewProject({
-                        ...newProject,
-                        dueDate: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    설명
-                  </label>
-                  <textarea
-                    value={newProject.description}
-                    onChange={(e) =>
-                      setNewProject({
-                        ...newProject,
-                        description: e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    rows={3}
-                    placeholder="프로젝트 설명을 입력하세요"
-                  />
-                </div>
-
-                
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2 ">
-                    프로젝트 태그 
-                  </label>
-                  <input
-                    type="text"
-                    value={newProject.tag}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      // 영어(대소문자)와 공백만 허용
-                      if (/^[a-zA-Z\s]*$/.test(value)) {
+              {/* 내용 스크롤 영역 */}
+              <div className="flex-1 overflow-y-auto max-h-[60vh] px-6 py-4 scrollbar-hide">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      프로젝트 이름
+                    </label>
+                    <input
+                      type="text"
+                      value={newProject.name}
+                      onChange={(e) =>
                         setNewProject({
                           ...newProject,
-                          tag: value,
-                        });
+                          name: e.target.value,
+                        })
                       }
-                    }}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="태그를 입력하세요(영어만 입력 가능)."
-                  />
-                </div>
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="프로젝트 이름을 입력하세요"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    GitHub 저장소
-                  </label>
-                  <GitHubConnector setRepositoryUrl={(url) => setNewProject({...newProject, repository_url: url})} />
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      마감일
+                    </label>
+                    <input
+                      type="date"
+                      value={newProject.dueDate}
+                      onChange={(e) =>
+                        setNewProject({
+                          ...newProject,
+                          dueDate: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      설명
+                    </label>
+                    <textarea
+                      value={newProject.description}
+                      onChange={(e) =>
+                        setNewProject({
+                          ...newProject,
+                          description: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      rows={3}
+                      placeholder="프로젝트 설명을 입력하세요"
+                    />
+                  </div>
+
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2 ">
+                      프로젝트 태그 
+                    </label>
+                    <input
+                      type="text"
+                      value={newProject.tag}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // 영어(대소문자)와 공백만 허용
+                        if (/^[a-zA-Z\s]*$/.test(value)) {
+                          setNewProject({
+                            ...newProject,
+                            tag: value,
+                          });
+                        }
+                      }}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="태그를 입력하세요(영어만 입력 가능)."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      GitHub 저장소
+                    </label>
+                    <GitHubConnector setRepositoryUrl={(url) => setNewProject({...newProject, repository_url: url})} />
+                  </div>
                 </div>
               </div>
-
-              <div className="flex gap-3 mt-6">
+              {/* 바텀 버튼 고정 */}
+              <div className="flex gap-3 px-6 pb-6 pt-4 border-t bg-white sticky bottom-0 rounded-b-lg">
                 <button
                   onClick={() => setShowCreateModal(false)}
                   className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"

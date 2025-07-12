@@ -5,9 +5,10 @@ import Link from "next/link";
 import { Bell, X } from "lucide-react";
 
 import { getApiUrl } from "@/lib/api";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import HealthCheck from "@/components/health-check";
-import { Notification_issue } from "@/components/type";
+import { Alert, AlertDescription } from "./ui/alert";
+import HealthCheck from "./health-check";
+import { Notification_issue } from "./type";
+import { isDevelopment } from "@/lib/api";
 
 // 상대 시간 변환 함수
 function getRelativeTime(isoString: string) {
@@ -157,7 +158,7 @@ export default function Header() {
                     </div>
                     <div className="flex items-center gap-3">
                         {/* 헬스체크 */}
-                        <HealthCheck />
+                        {typeof window !== "undefined" && !isDevelopment() && <HealthCheck />}
 
                         {/* 알림 */}
                         <div className="relative group">

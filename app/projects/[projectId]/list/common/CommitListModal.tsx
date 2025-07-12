@@ -79,7 +79,19 @@ export default function CommitListModal({
     const [selectedCommit, setSelectedCommit] = useState<{owner: string, repo: string, sha: string} | null>(null);
     const [projectOwner, setProjectOwner] = useState("");
     const [projectRepo, setProjectRepo] = useState("");
-    const [analyzeResults, setAnalyzeResults] = useState<{ [filename: string]: {cpp: boolean, clang: boolean, format: boolean} | null }>({});
+    const [analyzeResults, setAnalyzeResults] = useState<{
+      [filename: string]: {
+        cpp: boolean;
+        clang: boolean;
+        format: boolean;
+        cppcheckOutput?: string;
+        clangTidyOutput?: string;
+        clangFormatOutput?: string;
+        cppcheckIssues?: any[];
+        clangTidyIssues?: any[];
+        clangFormatIssues?: any[];
+      } | null;
+    }>({});
     const [analyzing, setAnalyzing] = useState<{ [filename: string]: boolean }>({});
 
     // 초기 커밋 목록 불러오기
@@ -231,12 +243,19 @@ export default function CommitListModal({
                 [file.filename]: {
                     cpp: !!result?.cppcheck?.success,
                     clang: !!result?.clangTidy?.success,
+                    format: !!result?.clangFormat?.success,
+                    cppcheckOutput: result?.cppcheck && !result?.cppcheck?.success ? result.cppcheck.output : undefined,
+                    clangTidyOutput: result?.clangTidy && !result?.clangTidy?.success ? result.clangTidy.output : undefined,
+                    clangFormatOutput: result?.clangFormat && !result?.clangFormat?.success ? result.clangFormat.output : undefined,
+                    cppcheckIssues: result?.cppcheck?.issues,
+                    clangTidyIssues: result?.clangTidy?.issues,
+                    clangFormatIssues: result?.clangFormat?.issues,
                 }
             }));
         } catch {
             setAnalyzeResults(prev => ({
                 ...prev,
-                [file.filename]: { cpp: false, clang: false }
+                [file.filename]: { cpp: false, clang: false, format: false }
             }));
         } finally {
             setAnalyzing(prev => ({ ...prev, [file.filename]: false }));
@@ -375,60 +394,255 @@ export default function CommitListModal({
 
             {/* 파일 목록 모달 */}
             <Dialog open={fileModalOpen} onOpenChange={setFileModalOpen}>
-              <DialogContent>
+              <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
                 <DialogHeader>
-                  <DialogTitle>커밋 파일 목록</DialogTitle>
+                  <DialogTitle className="flex items-center gap-2 text-xl font-semibold">
+                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    커밋 파일 목록
+                  </DialogTitle>
                 </DialogHeader>
-                {fileLoading && <div>불러오는 중...</div>}
-                {fileError && <div className="text-red-500">{fileError}</div>}
-                <div className="mt-4 space-y-3">
+                {fileLoading && (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <span className="ml-3 text-gray-600">파일 목록을 불러오는 중...</span>
+                  </div>
+                )}
+                {fileError && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+                    <div className="flex items-center gap-2">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      {fileError}
+                    </div>
+                  </div>
+                )}
+                <div className="mt-4 space-y-4 max-h-[60vh] overflow-y-auto">
                   {fileList.map((file: any, idx) => {
                     const result = analyzeResults[file.filename];
                     let color = "";
+                    let statusColor = "";
                     if (result) {
-                        if (result.cpp && result.clang) color = "bg-green-500";
-                        else if (!result.cpp && !result.clang) color = "bg-red-500";
+                        if (result.cpp && result.clang && result.format) color = "bg-green-500";
+                        else if (!result.cpp && !result.clang && !result.format) color = "bg-red-500";
                         else color = "bg-yellow-400";
                     }
+                    
+                    // 파일 상태에 따른 색상
+                    if (file.status === 'added') statusColor = 'bg-green-100 text-green-800 border-green-200';
+                    else if (file.status === 'modified') statusColor = 'bg-yellow-100 text-yellow-800 border-yellow-200';
+                    else if (file.status === 'removed') statusColor = 'bg-red-100 text-red-800 border-red-200';
+                    else statusColor = 'bg-gray-100 text-gray-800 border-gray-200';
+
                     return (
-                        <div key={file.filename + '-' + idx} className="border rounded-lg p-4 shadow-sm hover:shadow-md transition bg-white flex items-center">
-                            <div className="mr-4 flex-shrink-0">
-                                {result && (
-                                    <span className={`inline-block w-4 h-4 rounded-full ${color}`} title="분석 결과" />
-                                )}
-                            </div>
-                            <div className="flex-1">
-                                <div className="flex items-center justify-between mb-2">
-                                    <div className="font-semibold text-base text-gray-800 truncate max-w-[70%]">
-                                        {file.filename}
+                        <div key={file.filename + '-' + idx} className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-lg transition-all duration-200">
+                            <div className="flex items-start gap-4">
+                                {/* 분석 결과 표시 */}
+                                <div className="flex-shrink-0">
+                                    {result && (
+                                        <div className={`w-4 h-4 rounded-full ${color} shadow-sm`} title="분석 결과" />
+                                    )}
+                                </div>
+                                
+                                {/* 파일 정보 */}
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center gap-3">
+                                            <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                            <h3 className="font-semibold text-gray-900 break-all">
+                                                {file.filename}
+                                            </h3>
+                                        </div>
+                                        <span className={`px-3 py-1 rounded-full text-xs font-medium border ${statusColor} flex-shrink-0`}>
+                                            {file.status}
+                                        </span>
                                     </div>
-                                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                        file.status === 'added' ? 'bg-green-100 text-green-700' :
-                                        file.status === 'modified' ? 'bg-yellow-100 text-yellow-700' :
-                                        file.status === 'removed' ? 'bg-red-100 text-red-700' :
-                                        'bg-gray-100 text-gray-700'
-                                    }`}>
-                                        {file.status}
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-2 text-xs text-gray-500">
-                                    <span>언어: {file.language}</span>
-                                    <span>•</span>
-                                    <span>파일 크기: {file.content ? file.content.length : 0} 문자</span>
+                                    
+                                    <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
+                                        <div className="flex items-center gap-1">
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                            </svg>
+                                            <span>언어: {file.language || 'Unknown'}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                                            </svg>
+                                            <span>크기: {file.content ? file.content.length : 0} 문자</span>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* 분석 버튼 */}
+                                    <button
+                                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
+                                            analyzing[file.filename]
+                                                ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                                                : 'bg-blue-500 hover:bg-blue-600 text-white shadow-sm hover:shadow-md'
+                                        }`}
+                                        onClick={() => handleAnalyze(file)}
+                                        disabled={!!analyzing[file.filename]}
+                                    >
+                                        {analyzing[file.filename] ? (
+                                            <>
+                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                                분석 중...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                                </svg>
+                                                분석
+                                            </>
+                                        )}
+                                    </button>
                                 </div>
                             </div>
-                            <button
-                                className="ml-4 px-3 py-1 bg-blue-500 text-white rounded text-xs font-medium hover:bg-blue-600 disabled:opacity-50"
-                                onClick={() => handleAnalyze(file)}
-                                disabled={!!analyzing[file.filename]}
-                            >
-                                {analyzing[file.filename] ? "분석 중..." : "분석"}
-                            </button>
+                            
+                            {/* 분석 결과 에러 메시지 */}
+                            {result && (
+                                <div className="mt-4 space-y-3">
+                                    {/* cppcheck 에러 */}
+                                    {result.cpp === false && ((result.cppcheckIssues?.length ?? 0) > 0 ? (
+                                        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                <span className="font-semibold text-red-700">cppcheck 에러</span>
+                                            </div>
+                                            <ul className="space-y-1 ml-6">
+                                                {(result.cppcheckIssues ?? []).map((issue: any, idx: number) => (
+                                                    <li key={idx} className="text-red-600 text-sm flex items-start gap-2">
+                                                        <span className="text-red-400 mt-1">•</span>
+                                                        <span>타입: {issue.type} [{issue.line}, {issue.column}]: {issue.message}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    ) : result.cppcheckOutput && (
+                                        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                <span className="font-semibold text-red-700">cppcheck 에러</span>
+                                            </div>
+                                            <div className="text-red-600 text-sm whitespace-pre-wrap ml-6">
+                                                {result.cppcheckOutput}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    
+                                    {/* clang-tidy 에러 */}
+                                    {result.clang === false && ((result.clangTidyIssues?.length ?? 0) > 0 ? (
+                                        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                <span className="font-semibold text-orange-700">clang-tidy 에러</span>
+                                            </div>
+                                            <ul className="space-y-1 ml-6">
+                                                {(result.clangTidyIssues ?? []).map((issue: any, idx: number) => (
+                                                    <li key={idx} className="text-orange-600 text-sm flex items-start gap-2">
+                                                        <span className="text-orange-400 mt-1">•</span>
+                                                        <span> 타입: {issue.type} [{issue.line}, {issue.column}]: {issue.message}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    ) : result.clangTidyOutput && (
+                                        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                <span className="font-semibold text-orange-700">clang-tidy 에러</span>
+                                            </div>
+                                            <ul className="space-y-1 ml-6">
+                                                {(() => {
+                                                    const lines = (result.clangTidyOutput ?? '').split('\n');
+                                                    const errors: string[] = [];
+                                                    
+                                                    lines.forEach(line => {
+                                                        const match = line.match(/:(\d+):(\d+):\s*(error|warning|note):\s*(.+)/);
+                                                        if (match) {
+                                                            const [, lineNum, columnNum, type, message] = match;
+                                                            errors.push(`${type} error[${lineNum}, ${columnNum}]: ${message.trim()}`);
+                                                        }
+                                                    });
+                                                    
+                                                    if (errors.length > 0) {
+                                                        return errors.map((error, idx) => (
+                                                            <li key={idx} className="text-orange-600 text-sm flex items-start gap-2">
+                                                                <span className="text-orange-400 mt-1">•</span>
+                                                                <span>{error}</span>
+                                                            </li>
+                                                        ));
+                                                    } else {
+                                                        return [
+                                                            <li key="original" className="text-orange-600 text-sm flex items-start gap-2">
+                                                                <span className="text-orange-400 mt-1">•</span>
+                                                                <span className="whitespace-pre-wrap">{result.clangTidyOutput}</span>
+                                                            </li>
+                                                        ];
+                                                    }
+                                                })()}
+                                            </ul>
+                                        </div>
+                                    ))}
+                                    
+                                    {/* clang-format 에러 */}
+                                    {result.format === false && ((result.clangFormatIssues?.length ?? 0) > 0 ? (
+                                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <svg className="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                <span className="font-semibold text-purple-700">clang-format 에러</span>
+                                            </div>
+                                            <ul className="space-y-1 ml-6">
+                                                {(result.clangFormatIssues ?? []).map((issue: any, idx: number) => (
+                                                    <li key={idx} className="text-purple-600 text-sm flex items-start gap-2">
+                                                        <span className="text-purple-400 mt-1">•</span>
+                                                        <span>타입: {issue.type} [{issue.line}, {issue.column}]: {issue.message}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    ) : result.clangFormatOutput && (
+                                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <svg className="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                <span className="font-semibold text-purple-700">clang-format 에러</span>
+                                            </div>
+                                            <div className="text-purple-600 text-sm whitespace-pre-wrap ml-6">
+                                                {result.clangFormatOutput}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     );
                   })}
                 </div>
-                {fileList.length === 0 && !fileLoading && !fileError && <div>파일이 없습니다.</div>}
+                {fileList.length === 0 && !fileLoading && !fileError && (
+                    <div className="text-center py-8 text-gray-500">
+                        <svg className="w-12 h-12 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        파일이 없습니다.
+                    </div>
+                )}
               </DialogContent>
             </Dialog>
         </>
