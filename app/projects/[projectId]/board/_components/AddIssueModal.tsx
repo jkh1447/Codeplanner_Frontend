@@ -3,7 +3,7 @@
 import type React from "react";
 
 import { useState, useEffect } from "react";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, PlusIcon } from "lucide-react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 
@@ -28,6 +28,7 @@ import {
 import {
     Select,
     SelectContent,
+    SelectGroup,
     SelectItem,
     SelectTrigger,
     SelectValue,
@@ -35,37 +36,12 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-import { Id, User } from "@/components/type";
+import { Label_issue, User } from "@/components/type";
 import { getApiUrl } from "@/lib/api";
+import AddLabelModal from "./AddLabelModal";
+import ReactSelect from "react-select";
 
 // 더미 데이터 - 실제로는 서버에서 가져올 예정
-const users = [
-    {
-        id: "123e4567-e89b-12d3-a456-426614174000",
-        name: "김철수",
-        email: "kim@example.com",
-    },
-    {
-        id: "124e4567-e89b-12d3-a456-426614174000",
-        name: "이영희",
-        email: "lee@example.com",
-    },
-    {
-        id: "183e4567-e89b-12d3-a456-426614174000",
-        name: "박민수",
-        email: "park@example.com",
-    },
-    {
-        id: "123e4467-e89b-12d3-a456-426614174000",
-        name: "정수진",
-        email: "jung@example.com",
-    },
-    {
-        id: "ae4ea619-20e5-40b8-92bc-a36c935dff26",
-        name: "츄미밍a",
-        email: "myong2404@gmail.com",
-    },
-];
 
 interface IssueFormData {
     project_id: string;
@@ -80,6 +56,7 @@ interface IssueFormData {
     position: number;
     tag: string;
     createBranch: boolean;
+    labels: Label_issue[];
 }
 
 interface AddIssueModalProps {
@@ -115,10 +92,18 @@ export default function AddIssueModal({
         position: taskCount || 0,
         tag: "",
         createBranch: true, // 기본값으로 브랜치 생성 활성화
+        labels: [],
     });
 
     const [projectMembers, setProjectMembers] = useState<User[]>([]);
     const [current_member, setCurrent_member] = useState<any | null>(null);
+
+    const [isOpen, setIsOpen] = useState(false);
+    const [labelModalOpen, setLabelModalOpen] = useState(false);
+    const [labelName, setLabelName] = useState("");
+    const [selectedColor, setSelectedColor] = useState("#3b82f6");
+
+    const [label, setLabel] = useState<Label_issue[]>([]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -158,6 +143,7 @@ export default function AddIssueModal({
             position: 0,
             tag: "",
             createBranch: true,
+            labels: [],
         });
         onOpenChange(false);
 
@@ -210,9 +196,67 @@ export default function AddIssueModal({
         }
     };
 
+    const handleLabelSave = async () => {
+        const labelData = {
+            project_id: projectId,
+            name: labelName,
+            color: selectedColor,
+        };
+
+        const response = await fetch(
+            `${getApiUrl()}/projects/${projectId}/labels`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(labelData),
+                credentials: "include",
+            }
+        );
+        const data = await response.json();
+        if (response.ok) {
+            // 레이블 저장 후 전체 레이블 목록을 다시 가져옴
+            await getProjectLabels(projectId);
+        } else {
+            console.error("Failed to save label:", data);
+        }
+    };
+
+    const getProjectLabels = async (projectId: string) => {
+        const response = await fetch(
+            `${getApiUrl()}/projects/${projectId}/labels`,
+            {
+                method: "GET",
+            }
+        );
+        const data = await response.json();
+        if (response.ok) {
+            setLabel(data);
+        } else {
+            console.error("Failed to fetch project labels:", data);
+        }
+    };
+
+    const deleteLabel = async (labelId: string) => {
+        const response = await fetch(
+            `${getApiUrl()}/projects/${projectId}/labels/${labelId}`,
+            {
+                method: "DELETE",
+            }
+        );
+        const data = await response.json();
+        if (response.ok) {
+            await getProjectLabels(projectId);
+        } else {
+            console.error("Failed to delete label:", data);
+        }
+    };
+
     useEffect(() => {
         getProjectMembers(projectId);
         getProjectTag(projectId);
+        getProjectLabels(projectId);
         console.log("current_user", current_user);
     }, []);
 
@@ -313,11 +357,127 @@ export default function AddIssueModal({
                                         <SelectItem value="IN_PROGRESS">
                                             In Progress
                                         </SelectItem>
+                                        <SelectItem value="IN_REVIEW">
+                                            In Review
+                                        </SelectItem>
                                         <SelectItem value="DONE">
                                             Done
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>
+                            </div>
+                        </div>
+                        {/* 레이블 */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>레이블</Label>
+                                {(() => {
+                                    const labelOptions = label.map((l) => ({
+                                        ...l,
+                                        value: l.id,
+                                        label: l.name,
+                                    }));
+                                    return (
+                                        <ReactSelect
+                                            isMulti
+                                            options={labelOptions}
+                                            value={labelOptions.filter(opt => formData.labels.some(l => l.id === opt.id))}
+                                            onChange={(selected) => {
+                                                setFormData((prev) => ({
+                                                    ...prev,
+                                                    labels: (selected as any[]).map(({ id, name, color }) => ({ id, name, color })),
+                                                }));
+                                            }}
+                                            getOptionLabel={(option) => option.label}
+                                            getOptionValue={(option) => option.value}
+                                            closeMenuOnSelect={false}
+                                            placeholder="레이블 선택"
+                                            components={{
+                                                Option: (props) => (
+                                                    <div {...props.innerProps} className={props.isFocused ? "bg-gray-100 px-3 py-2 flex items-center gap-2" : "px-3 py-2 flex items-center gap-2"}>
+                                                        <span
+                                                            style={{
+                                                                backgroundColor: props.data.color,
+                                                                display: "inline-block",
+                                                                width: 12,
+                                                                height: 12,
+                                                                borderRadius: "50%",
+                                                            }}
+                                                        />
+                                                        {props.data.label}
+                                                    </div>
+                                                ),
+                                                MultiValueLabel: (props) => (
+                                                    <div className="flex items-center gap-1">
+                                                        <span
+                                                            style={{
+                                                                backgroundColor: props.data.color,
+                                                                display: "inline-block",
+                                                                width: 10,
+                                                                height: 10,
+                                                                borderRadius: "50%",
+                                                            }}
+                                                        />
+                                                        {props.data.label}
+                                                    </div>
+                                                ),
+                                            }}
+                                            styles={{
+                                                multiValue: (base, state) => ({
+                                                    ...base,
+                                                    backgroundColor: state.data.color,
+                                                    color: "#fff",
+                                                }),
+                                                multiValueLabel: (base) => ({
+                                                    ...base,
+                                                    color: "#fff",
+                                                }),
+                                                multiValueRemove: (base) => ({
+                                                    ...base,
+                                                    color: "#fff",
+                                                    ":hover": {
+                                                        backgroundColor: "#333",
+                                                        color: "#fff",
+                                                    },
+                                                }),
+                                            }}
+                                        />
+                                    );
+                                })()}
+                            </div>
+                            <div className="space-y-2">
+                                <div style={{ height: "1.50rem" }} />
+                                <Button
+                                    variant="outline"
+                                    className="w-full justify-start mt-2"
+                                    type="button"
+                                    onClick={() => setLabelModalOpen(true)}
+                                >
+                                    <PlusIcon className="h-4 w-4" />
+                                    레이블 추가
+                                </Button>
+                                {labelModalOpen && (
+                                    <AddLabelModal
+                                        labelName={labelName}
+                                        setLabelName={setLabelName}
+                                        selectedColor={selectedColor}
+                                        setSelectedColor={setSelectedColor}
+                                        handleSave={() => {
+                                            // 여기에 저장 로직 추가 가능
+
+                                            handleLabelSave();
+
+                                            setLabelModalOpen(false);
+                                            setLabelName("");
+                                            setSelectedColor("#3b82f6");
+                                        }}
+                                        handleCancel={() => {
+                                            setLabelModalOpen(false);
+                                            setLabelName("");
+                                            setSelectedColor("#3b82f6");
+                                        }}
+                                    />
+                                )}
                             </div>
                         </div>
 
