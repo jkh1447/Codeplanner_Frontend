@@ -35,8 +35,12 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-import { Id, User } from "@/components/type";
+import { Id, User, Label_issue } from "@/components/type";
 import { getApiUrl } from "@/lib/api";
+import ReactSelect from "react-select";
+import AddLabelModal from "../../board/_components/AddLabelModal";
+import PlusIcon from "@/components/icons/PlusIcon";
+
 
 interface IssueFormData {
     project_id: string;
@@ -51,6 +55,7 @@ interface IssueFormData {
     position: number;
     tag: string;
     createBranch: boolean;
+    labels: Label_issue[];
 }
 
 interface AddIssueModalProps {
@@ -96,11 +101,17 @@ export default function AddIssueModal({
         position: 0,
         tag: "",
         createBranch: true, // 기본값으로 브랜치 생성 활성화
+        labels: [],
     });
 
     const [projectMembers, setProjectMembers] = useState<User[]>([]);
     const [current_member, setCurrent_member] = useState<any | null>(null);
     const [createdIssueIds, setCreatedIssueIds] = useState<string[]>([]);
+    const [labelModalOpen, setLabelModalOpen] = useState(false);
+    const [labelName, setLabelName] = useState("");
+    const [selectedColor, setSelectedColor] = useState("#3b82f6");
+
+    const [label, setLabel] = useState<Label_issue[]>([]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -140,9 +151,10 @@ export default function AddIssueModal({
             position: 0,
             tag: "",
             createBranch: true,
+            labels: [],
         });
         onOpenChange(false);
-        if(onSuccess){
+        if (onSuccess) {
             onSuccess();
         }
         // alert("이슈가 성공적으로 등록되었습니다!");삭제 0705진혁 github 브랜치 생성 알림 추가에 포함함
@@ -194,9 +206,67 @@ export default function AddIssueModal({
         }
     };
 
+    const handleLabelSave = async () => {
+        const labelData = {
+            project_id: projectId,
+            name: labelName,
+            color: selectedColor,
+        };
+
+        const response = await fetch(
+            `${getApiUrl()}/projects/${projectId}/labels`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(labelData),
+                credentials: "include",
+            }
+        );
+        const data = await response.json();
+        if (response.ok) {
+            // 레이블 저장 후 전체 레이블 목록을 다시 가져옴
+            await getProjectLabels(projectId);
+        } else {
+            console.error("Failed to save label:", data);
+        }
+    };
+
+    const getProjectLabels = async (projectId: string) => {
+        const response = await fetch(
+            `${getApiUrl()}/projects/${projectId}/labels`,
+            {
+                method: "GET",
+            }
+        );
+        const data = await response.json();
+        if (response.ok) {
+            setLabel(data);
+        } else {
+            console.error("Failed to fetch project labels:", data);
+        }
+    };
+
+    const deleteLabel = async (labelId: string) => {
+        const response = await fetch(
+            `${getApiUrl()}/projects/${projectId}/labels/${labelId}`,
+            {
+                method: "DELETE",
+            }
+        );
+        const data = await response.json();
+        if (response.ok) {
+            await getProjectLabels(projectId);
+        } else {
+            console.error("Failed to delete label:", data);
+        }
+    };
+
     useEffect(() => {
         getProjectMembers(projectId);
         getProjectTag(projectId);
+        getProjectLabels(projectId);
         console.log("current_user", current_user);
     }, []);
 
@@ -288,6 +358,9 @@ export default function AddIssueModal({
                                         <SelectValue placeholder="상태 선택" />
                                     </SelectTrigger>
                                     <SelectContent>
+                                        <SelectItem value="BACKLOG">
+                                            Backlog
+                                        </SelectItem>
                                         <SelectItem value="TODO">
                                             Todo
                                         </SelectItem>
@@ -301,7 +374,155 @@ export default function AddIssueModal({
                                 </Select>
                             </div>
                         </div>
+                        {/* 레이블 */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>레이블</Label>
+                                {(() => {
+                                    const labelOptions = label.map((l) => ({
+                                        ...l,
+                                        value: l.id,
+                                        label: l.name,
+                                    }));
+                                    return (
+                                        <ReactSelect
+                                            isMulti
+                                            options={labelOptions}
+                                            value={labelOptions.filter((opt) =>
+                                                formData.labels.some(
+                                                    (l) => l.id === opt.id
+                                                )
+                                            )}
+                                            onChange={(selected) => {
+                                                setFormData((prev) => ({
+                                                    ...prev,
+                                                    labels: (
+                                                        selected as any[]
+                                                    ).map(
+                                                        ({
+                                                            id,
+                                                            name,
+                                                            color,
+                                                        }) => ({
+                                                            id,
+                                                            name,
+                                                            color,
+                                                        })
+                                                    ),
+                                                }));
+                                            }}
+                                            getOptionLabel={(option) =>
+                                                option.label
+                                            }
+                                            getOptionValue={(option) =>
+                                                option.value
+                                            }
+                                            closeMenuOnSelect={false}
+                                            placeholder="레이블 선택"
+                                            components={{
+                                                Option: (props) => (
+                                                    <div
+                                                        {...props.innerProps}
+                                                        className={
+                                                            props.isFocused
+                                                                ? "bg-gray-100 px-3 py-2 flex items-center gap-2"
+                                                                : "px-3 py-2 flex items-center gap-2"
+                                                        }
+                                                    >
+                                                        <span
+                                                            style={{
+                                                                backgroundColor:
+                                                                    props.data
+                                                                        .color,
+                                                                display:
+                                                                    "inline-block",
+                                                                width: 12,
+                                                                height: 12,
+                                                                borderRadius:
+                                                                    "50%",
+                                                            }}
+                                                        />
+                                                        {props.data.label}
+                                                    </div>
+                                                ),
+                                                MultiValueLabel: (props) => (
+                                                    <div className="flex items-center gap-1">
+                                                        <span
+                                                            style={{
+                                                                backgroundColor:
+                                                                    props.data
+                                                                        .color,
+                                                                display:
+                                                                    "inline-block",
+                                                                width: 10,
+                                                                height: 10,
+                                                                borderRadius:
+                                                                    "50%",
+                                                            }}
+                                                        />
+                                                        {props.data.label}
+                                                    </div>
+                                                ),
+                                            }}
+                                            styles={{
+                                                multiValue: (base, state) => ({
+                                                    ...base,
+                                                    backgroundColor:
+                                                        state.data.color,
+                                                    color: "#fff",
+                                                }),
+                                                multiValueLabel: (base) => ({
+                                                    ...base,
+                                                    color: "#fff",
+                                                }),
+                                                multiValueRemove: (base) => ({
+                                                    ...base,
+                                                    color: "#fff",
+                                                    ":hover": {
+                                                        backgroundColor: "#333",
+                                                        color: "#fff",
+                                                    },
+                                                }),
+                                            }}
+                                        />
+                                    );
+                                })()}
+                            </div>
+                            <div className="space-y-2">
+                                <div style={{ height: "1.50rem" }} />
+                                <Button
+                                    variant="outline"
+                                    className="w-full justify-start mt-2"
+                                    type="button"
+                                    onClick={() => setLabelModalOpen(true)}
+                                >
+                                    <PlusIcon className="h-4 w-4" />
+                                    레이블 추가
+                                </Button>
+                                {labelModalOpen && (
+                                    <AddLabelModal
+                                        labelName={labelName}
+                                        setLabelName={setLabelName}
+                                        selectedColor={selectedColor}
+                                        setSelectedColor={setSelectedColor}
+                                        handleSave={() => {
+                                            // 여기에 저장 로직 추가 가능
 
+                                            handleLabelSave();
+
+                                            setLabelModalOpen(false);
+                                            setLabelName("");
+                                            setSelectedColor("#3b82f6");
+                                        }}
+                                        handleCancel={() => {
+                                            setLabelModalOpen(false);
+                                            setLabelName("");
+                                            setSelectedColor("#3b82f6");
+                                        }}
+                                    />
+                                )}
+                            </div>
+                        </div>
                         {/* 담당자와 보고자 */}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
@@ -328,7 +549,6 @@ export default function AddIssueModal({
                                 </Select>
                             </div>
 
-                            
                             <div className="space-y-2">
                                 <Label>보고자</Label>
                                 <Select
@@ -454,18 +674,34 @@ export default function AddIssueModal({
                                 id="createBranch"
                                 checked={formData.createBranch}
                                 onChange={(e) =>
-                                    handleInputChange("createBranch", e.target.checked)
+                                    handleInputChange(
+                                        "createBranch",
+                                        e.target.checked
+                                    )
                                 }
                             />
-                            <Label htmlFor="createBranch" className="text-sm font-normal">
+                            <Label
+                                htmlFor="createBranch"
+                                className="text-sm font-normal"
+                            >
                                 이슈 제목으로 GitHub 브랜치 자동 생성
                             </Label>
                         </div>
                         {formData.createBranch && (
                             <div className="text-xs text-muted-foreground bg-blue-50 p-3 rounded-md">
-                                <p>• 이슈 제목을 기반으로 <code>feature/이슈제목</code> 형태의 브랜치가 생성됩니다</p>
-                                <p>• 프로젝트에 GitHub 저장소가 연결되어 있어야 합니다</p>
-                                <p>• 브랜치 생성에 실패해도 이슈는 정상적으로 생성됩니다</p>
+                                <p>
+                                    • 이슈 제목을 기반으로{" "}
+                                    <code>feature/이슈제목</code> 형태의
+                                    브랜치가 생성됩니다
+                                </p>
+                                <p>
+                                    • 프로젝트에 GitHub 저장소가 연결되어 있어야
+                                    합니다
+                                </p>
+                                <p>
+                                    • 브랜치 생성에 실패해도 이슈는 정상적으로
+                                    생성됩니다
+                                </p>
                             </div>
                         )}
                     </div>

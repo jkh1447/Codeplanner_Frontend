@@ -26,16 +26,24 @@ import { getApiUrl } from "@/lib/api";
 function KanbanBoard({ projectId }: { projectId: string }) {
     const [columns, setColumns] = useState<Column[]>([
         {
+            id: "BACKLOG",
+            title: "백로그",
+        },
+        {
             id: "TODO",
-            title: "Todo",
+            title: "해야 할 일",
         },
         {
             id: "IN_PROGRESS",
-            title: "In Progress",
+            title: "진행 중",
+        },
+        {
+            id: "IN_REVIEW",
+            title: "리뷰 중",
         },
         {
             id: "DONE",
-            title: "Done",
+            title: "완료",
         },
     ]);
     const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
@@ -79,7 +87,7 @@ function KanbanBoard({ projectId }: { projectId: string }) {
             if (response.ok) {
                 const latestTasks = await response.json();
                 allTasks.current = latestTasks;
-
+                console.log("latestTasks", latestTasks);
                 setTasks(
                     latestTasks.map((issue: any) => ({
                         ...issue,
@@ -90,12 +98,17 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                         start_date: issue.startDate,
                         due_date: issue.dueDate,
                         tag: issue.tag,
+                        labels: issue.labels,
+                        
                     }))
                 );
             }
         } catch (error) {
             console.error("Error fetching latest tasks:", error);
         }
+
+        
+
     }, [projectId]);
 
     // 컴포넌트 마운트 시 또는 projectId 변경 시 최신 데이터 가져오기
@@ -114,6 +127,7 @@ function KanbanBoard({ projectId }: { projectId: string }) {
     // overId: 드래그 중인 task가 드롭될 위치의 id
     // overType: 드롭될 위치의 타입 (Task 또는 Column)
     const moveTask = (activeId: Id, overId: Id, overType: string) => {
+        
         setTasks((tasks) => {
             // 현재 드래그 중인 task의 id가 tasks 배열에 있는지 확인하고 저장.
             const activeIndex = tasks.findIndex((t) => t.id === activeId);
@@ -134,7 +148,9 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                 );
                 return arrayMove(updatedTasks, activeIndex, overIndex);
             // 테스크 위에 있지 않고 컬럼위에 있는 경우, 현재 테스크의 status를 드롭될 위치의 컬럼의 id로 변경
-            } else if (overType === "Column") {
+            }
+            // 의미없음.
+            else if (overType === "Column") {
                 // status만 변경, 위치는 그대로
                 const updatedTasks = tasks.map((task, idx) =>
                     idx === activeIndex
@@ -173,7 +189,7 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                 </div>
             </div>
 
-            <div className="w-full overflow-x-auto overflow-y-hidden">
+            <div className="w-full overflow-x-scroll overflow-y-hidden">
                 {isClient && (
                     <DndContext
                         sensors={sensors}
@@ -378,6 +394,7 @@ function KanbanBoard({ projectId }: { projectId: string }) {
         }
     }
 
+    // 
     function onDragEnd(event: DragEndEvent) {
         setActiveColumn(null);
         setActiveTask(null);
@@ -492,7 +509,9 @@ function KanbanBoard({ projectId }: { projectId: string }) {
         }
     }
 
+    // tasks의 상태와 위치를 임시로 바꿔서 시각적 피드백을 준다.
     function onDragOver(event: DragOverEvent) {
+        
         const { active, over } = event;
         if (!over) return;
         const activeId = active.id;

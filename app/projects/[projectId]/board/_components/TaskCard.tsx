@@ -3,9 +3,12 @@ import PlusIcon from "@/components/icons/PlusIcon";
 import UserIcon from "@/components/icons/UserIcon";
 import { Id, Task } from "@/components/type";
 import { useSortable } from "@dnd-kit/sortable";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { CSS } from "@dnd-kit/utilities";
 import TaskDrawer from "../../list/common/TaskDrawer";
+import { getApiUrl } from "@/lib/api";
+import { Book, Bug, SquareCheckBig } from "lucide-react";
+import { differenceInDays, parseISO } from "date-fns";
 
 interface Props {
     task: Task;
@@ -34,10 +37,61 @@ function TaskCard({ task, deleteTask, projectId, onSave }: Props) {
         disabled: false,
     });
 
+    const [assignee_display_name, setAssigneeDisplayName] =
+        useState<string>("");
+
+    const getAssigneeDisplayName = async () => {
+        const res = await fetch(`${getApiUrl()}/user/${task.assignee_id}`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        });
+        // 응답 body를 먼저 text로 읽음
+        const text = await res.text();
+
+        if (text) {
+            // body가 비어있지 않으면 JSON 파싱
+            try {
+                const data = JSON.parse(text);
+                setAssigneeDisplayName(data.displayName || "N/A");
+                // console.log("assignee_display_name", data);
+            } catch (e) {
+                setAssigneeDisplayName("N/A");
+                console.error("JSON 파싱 에러:", e);
+            }
+        } else {
+            // body가 비어있으면 N/A로 처리
+            setAssigneeDisplayName("N/A");
+            // console.log("assignee_display_name: N/A (body empty)");
+        }
+    };
+
+    useEffect(() => {
+        getAssigneeDisplayName();
+    }, []);
+
     const style = {
         transition,
         transform: CSS.Transform.toString(transform),
     };
+
+    // 마감일에 따른 테두리 색상 결정 (색상 단계별)
+    let borderClass = "border-gray-200 border"; // 기본: 여유 있음
+    if (task.due_date) {
+        const dueDate = parseISO(task.due_date);
+        const today = new Date();
+        const daysLeft = differenceInDays(dueDate, today);
+        if (daysLeft <= 0) {
+            borderClass = "border-red-600 border"; // 이미 연체/오늘
+        } else if (daysLeft <= 3) {
+            borderClass = "border-orange-400 border"; // 1~3일 임박
+        } else if (daysLeft <= 7) {
+            borderClass = "border-yellow-400 border"; // 4~7일 다가옴
+        } else {
+            borderClass = "border-gray-200 border"; // 8일 이상
+        }
+    }
 
     if (isDragging) {
         return (
@@ -56,25 +110,59 @@ function TaskCard({ task, deleteTask, projectId, onSave }: Props) {
                 style={style}
                 {...attributes}
                 {...listeners}
-                className="bg-white p-3 min-h-[100px] flex flex-col rounded-xl shadow-md border border-gray-200 hover:ring-2 hover:ring-inset hover:ring-blue-300 cursor-pointer relative group transition-all"
+                className={`bg-white p-3 min-h-[100px] flex flex-col rounded-xl shadow-md ${borderClass} hover:ring-2 hover:ring-inset hover:ring-blue-300 cursor-pointer relative group transition-all`}
                 onMouseEnter={() => setMouseIsOver(true)}
                 onMouseLeave={() => setMouseIsOver(false)}
                 onClick={() => setShowDrawer(true)}
             >
-                <div className="flex flex-col h-full min-h-[120px] relative">
+                <div className="flex flex-col h-full min-h-[80px] relative">
                     <span
-                        className="font-semibold text-base text-gray-800 break-words whitespace-pre-line block"
+                        className="font-medium text-base text-gray-800 break-words whitespace-pre-line block"
                         style={{ wordBreak: "break-all" }}
                     >
                         {task.title}
                     </span>
+                    {/* 레이블 뱃지 */}
+                    {Array.isArray(task.labels) && task.labels.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                            {task.labels.map((label: any) => (
+                                <span
+                                    key={label.id.toString()}
+                                    className="px-2 py-0.5 rounded text-xs font-semibold"
+                                    style={{
+                                        backgroundColor: label.color,
+                                        color: "#fff",
+                                        minWidth: "2rem",
+                                        display: "inline-block",
+                                    }}
+                                >
+                                    {label.name}
+                                </span>
+                            ))}
+                        </div>
+                    )}
                     <div className="flex-1" />
                     <div className="flex items-end">
-                        <span className="px-3 py-1 rounded-full bg-purple-200 text-purple-800 text-sm font-semibold">
+                        <span className="flex items-center gap-1 py-1 rounded-full text-xs font-semibold mt-1">
+                            {task.issue_type === "task" && (
+                                <SquareCheckBig
+                                    className="w-5 h-5 mr-1"
+                                    color={"#3729ff"}
+                                />
+                            )}
+                            {task.issue_type === "story" && (
+                                <Book
+                                    className="w-5 h-5 mr-1"
+                                    color="#ff9500"
+                                />
+                            )}
+                            {task.issue_type === "bug" && (
+                                <Bug className="w-5 h-5 mr-1" color="#ff0000" />
+                            )}
                             {task.tag}
                         </span>
                     </div>
-                    {mouseIsOver && (
+                    {/* {mouseIsOver && (
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -84,18 +172,18 @@ function TaskCard({ task, deleteTask, projectId, onSave }: Props) {
                         >
                             <TrashIcon />
                         </button>
-                    )}
+                    )} */}
                 </div>
-                <div className="absolute bottom-3 right-3">
-                    <div className="w-7 h-7 rounded-full border-2 border-white shadow bg-gray-200 flex items-center justify-center">
-                        <UserIcon className="w-4 h-4 text-gray-500" />
+                {/* <div className="absolute bottom-3 right-3">
+                    <div className="border-2 px-2 py-1 border-white shadow bg-gray-200 flex items-center justify-center">
+                        {assignee_display_name ? assignee_display_name : "N/A"}
                     </div>
-                </div>
+                </div> */}
             </div>
             {showDrawer && (
-                <TaskDrawer 
-                    task={task} 
-                    onClose={() => setShowDrawer(false)} 
+                <TaskDrawer
+                    task={task}
+                    onClose={() => setShowDrawer(false)}
                     onSave={onSave}
                 />
             )}

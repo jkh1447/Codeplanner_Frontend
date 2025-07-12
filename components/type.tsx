@@ -18,6 +18,7 @@ export type Task = {
     due_date: string;
     position: number;
     tag: string;
+    labels: Label_issue[];
 };
 
 export type ColumnWithTasks = Column & {
@@ -36,6 +37,7 @@ export type Issue = {
   reporter_id: Id;
   start_date?: string;
   due_date?: string;
+  
 };
 
 export type User = {
@@ -103,4 +105,18 @@ export type User_detail = {
     displayName: string;
     
 };
+
+export type Label_project = {
+    id: Id;
+    project_id: Id;
+    name: string;
+    color: string;
+};
+
+export type Label_issue = {
+    id: string;
+    name: string;
+    color: string;
+};
+
 

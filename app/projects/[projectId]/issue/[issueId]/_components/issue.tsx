@@ -11,7 +11,7 @@ import {
     User,
     Flag,
     Trash2,
-
+    GitCommitHorizontal,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +31,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { getApiUrl } from "@/lib/api";
 import { useParams } from "next/navigation";
 import { Issue_detail, User_detail } from "@/components/type";
+import CommitListModal from "../../../list/common/CommitListModal";
 
 interface Comment {
     id: string;
@@ -39,11 +40,7 @@ interface Comment {
     content: string;
     createdAt: string;
     updatedAt: string;
-    author?: {
-        id: string;
-        displayName: string;
-        avatar?: string;
-    };
+    displayName?: string;
 }
 
 export default function IssueDetail() {
@@ -81,9 +78,9 @@ export default function IssueDetail() {
     const [editingCommentContent, setEditingCommentContent] = useState("");
     const [currentUser, setCurrentUser] = useState<{
         id: string;
-        displayName: string;
+        display_name: string;
     } | null>(null);
-
+    const [showCommitModal, setShowCommitModal] = useState(false);
     // 현재 사용자 정보 가져오기
     const getCurrentUser = async () => {
         try {
@@ -127,51 +124,7 @@ export default function IssueDetail() {
                 const commentsData = await res.json();
                 console.log("commentsData:", commentsData);
 
-                // 각 댓글의 작성자 정보를 가져오기
-                const commentsWithAuthors = await Promise.all(
-                    commentsData.map(async (comment: any) => {
-                        try {
-                            const userRes = await fetch(
-                                `${getApiUrl()}/user/${comment.authorId}`,
-                                {
-                                    credentials: "include",
-                                }
-                            );
-                            if (userRes.ok) {
-                                const userData = await userRes.json();
-                                return {
-                                    ...comment,
-                                    author: userData,
-                                };
-                            } else {
-                                console.error(
-                                    `사용자 정보 가져오기 실패: ${comment.authorId}`
-                                );
-                                return {
-                                    ...comment,
-                                    author: {
-                                        id: comment.authorId,
-                                        displayName: "알 수 없는 사용자",
-                                    },
-                                };
-                            }
-                        } catch (error) {
-                            console.error(
-                                `사용자 정보 가져오기 오류: ${comment.authorId}`,
-                                error
-                            );
-                            return {
-                                ...comment,
-                                author: {
-                                    id: comment.authorId,
-                                    displayName: "알 수 없는 사용자",
-                                },
-                            };
-                        }
-                    })
-                );
-
-                setComments(commentsWithAuthors);
+                setComments(commentsData);
             } else {
                 console.error("댓글 가져오기 실패");
             }
@@ -229,13 +182,14 @@ export default function IssueDetail() {
                 const newCommentData = await res.json();
                 console.log("댓글 생성 성공:", newCommentData);
 
-                // 새 댓글에 작성자 정보 추가
-                const commentWithAuthor = {
-                    ...newCommentData,
-                    author: currentUser,
-                };
-
-                setComments([...comments, commentWithAuthor]);
+                // displayName은 현재 사용자 이름으로 추가
+                setComments([
+                    ...comments,
+                    {
+                        ...newCommentData,
+                        displayName: currentUser.display_name, // 필드명 수정
+                    },
+                ]);
                 setNewComment("");
             } else {
                 const errorText = await res.text();
@@ -273,17 +227,14 @@ export default function IssueDetail() {
             if (res.ok) {
                 const updatedComment = await res.json();
 
-                // 수정된 댓글에 기존 작성자 정보 유지
-                const commentWithAuthor = {
-                    ...updatedComment,
-                    author:
-                        comments.find((c) => c.id === commentId)?.author ||
-                        currentUser,
-                };
-
                 setComments(
                     comments.map((comment) =>
-                        comment.id === commentId ? commentWithAuthor : comment
+                        comment.id === commentId
+                            ? {
+                                  ...updatedComment,
+                                  displayName: comment.displayName,
+                              }
+                            : comment
                     )
                 );
                 setEditingCommentId(null);
@@ -647,16 +598,9 @@ export default function IssueDetail() {
                                                 className="flex gap-4"
                                             >
                                                 <Avatar className="w-10 h-10 border-2 border-gray-200">
-                                                    <AvatarImage
-                                                        src={
-                                                            comment.author
-                                                                ?.avatar ||
-                                                            "/placeholder.svg"
-                                                        }
-                                                    />
                                                     <AvatarFallback className="bg-blue-100 text-blue-700">
-                                                        {comment.author
-                                                            ?.displayName?.[0] ||
+                                                        {comment
+                                                            .displayName?.[0] ||
                                                             "U"}
                                                     </AvatarFallback>
                                                 </Avatar>
@@ -664,8 +608,7 @@ export default function IssueDetail() {
                                                     <div className="flex items-center justify-between">
                                                         <div className="flex items-center gap-3">
                                                             <span className="font-semibold text-gray-800">
-                                                                {comment.author
-                                                                    ?.displayName ||
+                                                                {comment.displayName ||
                                                                     "알 수 없는 사용자"}
                                                             </span>
                                                             <span className="text-sm text-gray-500">
@@ -816,6 +759,9 @@ export default function IssueDetail() {
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
+                                            <SelectItem value="BACKLOG">
+                                                Backlog
+                                            </SelectItem>
                                             <SelectItem value="TODO">
                                                 Todo
                                             </SelectItem>
@@ -843,10 +789,10 @@ export default function IssueDetail() {
                                         {assignee?.displayName ? (
                                             <>
                                                 {/* <Avatar className="w-8 h-8 border-2 border-white">
-                                                    <AvatarImage src="/placeholder.svg?height=32&width=32" />
-                                                    <AvatarFallback className="bg-blue-100 text-blue-700">
-                                                        김
-                                                    </AvatarFallback>
+                                            <AvatarImage src="/placeholder.svg?height=32&width=32" />
+                                            <AvatarFallback className="bg-blue-100 text-blue-700">
+                                                김
+                                            </AvatarFallback>
                                                 </Avatar> */}
                                                 <span className="text-sm font-medium text-gray-800 ">
                                                     {assignee?.displayName}
@@ -907,8 +853,29 @@ export default function IssueDetail() {
                                 </div>
 
                                 <Separator className="bg-gray-200" />
+
+                                {/* 커밋 링크 */}
+                                <div className="space-y-1">
+                                    <label className="text-sm font-medium text-gray-700">
+                                        커밋 목록
+                                    </label>
+                                    <button
+                                        onClick={() => setShowCommitModal(true)}
+                                        className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md text-sm transition-colors duration-200"
+                                    >
+                                        <GitCommitHorizontal className="w-4 h-4" />
+                                        <span>GitHub 커밋 보기</span>
+                                    </button>
+                                </div>
                             </CardContent>
                         </Card>
+                        {/* 커밋 목록 모달 */}
+                        <CommitListModal
+                            isOpen={showCommitModal}
+                            onClose={() => setShowCommitModal(false)}
+                            projectId={String(projectId)}
+                            taskId={String(issueId)}
+                        />
                     </div>
                 </div>
             </div>
