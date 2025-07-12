@@ -62,7 +62,8 @@ export default function IssueDetail() {
 - 사용자 경험 향상
 - 모바일 사용자 증가
 - 브랜드 이미지 개선`);
-    const { projectId, issueId } = useParams();
+    const { projectId, issueId, notificationId } = useParams();
+
     const [issue, setIssue] = useState<Issue_detail | null>(null);
     const [tempTitle, setTempTitle] = useState("");
     const [tempDescription, setTempDescription] = useState("");
@@ -382,10 +383,28 @@ export default function IssueDetail() {
         getAssigneeAndReporter(data.assigneeId, data.reporterId);
     };
 
+    // 이슈 읽음 처리
+    const handleReadIssue = async () => {
+        const res = await fetch(
+            `${getApiUrl()}/notification/${issueId}/${notificationId}/read`,
+            {
+                method: "PATCH",
+                credentials: "include",
+            }
+        );
+
+        if (res.ok) {
+            console.log("이슈 읽음 처리 성공");
+        } else {
+            console.error("이슈 읽음 처리 실패");
+        }
+    };
+
     useEffect(() => {
         getCurrentUser();
         getIssue();
         fetchComments();
+        // handleReadIssue();
     }, []);
 
     // issue가 바뀔 때마다 tempTitle/tempDescription도 동기화
