@@ -27,19 +27,23 @@ function KanbanBoard({ projectId }: { projectId: string }) {
     const [columns, setColumns] = useState<Column[]>([
         {
             id: "BACKLOG",
-            title: "Backlog",
+            title: "백로그",
         },
         {
             id: "TODO",
-            title: "Todo",
+            title: "해야 할 일",
         },
         {
             id: "IN_PROGRESS",
-            title: "In Progress",
+            title: "진행 중",
+        },
+        {
+            id: "IN_REVIEW",
+            title: "리뷰 중",
         },
         {
             id: "DONE",
-            title: "Done",
+            title: "완료",
         },
     ]);
     const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
@@ -83,7 +87,7 @@ function KanbanBoard({ projectId }: { projectId: string }) {
             if (response.ok) {
                 const latestTasks = await response.json();
                 allTasks.current = latestTasks;
-
+                console.log("latestTasks", latestTasks);
                 setTasks(
                     latestTasks.map((issue: any) => ({
                         ...issue,
@@ -94,12 +98,17 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                         start_date: issue.startDate,
                         due_date: issue.dueDate,
                         tag: issue.tag,
+                        labels: issue.labels,
+                        
                     }))
                 );
             }
         } catch (error) {
             console.error("Error fetching latest tasks:", error);
         }
+
+        
+
     }, [projectId]);
 
     // 컴포넌트 마운트 시 또는 projectId 변경 시 최신 데이터 가져오기
@@ -180,7 +189,7 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                 </div>
             </div>
 
-            <div className="w-full overflow-x-auto overflow-y-hidden">
+            <div className="w-full overflow-x-scroll overflow-y-hidden">
                 {isClient && (
                     <DndContext
                         sensors={sensors}

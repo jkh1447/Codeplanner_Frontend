@@ -11,6 +11,7 @@ import {
     User,
     Flag,
     Trash2,
+    GitCommitHorizontal,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { getApiUrl } from "@/lib/api";
 import { useParams } from "next/navigation";
 import { Issue_detail, User_detail } from "@/components/type";
+import CommitListModal from "../../../list/common/CommitListModal";
 
 interface Comment {
     id: string;
@@ -78,7 +80,7 @@ export default function IssueDetail() {
         id: string;
         display_name: string;
     } | null>(null);
-
+    const [showCommitModal, setShowCommitModal] = useState(false);
     // 현재 사용자 정보 가져오기
     const getCurrentUser = async () => {
         try {
@@ -851,8 +853,29 @@ export default function IssueDetail() {
                                 </div>
 
                                 <Separator className="bg-gray-200" />
+
+                                {/* 커밋 링크 */}
+                                <div className="space-y-1">
+                                    <label className="text-sm font-medium text-gray-700">
+                                        커밋 목록
+                                    </label>
+                                    <button
+                                        onClick={() => setShowCommitModal(true)}
+                                        className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md text-sm transition-colors duration-200"
+                                    >
+                                        <GitCommitHorizontal className="w-4 h-4" />
+                                        <span>GitHub 커밋 보기</span>
+                                    </button>
+                                </div>
                             </CardContent>
                         </Card>
+                        {/* 커밋 목록 모달 */}
+                        <CommitListModal
+                            isOpen={showCommitModal}
+                            onClose={() => setShowCommitModal(false)}
+                            projectId={String(projectId)}
+                            taskId={String(issueId)}
+                        />
                     </div>
                 </div>
             </div>
