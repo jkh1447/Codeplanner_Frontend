@@ -1,127 +1,76 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Header from "../../../../../components/header";
-import { Issue, User, Label, Comment, Id, Task } from "@/components/type";
-import PlusIcon from "@/components/icons/PlusIcon";
-import { getApiUrl } from "@/lib/api";
-import { Input } from "@/components/ui/input";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardHeader } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import TaskDrawer from "../common/TaskDrawer";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Plus, Search, MoreHorizontal, Trash2, User, Calendar, MessageSquare, Loader2 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useParams } from "next/navigation";
+import TaskDrawer from "../common/TaskDrawer";
 import AddIssueModal from "../../board/_components/AddIssueModal";
+import { getApiUrl } from "@/lib/api";
+import { Issue as Task, User as UserType, Label as LabelType, Comment as CommentType, Id } from "@/components/type";
 
-// 이슈 상세 모달
-function IssueDetailModal({ open, onOpenChange, issue, assignee, reporter, labels, comments }: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  issue: Issue | null;
-  assignee?: User;
-  reporter?: User;
-  labels: Label[];
-  comments: Comment[];
-}) {
-  if (!issue) return null;
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{issue.title}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-2">
-          <div className="text-sm text-gray-500">{issue.issue_type} | 상태: {issue.status}</div>
-          <div className="text-base whitespace-pre-line mb-2">{issue.description}</div>
-          <div className="flex gap-2 text-xs">
-            <span>담당자: {assignee?.display_name || issue.assignee_id || "없음"}</span>
-            <span>보고자: {reporter?.display_name || issue.reporter_id}</span>
-            <span>마감일: {issue.due_date || "-"}</span>
-          </div>
-          <div className="flex gap-2 mt-2">
-            {labels.map(label => (
-              <span key={label.id} className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs">{label.name}</span>
-            ))}
-          </div>
-          <div className="mt-4">
-            <div className="font-semibold mb-1">댓글({comments.length})</div>
-            <div className="space-y-2 max-h-40 overflow-y-auto">
-              {comments.length === 0 ? (
-                <div className="text-gray-400 text-sm">댓글이 없습니다.</div>
-              ) : (
-                comments.map(c => (
-                  <div key={c.id} className="bg-gray-50 rounded p-2 text-sm">
-                    <div className="font-semibold text-xs mb-1">{c.author_id}</div>
-                    <div>{c.content}</div>
-                    <div className="text-gray-400 text-xs mt-1">{new Date(c.created_at).toLocaleString()}</div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button onClick={() => onOpenChange(false)}>닫기</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
+// 상태별 색상
+const statusColors: Record<string, string> = {
+  Backlog: "bg-gray-100 text-gray-800 border-gray-200",
+  Todo: "bg-yellow-100 text-yellow-800 border-yellow-200",
+  "In Progress": "bg-blue-100 text-blue-800 border-blue-200",
+  Done: "bg-green-100 text-green-800 border-green-200",
+};
 
-// 이슈 카드
-function IssueCard({ issue, assignee, labels, commentCount, onClick }: {
-  issue: Issue;
-  assignee?: User;
-  labels: Label[];
-  commentCount: number;
-  onClick: () => void;
-}) {
-  return (
-    <div className="bg-white p-4 rounded-xl border mb-3 shadow hover:shadow-lg cursor-pointer" onClick={onClick}>
-      <div className="flex items-center gap-2 mb-1">
-        <span className="font-semibold text-base">{issue.title}</span>
-        <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600">{issue.status}</span>
-        <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600">{issue.issue_type}</span>
-      </div>
-      <div className="text-xs text-gray-500 mb-1 truncate">{issue.description}</div>
-      <div className="flex gap-2 text-xs mb-1">
-        <span>담당: {assignee?.display_name || issue.assignee_id || "없음"}</span>
-        <span>마감: {issue.due_date || "-"}</span>
-      </div>
-      <div className="flex gap-1 mb-1">
-        {labels.map(label => (
-          <span key={label.id} className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs">{label.name}</span>
-        ))}
-      </div>
-      <div className="text-xs text-gray-400">💬 {commentCount}</div>
-    </div>
-  );
-}
+const ITEMS_PER_PAGE = 10;
 
-export default function IssueList() {
+export default function IssueManagement() {
+  // 실제 데이터 상태
   const [issues, setIssues] = useState<Task[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
-  const [labels, setLabels] = useState<Label[]>([]);
+  const [users, setUsers] = useState<UserType[]>([]);
+  const [labels, setLabels] = useState<LabelType[]>([]);
   const [issueLabels, setIssueLabels] = useState<{ issue_id: Id; label_id: Id }[]>([]);
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [search, setSearch] = useState("");
+  const [comments, setComments] = useState<CommentType[]>([]); 
+  const [searchTerm, setSearchTerm] = useState("");
+  const [typeFilter, setTypeFilter] = useState<string>("전체");
+  const [statusFilter, setStatusFilter] = useState<string>("전체");
+  const [selectedIssue, setSelectedIssue] = useState<Task | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(1);
+  const [displayedIssues, setDisplayedIssues] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [showDetail, setShowDetail] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const params = useParams();
   const projectId = params?.projectId as string;
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleCloseDrawer = () => setSelectedTask(null);
+  // useRef로 최신값 추적
+  const pageRef = useRef(page);
+  const isLoadingRef = useRef(isLoading);
+  const hasMoreRef = useRef(hasMore);
+
+  useEffect(() => { pageRef.current = page; }, [page]);
+  useEffect(() => { isLoadingRef.current = isLoading; }, [isLoading]);
+  useEffect(() => { hasMoreRef.current = hasMore; }, [hasMore]);
 
   // 이슈 목록 새로고침 함수
   const refreshIssues = async () => {
     try {
+      setIsLoading(true);
       const res = await fetch(`${getApiUrl()}/projects/${projectId}/issues`, {
         credentials: 'include',
       });
       if (!res.ok) throw new Error("이슈 목록 불러오기 실패");
       const data = await res.json();
       setIssues(
-        data.map((issue: any) => ({
+        data.map((issue: any, idx: number) => ({
           ...issue,
           project_id: issue.projectId,
           assignee_id: issue.assigneeId,
@@ -129,10 +78,14 @@ export default function IssueList() {
           issue_type: issue.issueType,
           start_date: issue.startDate,
           due_date: issue.dueDate,
+          // position, tag 기본값 보완 (Task 타입에 필요하다면)
+          position: typeof issue.position === 'number' ? issue.position : 0,
+          tag: typeof issue.tag === 'string' ? issue.tag : '',
         }))
       );
+      setIsLoading(false);
     } catch (err) {
-      console.error(err);
+      setIsLoading(false);
       setIssues([]);
     }
   };
@@ -141,131 +94,535 @@ export default function IssueList() {
     refreshIssues();
   }, [projectId]);
 
-  // 검색 필터링
-  const filtered = issues.filter(issue =>
-    issue.title.toLowerCase().includes(search.toLowerCase()) ||
-    (issue.description || "").toLowerCase().includes(search.toLowerCase())
-  );
+  // 필터링된 이슈들 (useMemo로 메모이제이션)
+  const filteredIssues = useMemo(() => {
+    return issues.filter((issue) => {
+      const matchesSearch =
+        issue.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (issue.description || "").toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesType = typeFilter === "전체" || issue.issue_type === typeFilter;
+      const matchesStatus = statusFilter === "전체" || issue.status === statusFilter;
+      return matchesSearch && matchesType && matchesStatus;
+    });
+  }, [issues, searchTerm, typeFilter, statusFilter]);
 
-  // Add issue logic (similar to board)
+  // 페이지네이션 (의존성 수정)
+  useEffect(() => {
+    setDisplayedIssues(filteredIssues.slice(0, ITEMS_PER_PAGE));
+    setPage(1);
+    setHasMore(filteredIssues.length > ITEMS_PER_PAGE);
+  }, [filteredIssues]);
+
+  // 더 많은 이슈 로드 (useCallback → 일반 함수, useRef 사용)
+  const loadMoreIssues = () => {
+    if (isLoadingRef.current || !hasMoreRef.current) return;
+    setIsLoading(true);
+    setTimeout(() => {
+      const nextPage = pageRef.current + 1;
+      const startIndex = (nextPage - 1) * ITEMS_PER_PAGE;
+      const endIndex = startIndex + ITEMS_PER_PAGE;
+      const newIssues = filteredIssues.slice(startIndex, endIndex);
+      if (newIssues.length > 0) {
+        setDisplayedIssues((prev) => [...prev, ...newIssues]);
+        setPage(nextPage);
+        setHasMore(endIndex < filteredIssues.length);
+      } else {
+        setHasMore(false);
+      }
+      setIsLoading(false);
+    }, 500);
+  };
+
+  // 스크롤 이벤트 핸들러 (의존성 빈 배열)
+  useEffect(() => {
+    const handleScroll = () => {
+      if (
+        window.innerHeight + document.documentElement.scrollTop >=
+        document.documentElement.offsetHeight - 1000
+      ) {
+        loadMoreIssues();
+      }
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // 이슈 생성
   const createTask = async (formData: any) => {
     try {
+      // 날짜 변환
+      const start_date = formData.startDate
+        ? (typeof formData.startDate === 'string' ? formData.startDate : formData.startDate.toISOString().split("T")[0])
+        : undefined;
+      const due_date = formData.dueDate
+        ? (typeof formData.dueDate === 'string' ? formData.dueDate : formData.dueDate.toISOString().split("T")[0])
+        : undefined;
+      // 서버에 보낼 데이터 구조로 변환
+      const apiData = {
+        project_id: projectId,
+        title: formData.title,
+        description: formData.description,
+        issue_type: formData.issueType,
+        status: formData.status,
+        assignee_id: formData.assigneeId,
+        reporter_id: formData.reporterId,
+        start_date,
+        due_date,
+      };
       const response = await fetch(`${getApiUrl()}/projects/${projectId}/issues/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({
-          ...formData,
-          project_id: projectId,
-        }),
+        body: JSON.stringify(apiData),
       });
       if (!response.ok) throw new Error("이슈 생성 실패");
-      
-      const result = await response.json();
-      console.log('이슈 생성 응답:', result);
-      console.log('formData.createBranch:', formData.createBranch);
-      
-      // Refresh issues after adding
       await refreshIssues();
-      
-      // 브랜치 생성 결과 알림 (createBranch 옵션이 활성화된 경우에만)
-      if (formData.createBranch !== false) {
-        console.log('브랜치 생성 옵션 활성화됨');
-        console.log('result.branchName:', result.branchName);
-        console.log('result.branchError:', result.branchError);
-        
-        if (result.branchName) {
-          alert(`이슈가 성공적으로 등록되었습니다!\n\n이슈 제목을 기반으로 GitHub 브랜치가 자동으로 생성되었습니다.\n브랜치 이름: ${result.branchName}`);
-        } else if (result.branchError) {
-          alert(`이슈가 성공적으로 등록되었습니다!\n\n브랜치 생성에 실패했습니다:\n${result.branchError}`);
-        } else {
-          alert(`이슈가 성공적으로 등록되었습니다!\n\n브랜치 생성에 실패했습니다. (저장소 URL이 설정되지 않았거나 GitHub 연결에 문제가 있을 수 있습니다.)`);
-        }
-      } else {
-        console.log('브랜치 생성 옵션 비활성화됨');
-        alert("이슈가 성공적으로 등록되었습니다!");
-      }
+      alert("이슈가 성공적으로 등록되었습니다!");
     } catch (err) {
       alert("이슈 생성에 실패했습니다.");
     }
   };
 
+  // 이슈 수정/저장
+  const handleSaveIssue = async (updatedIssue: Task) => {
+    try {
+      // position, tag는 타입에 없으면 그대로 전달
+      await refreshIssues();
+      setIsEditModalOpen(false);
+      setIsCreateModalOpen(false);
+    } catch (err) {
+      alert("이슈 저장에 실패했습니다.");
+    }
+  };
+
+  // 이슈 삭제
+  const handleDeleteIssue = async (issueId: string) => {
+    try {
+      // 실제 구현에서는 API 호출로 삭제
+      // 예시: DELETE /projects/:projectId/issues/:issueId
+      setDisplayedIssues(displayedIssues.filter((issue) => String(issue.id) !== String(issueId)));
+      await refreshIssues();
+    } catch (err) {
+      alert("이슈 삭제에 실패했습니다.");
+    }
+  };
+
+  // 댓글 추가 (실제 구현 필요)
+  const handleAddComment = (issueId: string, comment: string) => {
+    // 실제 구현에서는 API 호출
+    // selectedIssue 업데이트 등
+    alert("댓글 기능은 추후 구현 예정입니다.");
+  };
+
+  // TaskDrawer 핸들러
+  const handleCloseDrawer = () => setSelectedTask(null);
+
+  // 이슈 클릭 시 상세 모달 오픈
+  const handleIssueClick = (issue: Task) => {
+    setSelectedIssue(issue);
+    setIsEditModalOpen(true);
+  };
+
+  // 이슈 생성 모달 오픈
+  const handleCreateIssue = () => {
+    setSelectedIssue(null);
+    setIsCreateModalOpen(true);
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50">
-      <main className="container mx-auto px-6 py-8">
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between mb-6">
-          <Button
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2"
-            onClick={() => setIsModalOpen(true)}
-          >
-            <PlusIcon /> 이슈 추가
-          </Button>
-          <div className="flex-1 max-w-md">
-            <Input
-              type="text"
-              placeholder="이슈 검색"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="w-full"
-            />
-          </div>
+    <div className="min-h-screen bg-gray-50 p-6">
+      {/* 필터 영역 */}
+      <div className="flex items-center space-x-4 mb-6">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Input
+            placeholder="이슈 검색..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
         </div>
-        <div className="bg-white rounded-lg border border-slate-200 p-6">
-          {filtered.length === 0 ? (
-            <div className="text-center text-gray-400 py-8">이슈가 없습니다.</div>
-          ) : (
-            filtered.map(issue => {
-              const assignee = users.find(u => u.id === issue.assignee_id);
-              const issueLabelIds = issueLabels.filter(il => il.issue_id === issue.id).map(il => il.label_id);
-              const issueLabelsList = labels.filter(l => issueLabelIds.includes(l.id));
-              const commentCount = comments.filter(c => c.issue_id === issue.id).length;
-              return (
-                <div
-                  key={issue.id}
-                  onClick={() => setSelectedTask(issue)}
-                  className="border rounded-lg p-4 shadow-sm hover:shadow-md transition bg-white"
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <div className="text-lg font-semibold">{issue.title}</div>
-                    <span className="text-sm text-gray-500">{issue.status}</span>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-1">
-                    {issue.description || "설명이 없습니다"}
-                  </p>
-                  <div className="text-xs text-gray-400">
-                    담당자: {issue.assignee_id || "-"}
-                  </div>
-                  <div className="text-xs text-gray-400">
-                    보고자: {issue.reporter_id || "-"}
-                  </div>
-                  <div className="text-xs text-gray-400 mt-1">
-                    시작: {issue.start_date || "-"}
-                  </div>
-                  <div className="text-xs text-gray-400 mt-1">
-                    마감: {issue.due_date || "-"}
+        <Select value={typeFilter} onValueChange={setTypeFilter}>
+          <SelectTrigger className="w-32">
+            <SelectValue placeholder="유형" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="전체">전체</SelectItem>
+            <SelectItem value="Bug">Bug</SelectItem>
+            <SelectItem value="Story">Story</SelectItem>
+            <SelectItem value="Task">Task</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-32">
+            <SelectValue placeholder="상태" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="전체">전체</SelectItem>
+            <SelectItem value="Backlog">Backlog</SelectItem>
+            <SelectItem value="Todo">Todo</SelectItem>
+            <SelectItem value="In Progress">In Progress</SelectItem>
+            <SelectItem value="Done">Done</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button onClick={handleCreateIssue} className="bg-blue-600 hover:bg-blue-700">
+          <Plus className="w-4 h-4 mr-2" />
+          이슈 추가
+        </Button>
+      </div>
+
+      {/* 이슈 리스트 */}
+      <div className="space-y-4">
+        {displayedIssues.map((issue) => (
+          <Card
+            key={issue.id}
+            className="hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => {
+              // TaskDrawer 대신 새 페이지로 이동
+              window.location.href = `/projects/${projectId}/list/${issue.id}`;
+            }}
+          >
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900 mb-2">{issue.title}</h3>
+                  <p className="text-sm text-gray-600 mb-3 line-clamp-2">{issue.description}</p>
+                  <div className="flex items-center space-x-4 text-xs text-gray-500">
+                    <div className="flex items-center space-x-1">
+                      <User className="w-3 h-3" />
+                      <span>담당: {issue.assignee_id || "-"}</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <User className="w-3 h-3" />
+                      <span>보고: {issue.reporter_id || "-"}</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <Calendar className="w-3 h-3" />
+                      <span>
+                        {issue.start_date || "-"} ~ {issue.due_date || "-"}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              );
-            })
-          )}
-        </div>
-        {selectedTask && (
-          <TaskDrawer 
-            task={{ ...selectedTask, project_id: projectId}} 
-            onClose={handleCloseDrawer} 
-            onSave={refreshIssues}
-          />
+                <div className="flex items-center space-x-2 ml-4">
+                  <Badge className={`${statusColors[issue.status] ?? 'bg-gray-200 text-gray-600 border-gray-200'} text-xs`}>
+                    {issue.status}
+                  </Badge>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                      <Button variant="ghost" size="sm">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.location.href = `/projects/${projectId}/list/${issue.id}`;
+                        }}
+                      >
+                        <MessageSquare className="w-4 h-4 mr-2" />
+                        상세 보기
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteIssue(String(issue.id));
+                        }}
+                        className="text-red-600"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        삭제
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
+        ))}
+        {isLoading && (
+          <div className="flex justify-center py-8">
+            <div className="flex items-center space-x-2 text-gray-500">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <span>이슈를 불러오는 중...</span>
+            </div>
+          </div>
         )}
-        {isModalOpen && (
-          <AddIssueModal
-            open={isModalOpen}
-            onOpenChange={setIsModalOpen}
-            projectId={projectId}
-            createTask={createTask}
-            current_user={null}
-          />
+        {!hasMore && displayedIssues.length > 0 && (
+          <div className="text-center py-8 text-gray-500">
+            <p>모든 이슈를 불러왔습니다.</p>
+            <p className="text-sm mt-1">총 {displayedIssues.length}개의 이슈</p>
+          </div>
         )}
-      </main>
+        {displayedIssues.length === 0 && !isLoading && (
+          <div className="text-center py-12 text-gray-500">
+            <p>검색 조건에 맞는 이슈가 없습니다.</p>
+            <p className="text-sm mt-1">다른 검색어나 필터를 시도해보세요.</p>
+          </div>
+        )}
+      </div>
+
+      {/* Create Issue Modal */}
+      {isCreateModalOpen && (
+        <AddIssueModal
+          open={isCreateModalOpen}
+          onOpenChange={setIsCreateModalOpen}
+          projectId={projectId}
+          createTask={createTask}
+          current_user={null}
+        />
+      )}
     </div>
   );
-} 
+}
+
+// 이슈 상세/수정 폼 (댓글, 커밋 탭 등 포함)
+interface IssueFormProps {
+  issue: Task;
+  onSave: (issue: Task) => void;
+  onCancel: () => void;
+  onAddComment: (issueId: string, comment: string) => void;
+}
+
+function IssueForm({ issue, onSave, onCancel, onAddComment }: IssueFormProps) {
+  const [formData, setFormData] = useState<Task>(issue);
+  const [activeTab, setActiveTab] = useState<"details" | "commits" | "comments">("details");
+  const [newComment, setNewComment] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // position, tag 기본값 보완 (Task 타입에 필요하다면)
+    onSave({
+      ...formData,
+      position: typeof formData.position === 'number' ? formData.position : 0,
+      tag: typeof formData.tag === 'string' ? formData.tag : '',
+    });
+  };
+
+  const handleCommentSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newComment.trim() && issue.id) {
+      onAddComment(String(issue.id), newComment.trim());
+      setNewComment("");
+    }
+  };
+
+  return (
+    <ScrollArea className="max-h-[calc(90vh-120px)]">
+      <div className="space-y-6 pr-4">
+        {/* Tabs */}
+        <div className="flex items-center justify-between">
+          <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+            <button
+              type="button"
+              onClick={() => setActiveTab("details")}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeTab === "details" ? "bg-white text-gray-900 shadow-sm" : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              이슈 상세
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("commits")}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeTab === "commits" ? "bg-white text-gray-900 shadow-sm" : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              GitHub 커밋 (0)
+            </button>
+          </div>
+
+          <div className="flex space-x-2">
+            <Button
+              type="button"
+              variant={activeTab === "details" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActiveTab("details")}
+            >
+              상세
+            </Button>
+            <Button
+              type="button"
+              variant={activeTab === "comments" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActiveTab("comments")}
+            >
+              <MessageSquare className="w-4 h-4 mr-1" />
+              댓글 (0)
+            </Button>
+          </div>
+        </div>
+
+        {activeTab === "details" ? (
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="title">제목</Label>
+                <Input
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  placeholder="이슈 제목을 입력하세요"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="description">설명</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="이슈에 대한 자세한 설명을 입력하세요"
+                  rows={4}
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="type">유형</Label>
+                  <Select
+                    value={formData.issue_type}
+                    onValueChange={(value: any) => setFormData({ ...formData, issue_type: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Bug">Bug</SelectItem>
+                      <SelectItem value="Story">Story</SelectItem>
+                      <SelectItem value="Task">Task</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="status">상태</Label>
+                  <Select
+                    value={formData.status}
+                    onValueChange={(value: any) => setFormData({ ...formData, status: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Backlog">Backlog</SelectItem>
+                      <SelectItem value="Todo">Todo</SelectItem>
+                      <SelectItem value="In Progress">In Progress</SelectItem>
+                      <SelectItem value="Done">Done</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="assignee">담당자</Label>
+                  <Input
+                    id="assignee"
+                    value={formData.assignee_id || ""}
+                    onChange={(e) => setFormData({ ...formData, assignee_id: e.target.value })}
+                    placeholder="담당자 이름을 입력하세요"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="reporter">보고자</Label>
+                  <Input
+                    id="reporter"
+                    value={formData.reporter_id || ""}
+                    onChange={(e) => setFormData({ ...formData, reporter_id: e.target.value })}
+                    placeholder="보고자 이름을 입력하세요"
+                    required
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="start_date">시작일</Label>
+                  <Input
+                    id="start_date"
+                    type="date"
+                    value={formData.start_date || ""}
+                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="due_date">마감일</Label>
+                  <Input
+                    id="due_date"
+                    type="date"
+                    value={formData.due_date || ""}
+                    onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+            <Separator />
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={onCancel}>
+                취소
+              </Button>
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                저장
+              </Button>
+            </div>
+          </form>
+        ) : activeTab === "commits" ? (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-medium">GitHub 커밋 목록</h3>
+              <Button variant="outline" size="sm">
+                <Plus className="w-4 h-4 mr-2" />
+                커밋 연결
+              </Button>
+            </div>
+            <div className="text-center py-8 text-gray-500">
+              <p>연결된 커밋이 없습니다.</p>
+              <p className="text-sm mt-1">GitHub 저장소와 연결하여 커밋을 추적하세요.</p>
+            </div>
+            <Separator />
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={onCancel}>
+                닫기
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-medium">댓글</h3>
+            </div>
+            <div className="space-y-4 max-h-96 overflow-y-auto">
+              <div className="text-center py-8 text-gray-500">
+                <p>아직 댓글이 없습니다.</p>
+                <p className="text-sm mt-1">첫 번째 댓글을 작성해보세요.</p>
+              </div>
+            </div>
+            <form onSubmit={handleCommentSubmit} className="space-y-3">
+              <Textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="댓글을 입력하세요..."
+                rows={3}
+                required
+              />
+              <div className="flex justify-end">
+                <Button type="submit" size="sm" className="bg-blue-600 hover:bg-blue-700">
+                  댓글 작성
+                </Button>
+              </div>
+            </form>
+            <Separator />
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={onCancel}>
+                닫기
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </ScrollArea>
+  );
+}
