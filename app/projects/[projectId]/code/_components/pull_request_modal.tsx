@@ -41,6 +41,8 @@ export default function PullRequestModal({
     const [repo, setRepo] = useState("");
     const [openFiles, setOpenFiles] = useState<string[]>([]);
     const [fileChanges, setFileChanges] = useState<{ [filename: string]: any }>({});
+    const [fileAnalysis, setFileAnalysis] = useState<{[filename: string]: any}>({});
+    const [isAnalyzed, setIsAnalyzed] = useState<string[]>([]);
     const [loadingFiles, setLoadingFiles] = useState<{ [filename: string]: boolean }>({});
     const [isMergeConflict, setIsMergeConflict] = useState<{ [number: number]: boolean }>({[number]: false});
     const [isMerged, setIsMerged] = useState<{ [number: number]: boolean }>({[number]: false});
@@ -49,7 +51,7 @@ export default function PullRequestModal({
     const fetchPullRequestChanges = async (filename: string, owner: string, repo: string, prNumber: number) => {
         try {
             setLoadingFiles(prev => ({ ...prev, [filename]: true }));
-            const response = await fetch(`${getApiUrl()}/github/repos/${owner}/${repo}/pulls/${prNumber}/files`, {
+            const response = await fetch(`${getApiUrl()}/github/repos/${owner}/${repo}/pulls/${prNumber}/recent-files`, {
                 credentials: "include",
             });
             if(!response.ok) {
@@ -110,6 +112,40 @@ export default function PullRequestModal({
         setIsMerged(prev => ({ ...prev, [number]: true }));
         alert("Merge 완료");
         window.location.reload();
+    }
+
+    const fetchFileAnalysis = async (filename: string, owner: string, repo: string, number: number) => {
+        const response = await fetch(`${getApiUrl()}/analyze/github/pr/${owner}/${repo}/${number}/recent`, {
+            credentials: "include",
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+        })
+        if(!response.ok) {
+            if(response.status === 404) {
+                console.log("파일 분석 데이터가 없습니다.");
+            }
+            return;
+        }
+        const data = await response.json();
+
+        const matchedFile = data.find((file: any) => file.filename === filename);
+        if (matchedFile) {
+            setFileAnalysis(prev => ({ ...prev, [filename]: matchedFile }));
+        }
+    }
+
+    const handleFileAnalysis = async (filename: string) => {
+        if(isAnalyzed.includes(filename)) {
+            setIsAnalyzed(prev => prev.filter((file: string) => file !== filename));
+        }
+        else{
+            setIsAnalyzed(prev => [...prev, filename]); // prev 사용
+            if(!fileAnalysis[filename]) {
+                await fetchFileAnalysis(filename, owner, repo, number);
+            }  
+        }
     }
     useEffect(() => {
         const getOwner = async () => {
@@ -201,6 +237,9 @@ export default function PullRequestModal({
                                                 <Badge variant="outline" className={`text-xs ${file.status === "added" ? "bg-green-100 text-green-800 border-green-200" : file.status === "modified" ? "bg-blue-100 text-blue-800 border-blue-200" : file.status === "deleted" ? "bg-red-100 text-red-800 border-red-200" : "bg-gray-100 text-gray-800 border-gray-200"}`}>
                                                     {file.status === "added" ? "추가됨" : file.status === "modified" ? "수정됨" : file.status === "deleted" ? "삭제됨" : file.status}
                                                 </Badge>
+                                                <span className="ml-2 gap-x-4">
+                                                    <Button onClick={() => handleFileAnalysis(file.filename)}>코드 분석</Button>
+                                                 </span>
                                             </div>
                                             <button
                                                 className="text-xs text-blue-600 hover:text-blue-800 underline"
@@ -240,6 +279,16 @@ export default function PullRequestModal({
                                                 )}
                                             </div>
                                         )}
+                                        {
+                                            isAnalyzed.includes(file.filename) && (
+                                                <div className="mt-3 border-t pt-3">
+                                                    <div className="text-sm font-medium text-gray-700">코드 분석 결과:</div>
+                                                    <div className="bg-gray-50 rounded p-3 text-xs font-mono overflow-x-auto whitespace-pre-wrap border">
+                                                        {fileAnalysis[file.filename].content}
+                                                    </div>
+                                                </div>
+                                            )
+                                        }
                                     </div>
                                 )) : <div className="text-gray-400 text-center">변경된 파일이 없습니다.</div>}
                             </div>
