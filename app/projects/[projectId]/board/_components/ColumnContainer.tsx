@@ -81,7 +81,7 @@ function ColumnContainer(props: Props) {
         <div
             ref={setNodeRef}
             style={style}
-            className="bg-[#f8f8f8] w-[350px] h-[3000px] max-h-[3000px] rounded-md flex flex-col"
+            className="bg-[#f8f8f8] w-[310px] h-[3000px] max-h-[3000px] rounded-md flex flex-col"
         >
             {/* Column title */}
 

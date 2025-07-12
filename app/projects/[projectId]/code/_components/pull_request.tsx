@@ -16,6 +16,8 @@ export default function PullRequest() {
   const [isPullRequestCreateModalOpen, setIsPullRequestCreateModalOpen] =
     useState(false);
   const [isPullRequestModalOpen, setIsPullRequestModalOpen] = useState(false);
+  const [openModalNumber, setOpenModalNumber] = useState<number | null>(null);
+  
   useEffect(() => {
     const fetchPullRequests = async () => {
       const projectRes = await fetch(`${getApiUrl()}/projects/${projectId}`, {
@@ -88,13 +90,16 @@ export default function PullRequest() {
                 <div className="flex items-center gap-3">
                   <Badge variant="default">{pullRequest.state}</Badge>
                   <span className="font-medium">
-                    <a onClick={() => setIsPullRequestModalOpen(true)}>
+                    <a onClick={() => setOpenModalNumber(pullRequest.number)}>
                       {pullRequest.title}
                     </a>
                     <PullRequestModal
-                      open={isPullRequestModalOpen}
-                      onOpenChange={setIsPullRequestModalOpen}
+                      open={openModalNumber === pullRequest.number}
+                      onOpenChange={() => setOpenModalNumber(null)}
                       number={pullRequest.number}
+                      title={pullRequest.title}
+                      head={pullRequest.head}
+                      base={pullRequest.base}
                     />
                   </span>
                 </div>
