@@ -336,12 +336,12 @@ export default function AddIssueModal({
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="story">
-                                            Story
+                                            스토리
                                         </SelectItem>
                                         <SelectItem value="task">
-                                            Task
+                                            작업
                                         </SelectItem>
-                                        <SelectItem value="bug">Bug</SelectItem>
+                                        <SelectItem value="bug">버그</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -359,16 +359,16 @@ export default function AddIssueModal({
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="BACKLOG">
-                                            Backlog
+                                            백로그
                                         </SelectItem>
                                         <SelectItem value="TODO">
-                                            Todo
+                                            해야 할 일
                                         </SelectItem>
                                         <SelectItem value="IN_PROGRESS">
-                                            In Progress
+                                            진행 중
                                         </SelectItem>
                                         <SelectItem value="DONE">
-                                            Done
+                                            완료
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>

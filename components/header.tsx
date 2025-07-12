@@ -1,12 +1,13 @@
 "use client";
 
-import Link from "next/link";
-import { Bell } from "lucide-react";
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Bell, X } from "lucide-react";
+
 import { getApiUrl } from "@/lib/api";
-import { Alert, AlertDescription } from "./ui/alert";
-import HealthCheck from "./health-check";
-import { Notification_issue } from "./type";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import HealthCheck from "@/components/health-check";
+import { Notification_issue } from "@/components/type";
 
 // 상대 시간 변환 함수
 function getRelativeTime(isoString: string) {
@@ -23,14 +24,17 @@ function getRelativeTime(isoString: string) {
     return date.toLocaleDateString("ko-KR");
 }
 
-// 헤더 컴포넌트
 export default function Header() {
-    {
-        /* 헤더 컴포넌트 반환 */
-    }
-
+    const [showModal, setShowModal] = useState(false);
+    const [description, setDescription] = useState("");
+    const [name, setName] = useState("");
+    const [assignee, setAssignee] = useState("");
+    const [dueDate, setDueDate] = useState("");
+    const [status, setStatus] = useState("");
     const [error, setError] = useState("");
+
     const [notification, setNotification] = useState<Notification_issue[]>([]);
+    const [notificationCount, setNotificationCount] = useState(0);
 
     const handleLogout = async () => {
         try {
@@ -68,6 +72,60 @@ export default function Header() {
         }
     };
 
+    const handleNotificationClick = async (item: Notification_issue) => {
+        // 알림을 읽음 처리하는 API 호출 (선택사항)
+        try {
+            await fetch(
+                `${getApiUrl()}/notification/${item.notificationId}/read`,
+                {
+                    method: "PATCH",
+                    credentials: "include",
+                }
+            );
+        } catch (err) {
+            console.error("알림 읽음 처리 실패:", err);
+        }
+
+        // 알림 목록 새로고침
+        handleNotification();
+    };
+
+    const deleteUserNotification = async (notificationId: string) => {
+        const response = await fetch(
+            `${getApiUrl()}/notification/${notificationId}`,
+            {
+                method: "DELETE",
+                credentials: "include",
+            }
+        );
+        if (response.ok) {
+            console.log("noti delete success");
+        } else {
+            console.log("noti delete failed");
+        }
+    };
+
+    const handleDeleteNotification = async (
+        e: React.MouseEvent,
+        item: Notification_issue
+    ) => {
+        e.preventDefault(); // Link 클릭 방지
+        e.stopPropagation(); // 이벤트 버블링 방지
+
+        if (!item.notificationId) {
+            console.error("알림 ID가 없습니다.");
+            return;
+        }
+
+        try {
+            await deleteUserNotification(item.notificationId);
+            // 알림 목록 새로고침
+            handleNotification();
+        } catch (err) {
+            console.error("알림 삭제 실패:", err);
+        }
+    };
+
     useEffect(() => {
         handleNotification();
     }, []);
@@ -94,6 +152,9 @@ export default function Header() {
                             </h1>
                         </Link>
                     </div>
+                    <div className="flex flex-1 justify-center ">
+                        <div className="w-full max-w-[60rem]"></div>
+                    </div>
                     <div className="flex items-center gap-3">
                         {/* 헬스체크 */}
                         <HealthCheck />
@@ -102,7 +163,10 @@ export default function Header() {
                         <div className="relative group">
                             <button className="p-2 text-slate-600 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors relative">
                                 <Bell className="w-6 h-6" />
-                                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-xs"></span>
+                                {Array.isArray(notification) &&
+                                    notification.length > 0 && (
+                                        <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-xs"></span>
+                                    )}
                             </button>
 
                             {/* 알림 팝업 */}
@@ -118,26 +182,62 @@ export default function Header() {
                                     {Array.isArray(notification) &&
                                     notification.length > 0 ? (
                                         notification.map((item, idx) => (
-                                            <Link
-                                                key={item.issueId || idx}
-                                                href={`/projects/${item.projectId}/issue/${item.issueId}`}
-                                                className="block p-3 hover:bg-slate-50 border-b border-slate-100 cursor-pointer"
-                                            >
-                                                <div className="flex items-start gap-3">
-                                                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                                                    <div>
-                                                        <p className="text-sm text-slate-800">
-                                                            {item.issueTitle}
-                                                        </p>
-                                                        <p className="text-xs text-slate-500 mt-1">
-                                                            {item.projectName} -{" "}
-                                                            {getRelativeTime(
-                                                                item.createdAt
-                                                            )}
-                                                        </p>
+                                            <div className="relative group/item">
+                                                <Link
+                                                    key={`${item.issueId}-${item.createdAt}-${idx}`}
+                                                    href={`/projects/${item.projectId}/issue/${item.issueId}`}
+                                                    className="block p-3 hover:bg-slate-50 border-b border-slate-100 cursor-pointer"
+                                                    onClick={() =>
+                                                        handleNotificationClick(
+                                                            item
+                                                        )
+                                                    }
+                                                >
+                                                    <div className="flex items-start gap-3">
+                                                        <div
+                                                            className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
+                                                                item.type ===
+                                                                "issue_created_assignee"
+                                                                    ? "bg-red-500"
+                                                                    : "bg-blue-500"
+                                                            }`}
+                                                        ></div>
+                                                        <div className="flex-1">
+                                                            <p className="text-sm text-slate-800">
+                                                                {
+                                                                    item.issueTitle
+                                                                }
+                                                            </p>
+                                                            <p className="text-xs text-slate-500 mt-1">
+                                                                {
+                                                                    item.projectName
+                                                                }{" "}
+                                                                -{" "}
+                                                                {item.type ===
+                                                                    "issue_created_assignee" &&
+                                                                    "나에게 할당되었습니다. "}
+                                                                {item.type ===
+                                                                    "issue_created_backlog" &&
+                                                                    "backlog에 추가되었습니다. "}
+                                                                {getRelativeTime(
+                                                                    item.createdAt
+                                                                )}
+                                                            </p>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </Link>
+                                                </Link>
+                                                <button
+                                                    onClick={(e) =>
+                                                        handleDeleteNotification(
+                                                            e,
+                                                            item
+                                                        )
+                                                    }
+                                                    className="absolute top-2 right-2 p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full opacity-0 group-hover/item:opacity-100 transition-all duration-200"
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </button>
+                                            </div>
                                         ))
                                     ) : (
                                         <div className="p-3 text-sm text-slate-500 text-center">
@@ -146,13 +246,13 @@ export default function Header() {
                                     )}
                                 </div>
 
-                                <div className="p-3 border-t border-slate-200">
-                                    <button
-                                        type="button"
-                                        className="text-sm text-blue-600 hover:text-blue-700 font-medium w-full text-center"
+                                <div className="p-3 border-t border-slate-200 flex justify-center">
+                                    <Link
+                                        href="/notificationList"
+                                        className="text-sm text-blue-600 hover:text-blue-700 font-medium"
                                     >
                                         모든 알림 보기
-                                    </button>
+                                    </Link>
                                 </div>
                             </div>
                         </div>
