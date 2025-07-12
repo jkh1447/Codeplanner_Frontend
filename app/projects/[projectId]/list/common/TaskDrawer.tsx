@@ -4,7 +4,7 @@ import { getApiUrl } from "@/lib/api";
 import { useState, useEffect } from "react";
 import GitCommitIcon from "@/components/icons/GitCommitIcon";
 import CommitListModal from "./CommitListModal";
-import { ArrowBigLeftDash, GitCommitHorizontal, MessageSquare, Plus } from "lucide-react";
+import { ArrowBigLeftDash, GitCommitHorizontal, MessageSquare, Plus, CalendarIcon } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import ReactSelect from "react-select";
+import PlusIcon from "@/components/icons/PlusIcon";
+import { format } from "date-fns";
+import { ko } from "date-fns/locale";
+import AddLabelModal from "../../board/_components/AddLabelModal";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 
 {
     /* 이슈에 대한 카드 모달 */
@@ -42,10 +58,11 @@ export default function TaskDrawer({
         description: task.description || "",
         issue_type: task.issue_type || "",
         status: task.status || "",
-        assignee_id: task.assignee_id || "",
-        reporter_id: task.reporter_id || "",
-        start_date: formatDateForInput(task.start_date),
-        due_date: formatDateForInput(task.due_date),
+        assigneeId: task.assignee_id || "",
+        reporterId: task.reporter_id || "",
+        startDate: task.start_date ? new Date(task.start_date) : undefined,
+        dueDate: task.due_date ? new Date(task.due_date) : undefined,
+        labels: task.labels || [],
     });
     const [activeTab, setActiveTab] = useState<"details" | "commits" | "comments">("details");
     const [newComment, setNewComment] = useState("");
@@ -59,22 +76,30 @@ export default function TaskDrawer({
             description: task.description || "",
             issue_type: task.issue_type || "",
             status: task.status || "",
-            assignee_id: task.assignee_id || "",
-            reporter_id: task.reporter_id || "",
-            start_date: formatDateForInput(task.start_date),
-            due_date: formatDateForInput(task.due_date),
+            assigneeId: task.assignee_id || "",
+            reporterId: task.reporter_id || "",
+            startDate: task.start_date ? new Date(task.start_date) : undefined,
+            dueDate: task.due_date ? new Date(task.due_date) : undefined,
+            labels: task.labels || [],
         });
     }, [task]);
 
     // 로딩 및 에러 상태값 정의
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [successMessage, setSuccessMessage] = useState("");
     const [memberList, setMemberList] = useState<any[]>([]);
     const [assigneeSearch, setAssigneeSearch] = useState("");
     const [reporterSearch, setReporterSearch] = useState("");
     const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
     const [showReporterDropdown, setShowReporterDropdown] = useState(false);
     const [showCommitModal, setShowCommitModal] = useState(false);
+    
+    // 레이블 관련 상태
+    const [label, setLabel] = useState<any[]>([]);
+    const [labelModalOpen, setLabelModalOpen] = useState(false);
+    const [labelName, setLabelName] = useState("");
+    const [selectedColor, setSelectedColor] = useState("#3b82f6");
 
     // 드롭다운 외부 클릭 시 닫기
     useEffect(() => {
@@ -133,6 +158,27 @@ export default function TaskDrawer({
         fetchMembers();
     }, [task.project_id, task.assignee_id, task.reporter_id]);
 
+    // 레이블 목록 불러오기
+    useEffect(() => {
+        const fetchLabels = async () => {
+            try {
+                const response = await fetch(
+                    `${getApiUrl()}/projects/${task.project_id}/labels`,
+                    {
+                        credentials: "include",
+                    }
+                );
+                if (response.ok) {
+                    const data = await response.json();
+                    setLabel(data);
+                }
+            } catch (error) {
+                console.error("레이블 목록을 불러오는 중 오류 발생:", error);
+            }
+        };
+        fetchLabels();
+    }, [task.project_id]);
+
     // 폼 값 변경해주는 핸들러
     const handleChange = (
         e: React.ChangeEvent<
@@ -143,16 +189,21 @@ export default function TaskDrawer({
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
+    // handleInputChange 함수 추가
+    const handleInputChange = (field: string, value: any) => {
+        setFormData((prev) => ({ ...prev, [field]: value }));
+    };
+
     // 담당자 선택 핸들러
     const handleAssigneeSelect = (memberId: string, displayName: string) => {
-        setFormData((prev) => ({ ...prev, assignee_id: memberId }));
+        setFormData((prev) => ({ ...prev, assigneeId: memberId }));
         setAssigneeSearch(displayName);
         setShowAssigneeDropdown(false);
     };
 
     // 보고자 선택 핸들러
     const handleReporterSelect = (memberId: string, displayName: string) => {
-        setFormData((prev) => ({ ...prev, reporter_id: memberId }));
+        setFormData((prev) => ({ ...prev, reporterId: memberId }));
         setReporterSearch(displayName);
         setShowReporterDropdown(false);
     };
@@ -183,10 +234,10 @@ export default function TaskDrawer({
         if (!formData.status || formData.status.trim() === '') {
             missingFields.push('상태');
         }
-        if (!formData.assignee_id) {
+        if (!formData.assigneeId) {
             missingFields.push('담당자');
         }
-        if (!formData.reporter_id) {
+        if (!formData.reporterId) {
             missingFields.push('보고자');
         }
         
@@ -199,8 +250,6 @@ export default function TaskDrawer({
         setLoading(true);
         setError("");
         try {
-            console.log("project_id: ", task.project_id, "task_id: ", task.id);
-            
             const res = await fetch(
                 `${getApiUrl()}/projects/${task.project_id}/${task.id}`,
                 {
@@ -208,26 +257,36 @@ export default function TaskDrawer({
                     headers: { "Content-Type": "application/json" },
                     credentials: "include",
                     body: JSON.stringify({
+                        project_id: formData.project_id,
                         title: formData.title,
                         description: formData.description,
                         issueType: formData.issue_type,
                         status: formData.status,
-                        assigneeId: formData.assignee_id,
-                        reporterId: formData.reporter_id,
-                        startDate: formData.start_date,
-                        dueDate: formData.due_date,
+                        assigneeId: formData.assigneeId,
+                        reporterId: formData.reporterId,
+                        startDate: formData.startDate,
+                        dueDate: formData.dueDate,
+                        labels: formData.labels,
                     }),
                 }
             );
             
-            if (!res.ok) throw new Error("저장 실패");
+            if (!res.ok) {
+                const errorText = await res.text();
+                throw new Error(`저장 실패: ${res.status} ${errorText}`);
+            }
             
             // 부모 컴포넌트에게 데이터 새로고침 요청
             if (onSave) {
                 onSave();
             }
             
-            onClose(); // -> 저장 완료하면, 모달 닫는다.
+            // 저장 성공 메시지 표시 후 잠시 대기
+            setError(""); // 에러 메시지 초기화
+            setSuccessMessage("저장이 완료되었습니다!"); // 성공 메시지 표시
+            setTimeout(() => {
+                onClose(); // -> 저장 완료하면, 모달 닫는다.
+            }, 1000); // 1초 대기
         } catch (err: any) {
             setError(err.message || "저장 중 오류 발생"); // 저장 실패시 오류
         } finally {
@@ -277,18 +336,51 @@ export default function TaskDrawer({
         }
     };
 
+    // 레이블 저장 핸들러
+    const handleLabelSave = async () => {
+        try {
+            const response = await fetch(
+                `${getApiUrl()}/projects/${task.project_id}/labels`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify({
+                        name: labelName,
+                        color: selectedColor,
+                    }),
+                }
+            );
+            if (response.ok) {
+                // 레이블 목록 새로고침
+                const newLabel = await response.json();
+                setLabel(prev => [...prev, newLabel]);
+            }
+        } catch (error) {
+            // 레이블 저장 실패 처리
+        }
+    };
+
+
+
     return (
         <>
             {/* Backdrop */}
             <div
                 className="fixed inset-0 bg-black bg-opacity-50 z-40 animate-in fade-in duration-300"
                 onClick={onClose}
+                style={{ zIndex: 40, position: 'fixed' }}
             />
-            
             {/* 모달 컨테이너 */}
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-2 overflow-y-auto">
-                {/* 모달 */}
-                <div className="bg-white rounded-lg shadow-2xl w-full max-w-xl flex flex-col animate-in zoom-in-95 duration-300">
+            <div
+                className="fixed inset-0 z-50 flex items-center justify-center p-2 overflow-y-auto"
+                style={{ pointerEvents: 'none' }}
+            >
+                <div
+                    className="bg-white rounded-lg shadow-2xl w-full max-w-xl flex flex-col animate-in zoom-in-95 duration-300"
+                    onClick={e => e.stopPropagation()}
+                    style={{ pointerEvents: 'auto' }}
+                >
                     {/* 헤더 */}
                     <div className="px-4 pt-2 pb-2 flex items-center justify-between">
                         <h1 className="text-xl font-bold text-black">이슈 수정</h1>
@@ -299,7 +391,7 @@ export default function TaskDrawer({
                         </button>
                     </div>
                     {/* 본문(탭/토글+내용) 스크롤 영역 */}
-                    <div className="flex-1 overflow-y-scroll bg-white" style={{maxHeight: '60vh'}}>
+                    <div className="flex-1 overflow-y-scroll bg-white [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" style={{maxHeight: '75vh'}}>
                         <div className="flex items-center justify-between px-4 mt-2 mb-2">
                             {/* 탭 버튼 - 심플 스타일 */}
                             <div className="flex bg-gray-100 rounded-lg p-1">
@@ -314,18 +406,19 @@ export default function TaskDrawer({
                                     GitHub 커밋
                                 </button>
                             </div>
-                            {/* 상세/댓글 토글 */}
+
+                            {/* 댓글 버튼 */}
                             <div className="flex space-x-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setActiveTab('comments')}
-                                    className={`px-4 py-2 rounded-md text-sm font-medium flex items-center transition-colors ${activeTab === 'comments' ? 'bg-gray-900 text-white' : 'bg-white text-black border border-gray-200'}`}
+                                <Link
+                                    href={`/projects/${task.project_id}/issue/${task.id}`}
+                                    className="px-4 py-2 rounded-md text-sm font-medium flex items-center transition-colors bg-white text-black border border-gray-200 hover:bg-gray-100"
                                 >
                                     <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" /></svg>
-                                    댓글 (매핑필요)
-                                </button>
+                                    댓글
+                                </Link>
                             </div>
                         </div>
+
                         {/* 본문 내용 전체(ScrollArea, 탭별 내용 등) */}
                         <div className="flex-1 overflow-hidden">
                             <ScrollArea className="h-full">
@@ -341,7 +434,7 @@ export default function TaskDrawer({
                                                         value={formData.title}
                                                         onChange={handleChange}
                                                         placeholder="이슈 제목을 입력하세요"
-                                                        className="mt-1 text-lg font-semibold text-black placeholder:text-gray-500"
+                                                        className="mt-1 text-lg text-black placeholder:text-gray-500"
                                                     />
                                                 </div>
                                                 <div>
@@ -392,115 +485,264 @@ export default function TaskDrawer({
                                                         </Select>
                                                     </div>
                                                 </div>
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    <div>
-                                                        <Label htmlFor="assignee_id" className="font-medium text-black">담당자</Label>
-                                                        <div className="relative assignee-dropdown mt-1">
-                                                            <input
-                                                                type="text"
-                                                                placeholder="담당자 검색"
-                                                                value={assigneeSearch}
-                                                                onChange={(e) =>
-                                                                    setAssigneeSearch(e.target.value)
-                                                                }
-                                                                onFocus={(e) => {
-                                                                    setShowAssigneeDropdown(true);
-                                                                    e.target.select();
-                                                                }}
-                                                                className="px-3 py-2 bg-gray-100 text-black rounded-md text-sm w-full"
-                                                            />
-                                                            {showAssigneeDropdown && (
-                                                                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-40 overflow-y-auto">
-                                                                    {filteredAssignees.map((member) => (
-                                                                        <div
-                                                                            key={member.id}
-                                                                            onClick={() =>
-                                                                                handleAssigneeSelect(
-                                                                                    member.id,
-                                                                                    member.display_name
-                                                                                )
-                                                                            }
-                                                                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm text-black"
-                                                                        >
-                                                                            {member.display_name}
-                                                                        </div>
-                                                                    ))}
-                                                                    {filteredAssignees.length === 0 && (
-                                                                        <div className="px-3 py-2 text-black text-sm">
-                                                                            검색 결과가 없습니다.
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            )}
+
+                                {/* 레이블 */}
+                                <div className="grid grid-cols-2 gap-4">
+                                                            <div className="space-y-2">
+                                                                <Label>레이블</Label>
+                                                                {(() => {
+                                                                    const labelOptions = label.map((l) => ({
+                                                                        ...l,
+                                                                        value: l.id,
+                                                                        label: l.name,
+                                                                    }));
+                                                                    return (
+                                                                        <ReactSelect
+                                                                            isMulti
+                                                                            options={labelOptions}
+                                                                            value={labelOptions.filter(opt => formData.labels.some(l => l.id === opt.id))}
+                                                                            onChange={(selected) => {
+                                                                                const newLabels = (selected as any[]).map(({ id, name, color }) => ({ id, name, color }));
+                                                                                setFormData((prev) => ({
+                                                                                    ...prev,
+                                                                                    labels: newLabels,
+                                                                                }));
+                                                                            }}
+                                                                            getOptionLabel={(option) => option.label}
+                                                                            getOptionValue={(option) => option.value}
+                                                                            closeMenuOnSelect={false}
+                                                                            placeholder="레이블 선택"
+                                                                            components={{
+                                                                                Option: (props) => (
+                                                                                    <div {...props.innerProps} className={props.isFocused ? "bg-gray-100 px-3 py-2 flex items-center gap-2" : "px-3 py-2 flex items-center gap-2"}>
+                                                                                        <span
+                                                                                            style={{
+                                                                                                backgroundColor: props.data.color,
+                                                                                                display: "inline-block",
+                                                                                                width: 12,
+                                                                                                height: 12,
+                                                                                                borderRadius: "50%",
+                                                                                            }}
+                                                                                        />
+                                                                                        {props.data.label}
+                                                                                    </div>
+                                                                                ),
+                                                                                MultiValueLabel: (props) => (
+                                                                                    <div className="flex items-center gap-1">
+                                                                                        <span
+                                                                                            style={{
+                                                                                                backgroundColor: props.data.color,
+                                                                                                display: "inline-block",
+                                                                                                width: 10,
+                                                                                                height: 10,
+                                                                                                borderRadius: "50%",
+                                                                                            }}
+                                                                                        />
+                                                                                        {props.data.label}
+                                                                                    </div>
+                                                                                ),
+                                                                            }}
+                                                                            styles={{
+                                                                                multiValue: (base, state) => ({
+                                                                                    ...base,
+                                                                                    backgroundColor: state.data.color,
+                                                                                    color: "#fff",
+                                                                                }),
+                                                                                multiValueLabel: (base) => ({
+                                                                                    ...base,
+                                                                                    color: "#fff",
+                                                                                }),
+                                                                                multiValueRemove: (base) => ({
+                                                                                    ...base,
+                                                                                    color: "#fff",
+                                                                                    ":hover": {
+                                                                                        backgroundColor: "#333",
+                                                                                        color: "#fff",
+                                                                                    },
+                                                                                }),
+                                                                            }}
+                                                                        />
+                                                                    );
+                                                                })()}
+                                                            </div>
+                                                                <div className="space-y-2">
+                                                                <div style={{ height: "1.50rem" }} />
+                                                                <Button
+                                                                    variant="outline"
+                                                                    className="w-full justify-start mt-2"
+                                                                    type="button"
+                                                                    onClick={() => setLabelModalOpen(true)}
+                                                                >
+                                                                    <PlusIcon className="h-4 w-4" />
+                                                                    레이블 추가
+                                                                </Button>
+                                                                <Dialog open={labelModalOpen} onOpenChange={setLabelModalOpen}>
+                                                                    <AddLabelModal
+                                                                        labelName={labelName}
+                                                                        setLabelName={setLabelName}
+                                                                        selectedColor={selectedColor}
+                                                                        setSelectedColor={setSelectedColor}
+                                                                        handleSave={() => {
+                                                                            handleLabelSave();
+                                                                            setLabelModalOpen(false);
+                                                                            setLabelName("");
+                                                                            setSelectedColor("#3b82f6");
+                                                                        }}
+                                                                        handleCancel={() => {
+                                                                            setLabelModalOpen(false);
+                                                                            setLabelName("");
+                                                                            setSelectedColor("#3b82f6");
+                                                                        }}
+                                                                    />
+                                                                </Dialog>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                    <div>
-                                                        <Label htmlFor="reporter_id" className="font-medium text-black">보고자</Label>
-                                                        <div className="relative reporter-dropdown mt-1">
-                                                            <input
-                                                                type="text"
-                                                                placeholder="보고자 검색"
-                                                                value={reporterSearch}
-                                                                onChange={(e) =>
-                                                                    setReporterSearch(e.target.value)
+                                                
+                                                {/* 담당자와 보고자 */}
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div className="space-y-2">
+                                                            <Label>담당자</Label>
+                                                            <Select
+                                                                value={formData.assigneeId?.toString()}
+                                                                onValueChange={(value) =>
+                                                                    handleInputChange("assigneeId", value)
                                                                 }
-                                                                onFocus={(e) => {
-                                                                    setShowReporterDropdown(true);
-                                                                    e.target.select();
-                                                                }}
-                                                                className="px-3 py-2 bg-gray-100 text-black rounded-md text-sm w-full"
-                                                            />
-                                                            {showReporterDropdown && (
-                                                                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-40 overflow-y-auto">
-                                                                    {filteredReporters.map((member) => (
-                                                                        <div
-                                                                            key={member.id}
-                                                                            onClick={() =>
-                                                                                handleReporterSelect(
-                                                                                    member.id,
-                                                                                    member.display_name
-                                                                                )
-                                                                            }
-                                                                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm text-black"
+                                                            >
+                                                                <SelectTrigger>
+                                                                    <SelectValue placeholder="담당자 선택" />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    {memberList.map((user) => (
+                                                                        <SelectItem
+                                                                            key={user.id}
+                                                                            value={user.id.toString()}
                                                                         >
-                                                                            {member.display_name}
-                                                                        </div>
+                                                                            {user.display_name}
+                                                                        </SelectItem>
                                                                     ))}
-                                                                    {filteredReporters.length === 0 && (
-                                                                        <div className="px-3 py-2 text-black text-sm">
-                                                                            검색 결과가 없습니다.
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            )}
+                                                                </SelectContent>
+                                                            </Select>
                                                         </div>
-                                                    </div>
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-4">
-                                                    <div>
-                                                        <Label htmlFor="start_date" className="font-medium text-black">시작일</Label>
-                                                        <Input
-                                                            id="start_date"
-                                                            name="start_date"
-                                                            type="date"
-                                                            value={formData.start_date || ""}
-                                                            onChange={handleChange}
-                                                            className="mt-1 text-black"
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <Label htmlFor="due_date" className="font-medium text-black">마감일</Label>
-                                                        <Input
-                                                            id="due_date"
-                                                            name="due_date"
-                                                            type="date"
-                                                            value={formData.due_date || ""}
-                                                            onChange={handleChange}
-                                                            className="mt-1 text-black"
-                                                        />
-                                                    </div>
-                                                </div>
-                                            </div>
+
+                            <div className="space-y-2">
+                                <Label>보고자</Label>
+                                <Select
+                                    value={formData.reporterId?.toString()}
+                                    onValueChange={(value) =>
+                                        handleInputChange("reporterId", value)
+                                    }
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="보고자 선택" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {memberList.map((user) => (
+                                            <SelectItem
+                                                key={user.id}
+                                                value={user.id.toString()}
+                                            >
+                                                {user.display_name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+
+                        {/* 시작일과 마감일 */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>시작일</Label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            className={cn(
+                                                "w-full justify-start text-left font-normal",
+                                                !formData.startDate &&
+                                                    "text-muted-foreground"
+                                            )}
+                                        >
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {formData.startDate
+                                                ? format(
+                                                      formData.startDate,
+                                                      "yyyy년 MM월 dd일",
+                                                      {
+                                                          locale: ko,
+                                                      }
+                                                  )
+                                                : "시작일 선택"}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent
+                                        className="w-auto p-0"
+                                        align="start"
+                                    >
+                                        <Calendar
+                                            mode="single"
+                                            selected={formData.startDate}
+                                            onSelect={(date) =>
+                                                handleInputChange(
+                                                    "startDate",
+                                                    date
+                                                )
+                                            }
+                                            initialFocus
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>마감일</Label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            className={cn(
+                                                "w-full justify-start text-left font-normal",
+                                                !formData.dueDate &&
+                                                    "text-muted-foreground"
+                                            )}
+                                        >
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {formData.dueDate
+                                                ? format(
+                                                      formData.dueDate,
+                                                      "yyyy년 MM월 dd일",
+                                                      {
+                                                          locale: ko,
+                                                      }
+                                                  )
+                                                : "마감일 선택"}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent
+                                        className="w-auto p-0"
+                                        align="start"
+                                    >
+                                        <Calendar
+                                            mode="single"
+                                            selected={formData.dueDate}
+                                            onSelect={(date) =>
+                                                handleInputChange(
+                                                    "dueDate",
+                                                    date
+                                                )
+                                            }
+                                            initialFocus
+                                            disabled={(date) =>
+                                                formData.startDate
+                                                    ? date < formData.startDate
+                                                    : false
+                                            }
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+                        </div>
                                         </form>
                                     ) : activeTab === "commits" ? (
                                         <div className="space-y-4">
@@ -578,11 +820,11 @@ export default function TaskDrawer({
                             삭제
                         </Button>
                         <div className="flex gap-2">
-                            <Button type="button" variant="outline" onClick={onClose}>
+                            <Button type="button" variant="outline" disabled={loading} onClick={onClose}>
                                 취소
                             </Button>
-                            <Button type="button" className="bg-black hover:bg-gray-800 text-white" disabled={loading} onClick={handleSave}>
-                                {loading ? "저장 중..." : "저장"}
+                            <Button type="button" className="bg-slate-600 hover:bg-slate-700 text-white" disabled={loading} onClick={handleSave}>
+                                {"저장"}
                             </Button>
                         </div>
                     </div>
