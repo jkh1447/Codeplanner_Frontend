@@ -351,8 +351,8 @@ export default function LoginPage() {
 
               <div className="text-center">
                 <span className="text-gray-600">계정이 없으신가요? </span>
-                <Link href="/auth/create" className="text-[#64748b] hover:text-[#475569] font-medium hover:underline">
-              회원가입
+                <Link href="/user/create" className="text-[#64748b] hover:text-[#475569] font-medium hover:underline">
+                회원가입
                 </Link>
           </div>
         </CardContent>
