@@ -132,7 +132,7 @@ export default function ForgotPasswordPage() {
                   <Input
                     ref={emailInputRef}
                     id="email"
-                    type="text"
+                    type="email"
                     className={`pl-10 h-11 pt-6 pb-2 transition-all duration-300 peer ${
                       error
                         ? "border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:shadow-lg focus:shadow-red-500/10"
@@ -144,9 +144,8 @@ export default function ForgotPasswordPage() {
                       if (error) validateEmail(e.target.value)
                     }}
                     onFocus={() => setIsEmailFocused(true)}
-                    // onBlur에서 validateEmail 호출 제거
-                    onBlur={() => setIsEmailFocused(false)}
                     placeholder=" "
+                    required
                   />
                   <Label
                     htmlFor="email"

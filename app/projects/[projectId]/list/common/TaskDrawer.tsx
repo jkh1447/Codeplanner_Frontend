@@ -387,9 +387,9 @@ export default function TaskDrawer({
                         <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full">
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                    </div>
+                        </svg>
+                    </button>
+                </div>
                     {/* 본문(탭/토글+내용) 스크롤 영역 */}
                     <div className="flex-1 overflow-y-scroll bg-white [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" style={{maxHeight: '75vh'}}>
                         <div className="flex items-center justify-between px-4 mt-2 mb-2">
@@ -418,7 +418,7 @@ export default function TaskDrawer({
                                 </Link>
                             </div>
                         </div>
-
+                        
                         {/* 본문 내용 전체(ScrollArea, 탭별 내용 등) */}
                         <div className="flex-1 overflow-hidden">
                             <ScrollArea className="h-full">
@@ -441,14 +441,14 @@ export default function TaskDrawer({
                                                     <Label htmlFor="description" className="font-medium text-black">설명</Label>
                                                     <Textarea
                                                         id="description"
-                                                        name="description"
+                            name="description"
                                                         value={formData.description}
-                                                        onChange={handleChange}
+                            onChange={handleChange}
                                                         placeholder="이슈에 대한 자세한 설명을 입력하세요"
                                                         rows={6}
                                                         className="mt-1 text-black placeholder:text-gray-500"
-                                                    />
-                                                </div>
+                        />
+                    </div>
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div>
                                                         <Label htmlFor="issue_type" className="font-medium text-black">유형</Label>
@@ -597,8 +597,8 @@ export default function TaskDrawer({
                                                                 </Dialog>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                
+                    </div>
+
                                                 {/* 담당자와 보고자 */}
                                                     <div className="grid grid-cols-2 gap-4">
                                                         <div className="space-y-2">
@@ -757,18 +757,18 @@ export default function TaskDrawer({
                                                 <p>연결된 커밋이 없습니다.</p>
                                                 <p className="text-sm mt-1">GitHub 저장소와 연결하여 커밋을 추적하세요.</p>
                                             </div>
-                                        </div>
+                                    </div>
                                     ) : (
                                         <div className="space-y-4">
                                             <div className="flex items-center justify-between">
                                                 <h3 className="text-lg font-medium">댓글</h3>
-                                            </div>
+                            </div>
                                             <div className="space-y-4 max-h-96 overflow-y-auto">
                                                                                             <div className="text-center py-8 text-black">
                                                 <p>아직 댓글이 없습니다.</p>
                                                 <p className="text-sm mt-1">첫 번째 댓글을 작성해보세요.</p>
-                                            </div>
-                                            </div>
+                        </div>
+                    </div>
                                             <form onSubmit={handleCommentSubmit} className="space-y-3">
                                                 <Textarea
                                                     value={newComment}
@@ -792,7 +792,7 @@ export default function TaskDrawer({
                                             </div>
                                         </div>
                                     )}
-                                </div>
+                        </div>
                             </ScrollArea>
                         </div>
                     </div>
@@ -813,11 +813,11 @@ export default function TaskDrawer({
                     {/* 하단 버튼 영역 */}
                     <div className="flex justify-between items-center gap-2 px-4 py-3 bg-white-50 rounded-b-lg">
                         <Button
-                            onClick={handleDelete}
+                        onClick={handleDelete}
                             variant="destructive"
-                            disabled={loading}
-                        >
-                            삭제
+                        disabled={loading}
+                    >
+                        삭제
                         </Button>
                         <div className="flex gap-2">
                             <Button type="button" variant="outline" disabled={loading} onClick={onClose}>

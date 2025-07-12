@@ -99,14 +99,6 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitted(true);
-    // 모든 필드에 대해 직접 errors 객체 생성
-    const newErrors: Record<string, string> = {};
-    if (!formData.email.trim()) newErrors.email = "이메일을 입력해주세요";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = "올바른 이메일 형식이 아닙니다";
-    if (!formData.password) newErrors.password = "비밀번호를 입력해주세요";
-    else if (formData.password.length < 6) newErrors.password = "비밀번호는 6자 이상이어야 합니다";
-    setErrors(newErrors);
-    if (Object.keys(newErrors).length > 0) return;
     setIsLoading(true);
     setLoginError("");
     const loginData = {
@@ -242,7 +234,7 @@ export default function LoginPage() {
               <Input
                       ref={emailInputRef}
                 id="email"
-                type="text"
+                type="email"
                       className={`pl-10 h-11 pt-6 pb-2 transition-all duration-300 peer ${
                         errors.email
                           ? "border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:shadow-lg focus:shadow-red-500/10"
@@ -256,7 +248,8 @@ export default function LoginPage() {
                       onFocus={() => setIsEmailFocused(true)}
                       // onBlur 제거
                       placeholder=" "
-                />
+                required
+              />
                     <Label
                       htmlFor="email"
                       className={`absolute left-10 transition-all duration-300 pointer-events-none ${
