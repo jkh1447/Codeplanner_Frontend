@@ -62,7 +62,7 @@ function TreeNode({
   depth?: number;
 }) {
   const [open, setOpen] = React.useState(depth === 0); // 최상위는 기본 open
-  
+
   // 파일 확장자에 따른 아이콘 결정
   const getFileIcon = (fileName: string) => {
     const ext = fileName.split('.').pop()?.toLowerCase();
@@ -87,11 +87,11 @@ function TreeNode({
         return '📄';
     }
   };
-  
+
   if (node.__type === "blob") {
     return <div style={{ marginLeft: depth * 16 }}>{getFileIcon(name)} {name}</div>;
   }
-  
+
   // 폴더(tree)
   const folderName = name === "." ? "프로젝트 루트" : name;
   return (
@@ -298,7 +298,7 @@ export default function CodePage() {
   }, [selectedBranch, projectId]);
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-4 p-6">
       <div>
         <h1 className="text-3xl font-bold">코드 관리</h1>
         <p className="text-muted-foreground">
@@ -320,30 +320,30 @@ export default function CodePage() {
           ) : error ? (
             <div className="text-red-500">{error}</div>
           ) : repoData ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
               <div>
-                <h4 className="font-semibold">저장소</h4>
+                <h4 className="font-bold text-lg mb-1">저장소</h4>
                 <a
                   href={repoData.html_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-blue-600 underline"
+                  className="text-base text-blue-600 underline"
                 >
                   {repoData.full_name}
                 </a>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   {repoData.description}
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold">기본 브랜치</h4>
-                <p className="text-sm text-muted-foreground">
+                <h4 className="font-bold text-lg mb-1">기본 브랜치</h4>
+                <p className="text-base text-muted-foreground">
                   {repoData.default_branch}
                 </p>
               </div>
               <div>
-                <h4 className="font-semibold">마지막 업데이트</h4>
-                <p className="text-sm text-muted-foreground">
+                <h4 className="font-bold text-lg mb-1">마지막 업데이트</h4>
+                <p className="text-base text-muted-foreground">
                   {new Date(repoData.updated_at).toLocaleString("ko-KR")}
                 </p>
               </div>
@@ -357,9 +357,10 @@ export default function CodePage() {
       {/* 브랜치 및 커밋 */}
       <Tabs defaultValue="branches" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="branches">브랜치</TabsTrigger>
-          <TabsTrigger value="commits">커밋</TabsTrigger>
-          <TabsTrigger value="pull-requests">Pull Requests</TabsTrigger>
+          <TabsTrigger value="branches" className="text-lg px-6 py-3 h-12">브랜치</TabsTrigger>
+          <TabsTrigger value="commits" className="text-lg px-6 py-3 h-12">커밋</TabsTrigger>
+          <TabsTrigger value="pull-requests" className="text-lg px-6 py-3 h-12">Pull Requests</TabsTrigger>
+          <TabsTrigger value="structure" className="text-lg px-6 py-3 h-12">프로젝트 구조</TabsTrigger>
         </TabsList>
 
         <TabsContent value="branches" className="space-y-4">
@@ -388,8 +389,8 @@ export default function CodePage() {
                             branch.name === repoData?.default_branch
                               ? "default"
                               : branch.name.startsWith("feature/")
-                              ? "secondary"
-                              : "outline"
+                                ? "secondary"
+                                : "outline"
                           }
                         >
                           {branch.name}
@@ -403,13 +404,13 @@ export default function CodePage() {
                       <div className="text-sm text-muted-foreground">
                         최신 커밋:{" "}
                         {branch.commit &&
-                        branch.commit.commit &&
-                        branch.commit.commit.author
+                          branch.commit.commit &&
+                          branch.commit.commit.author
                           ? new Date(
-                              branch.commit.commit.author.date
-                            ).toLocaleString("ko-KR", {
-                              hour12: false,
-                            })
+                            branch.commit.commit.author.date
+                          ).toLocaleString("ko-KR", {
+                            hour12: false,
+                          })
                           : "-"}
                       </div>
                     </div>
@@ -480,36 +481,40 @@ export default function CodePage() {
         <TabsContent value="pull-requests" className="space-y-4">
           <PullRequest />
         </TabsContent>
-      </Tabs>
+        {/* 파일 구조 */}
 
-      {/* 파일 구조 */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileCode className="h-5 w-5" />
-            프로젝트 구조
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {treeLoading ? (
-            <div>프로젝트 구조를 불러오는 중...</div>
-          ) : treeError ? (
-            <div className="text-red-500">{treeError}</div>
-          ) : tree && tree.length > 0 ? (
-            <div className="space-y-2 text-sm">
-              <TreeNode
-                name="."
-                node={{
-                  __type: "tree",
-                  __children: buildTree(tree),
-                }}
-              />
-            </div>
-          ) : (
-            <div>구조 데이터가 없습니다.</div>
-          )}
-        </CardContent>
-      </Card>
+        <TabsContent value="structure" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-4">
+                <CardTitle className="flex items-center gap-2">
+                  <FileCode className="h-5 w-5" />
+                  프로젝트 구조
+                </CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {treeLoading ? (
+                <div>프로젝트 구조를 불러오는 중...</div>
+              ) : treeError ? (
+                <div className="text-red-500">{treeError}</div>
+              ) : tree && tree.length > 0 ? (
+                <div className="space-y-2 text-sm">
+                  <TreeNode
+                    name="."
+                    node={{
+                      __type: "tree",
+                      __children: buildTree(tree),
+                    }}
+                  />
+                </div>
+              ) : (
+                <div>구조 데이터가 없습니다.</div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
