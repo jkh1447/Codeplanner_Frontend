@@ -17,6 +17,7 @@ import {
   import { Badge } from "@/components/ui/badge";
   import { Separator } from "@/components/ui/separator";
   import { GitBranch, FileText, Plus, Minus } from "lucide-react";
+    import { Alert } from "@/components/ui/alert";
 
 export default function PullRequestModal({
     open,
@@ -41,6 +42,8 @@ export default function PullRequestModal({
     const [openFiles, setOpenFiles] = useState<string[]>([]);
     const [fileChanges, setFileChanges] = useState<{ [filename: string]: any }>({});
     const [loadingFiles, setLoadingFiles] = useState<{ [filename: string]: boolean }>({});
+    const [isMergeConflict, setIsMergeConflict] = useState<{ [number: number]: boolean }>({[number]: false});
+    const [isMerged, setIsMerged] = useState<{ [number: number]: boolean }>({[number]: false});
 
     // 파일 변경 내역 불러오기
     const fetchPullRequestChanges = async (filename: string, owner: string, repo: string, prNumber: number) => {
@@ -80,6 +83,34 @@ export default function PullRequestModal({
         }
     };
 
+    const mergePullRequest = async () => {
+        console.log("number : ", number);
+        console.log("owner : ", owner);
+        console.log("repo : ", repo);
+        const response = await fetch(`${getApiUrl()}/github/project/${projectId}/merge-pull-request`,{
+            credentials: "include",
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                pull_number: number,
+                owner: owner,
+                repo: repo,
+            }),
+        })
+
+        if(!response.ok) {
+            if(response.status === 405) {
+                console.log("conflict 발생");
+                setIsMergeConflict(prev => ({ ...prev, [number]: true }));
+            }
+            return;
+        }
+        setIsMerged(prev => ({ ...prev, [number]: true }));
+        alert("Merge 완료");
+        window.location.reload();
+    }
     useEffect(() => {
         const getOwner = async () => {
             const projectRes = await fetch(`${getApiUrl()}/projects/${projectId}`, {
@@ -102,9 +133,6 @@ export default function PullRequestModal({
             await fetchChangeList(owner, repo);
         }
         const fetchChangeList = async (owner: string, repo: string) => {
-            console.log("number : ", number);
-            console.log("owner : ", owner);
-            console.log("repo : ", repo);
             const response = await fetch(`${getApiUrl()}/github/project/${projectId}/pull-request-file-changes/${number}/${owner}/${repo}`, {
                 credentials: "include",
                 method: "GET",
@@ -123,6 +151,7 @@ export default function PullRequestModal({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-4xl max-h-[80vh]">
                 <DialogHeader>
+                    {isMergeConflict[number] && <Alert className="text-red-500">Conflict 발생. Git 허브에서 직접 병합하세요.</Alert>}
                     <DialogTitle className="text-xl font-semibold">Pull Request 정보</DialogTitle>
                     <DialogDescription>Pull Request의 상세 정보를 확인하세요.</DialogDescription>
                 </DialogHeader>
@@ -194,7 +223,6 @@ export default function PullRequestModal({
                                                 </div>
                                             )}
                                         </div>
-                                        
                                         {/* 파일 변경 내역 표시 */}
                                         {openFiles.includes(file.filename) && (
                                             <div className="mt-3 border-t pt-3">
@@ -215,6 +243,18 @@ export default function PullRequestModal({
                                     </div>
                                 )) : <div className="text-gray-400 text-center">변경된 파일이 없습니다.</div>}
                             </div>
+                        </div>
+                        {/* Merge 버튼 오른쪽 하단 배치 */}
+                        <div className="flex justify-end mt-8 gap-x-3">
+                            <Button variant="outline" className="bg-gray-200 text-gray-700 hover:bg-gray-300" onClick={() => {
+                                window.open(`https://github.com/${owner}/${repo}/pull/${number}`, "_blank");
+                            }}>
+                                깃허브에서 직접 병합
+                            </Button>
+                            <Button className="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded shadow" type="button" 
+                            onClick={() => {mergePullRequest()}} disabled={isMergeConflict[number]}>
+                                {isMergeConflict[number] ? "Conflict 발생" : "Merge Pull Request"}
+                            </Button>
                         </div>
                     </div>
                 </div>
