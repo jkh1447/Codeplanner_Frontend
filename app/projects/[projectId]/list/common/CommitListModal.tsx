@@ -450,14 +450,14 @@ export default function CommitListModal({
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center justify-between mb-3">
                                         <div className="flex items-center gap-3">
-                                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                             </svg>
-                                            <h3 className="font-semibold text-gray-900 truncate max-w-[60%]">
+                                            <h3 className="font-semibold text-gray-900 break-all">
                                                 {file.filename}
                                             </h3>
                                         </div>
-                                        <span className={`px-3 py-1 rounded-full text-xs font-medium border ${statusColor}`}>
+                                        <span className={`px-3 py-1 rounded-full text-xs font-medium border ${statusColor} flex-shrink-0`}>
                                             {file.status}
                                         </span>
                                     </div>
@@ -520,7 +520,7 @@ export default function CommitListModal({
                                                 {(result.cppcheckIssues ?? []).map((issue: any, idx: number) => (
                                                     <li key={idx} className="text-red-600 text-sm flex items-start gap-2">
                                                         <span className="text-red-400 mt-1">•</span>
-                                                        <span>{issue.type} error[{issue.line}, {issue.column}]: {issue.message}</span>
+                                                        <span>타입: {issue.type} [{issue.line}, {issue.column}]: {issue.message}</span>
                                                     </li>
                                                 ))}
                                             </ul>
@@ -552,7 +552,7 @@ export default function CommitListModal({
                                                 {(result.clangTidyIssues ?? []).map((issue: any, idx: number) => (
                                                     <li key={idx} className="text-orange-600 text-sm flex items-start gap-2">
                                                         <span className="text-orange-400 mt-1">•</span>
-                                                        <span>{issue.type} error[{issue.line}, {issue.column}]: {issue.message}</span>
+                                                        <span> 타입: {issue.type} [{issue.line}, {issue.column}]: {issue.message}</span>
                                                     </li>
                                                 ))}
                                             </ul>
@@ -611,7 +611,7 @@ export default function CommitListModal({
                                                 {(result.clangFormatIssues ?? []).map((issue: any, idx: number) => (
                                                     <li key={idx} className="text-purple-600 text-sm flex items-start gap-2">
                                                         <span className="text-purple-400 mt-1">•</span>
-                                                        <span>{issue.type} error[{issue.line}, {issue.column}]: {issue.message}</span>
+                                                        <span>타입: {issue.type} [{issue.line}, {issue.column}]: {issue.message}</span>
                                                     </li>
                                                 ))}
                                             </ul>
