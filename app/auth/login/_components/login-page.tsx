@@ -34,6 +34,8 @@ export default function LoginPage() {
     rememberMe: false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  // touched, handleBlur 제거
+  const [submitted, setSubmitted] = useState(false);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [showResendAlert, setShowResendAlert] = useState(false);
   const router = useRouter();
@@ -96,6 +98,15 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitted(true);
+    // 모든 필드에 대해 직접 errors 객체 생성
+    const newErrors: Record<string, string> = {};
+    if (!formData.email.trim()) newErrors.email = "이메일을 입력해주세요";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = "올바른 이메일 형식이 아닙니다";
+    if (!formData.password) newErrors.password = "비밀번호를 입력해주세요";
+    else if (formData.password.length < 6) newErrors.password = "비밀번호는 6자 이상이어야 합니다";
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) return;
     setIsLoading(true);
     setLoginError("");
     const loginData = {
@@ -158,14 +169,14 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex">
+    <div className="min-h-screen flex">
       {/* Left Side - Branding */}
       <div className="hidden lg:flex lg:w-1/2 bg-[#64748b] relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-[#64748b] to-[#475569]" />
-        <div className="relative z-10 flex flex-col justify-center items-center text-white p-12">
+        <div className="relative z-10 flex flex-col justify-center items-center text-white p-12 w-full">
           <div className="mb-8">
             <div className="w-16 h-16 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-6">
-              <Code2 className="w-8 h-8 text-white" />
+              <span className="text-3xl font-bold">CP</span>
             </div>
             <h1 className="text-4xl font-bold mb-4">Code Planner</h1>
             <p className="text-xl text-white/80 mb-8">프로젝트를 계획하고 관리하는 가장 스마트한 방법</p>
@@ -173,42 +184,42 @@ export default function LoginPage() {
           <div className="space-y-6 text-white/70">
             <div className="flex items-center space-x-4">
               <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">
-                <span className="text-sm">✓</span>
+                <span className="text-sm">1</span>
               </div>
               <span>직관적인 프로젝트 관리</span>
             </div>
             <div className="flex items-center space-x-4">
               <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">
-                <span className="text-sm">✓</span>
+                <span className="text-sm">2</span>
               </div>
               <span>팀 협업 도구</span>
             </div>
             <div className="flex items-center space-x-4">
               <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">
-                <span className="text-sm">✓</span>
+                <span className="text-sm">3</span>
               </div>
               <span>실시간 진행 상황 추적</span>
             </div>
           </div>
         </div>
-        {/* Decorative Elements */}
+        {/* 장식용 blur 원 */}
         <div className="absolute top-20 right-20 w-32 h-32 bg-white/5 rounded-full blur-xl" />
         <div className="absolute bottom-20 left-20 w-24 h-24 bg-white/5 rounded-full blur-xl" />
       </div>
-      {/* Right Side - Login Form */}
-      <div className="flex-1 flex items-center justify-center p-8">
+      {/* 오른쪽 - 로그인 폼 */}
+      <div className="flex-1 flex items-center justify-center p-8 bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="w-full max-w-md">
-          <Card className="border-0 shadow-xl">
+          <div className="text-center mb-8 lg:hidden">
+            <div className="w-10 h-10 bg-[#64748b] rounded-lg flex items-center justify-center mr-3 mx-auto mb-2">
+              <span className="text-white font-bold text-sm">CP</span>
+            </div>
+            <span className="text-xl font-semibold text-gray-900">Code Planner</span>
+          </div>
+          <Card className="shadow-xl border-0">
             <CardHeader className="space-y-1 pb-6">
-              <div className="flex items-center justify-center lg:hidden mb-4">
-                <div className="w-10 h-10 bg-[#64748b] rounded-lg flex items-center justify-center mr-3">
-                  <span className="text-white font-bold text-sm">CP</span>
-                </div>
-                <span className="text-xl font-semibold text-gray-900">Code Planner</span>
-              </div>
-              <CardTitle className="text-2xl font-bold text-center text-gray-900">로그인</CardTitle>
-              <p className="text-center text-gray-600">계정에 로그인하여 프로젝트를 관리하세요</p>
-        </CardHeader>
+              <CardTitle className="text-2xl font-bold text-center">로그인</CardTitle>
+              <CardDescription className="text-center">계정에 로그인하여 프로젝트를 관리하세요</CardDescription>
+            </CardHeader>
             <CardContent className="space-y-6">
           {showSuccessAlert && (
             <Alert className="mb-4 border-green-200 bg-green-50">
@@ -231,7 +242,7 @@ export default function LoginPage() {
               <Input
                       ref={emailInputRef}
                 id="email"
-                type="email"
+                type="text"
                       className={`pl-10 h-11 pt-6 pb-2 transition-all duration-300 peer ${
                         errors.email
                           ? "border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:shadow-lg focus:shadow-red-500/10"
@@ -243,13 +254,9 @@ export default function LoginPage() {
                         validateField("email", e.target.value);
                       }}
                       onFocus={() => setIsEmailFocused(true)}
-                      onBlur={(e) => {
-                        setIsEmailFocused(false);
-                        validateField("email", e.target.value);
-                      }}
+                      // onBlur 제거
                       placeholder=" "
-                required
-              />
+                />
                     <Label
                       htmlFor="email"
                       className={`absolute left-10 transition-all duration-300 pointer-events-none ${
@@ -261,7 +268,7 @@ export default function LoginPage() {
                       이메일
                     </Label>
                   </div>
-                  {errors.email && <p className="text-sm text-red-600">{errors.email}</p>}
+                  {submitted && errors.email && <p className="text-sm text-red-600">{errors.email}</p>}
             </div>
 
             <div className="space-y-2">
@@ -281,10 +288,7 @@ export default function LoginPage() {
                         validateField("password", e.target.value);
                       }}
                       onFocus={() => setIsPasswordFocused(true)}
-                      onBlur={(e) => {
-                        setIsPasswordFocused(false);
-                        validateField("password", e.target.value);
-                      }}
+                      // onBlur 제거
                       placeholder=" "
                 required
               />
@@ -306,7 +310,7 @@ export default function LoginPage() {
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
-                  {errors.password && <p className="text-sm text-red-600">{errors.password}</p>}
+                  {submitted && errors.password && <p className="text-sm text-red-600">{errors.password}</p>}
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -354,7 +358,7 @@ export default function LoginPage() {
 
               <div className="text-center">
                 <span className="text-gray-600">계정이 없으신가요? </span>
-                <Link href="/user/create" className="text-[#64748b] hover:text-[#475569] font-medium hover:underline">
+                <Link href="/auth/create" className="text-[#64748b] hover:text-[#475569] font-medium hover:underline">
               회원가입
                 </Link>
           </div>

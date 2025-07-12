@@ -112,14 +112,14 @@ export default function SignupPage() {
               <span className="text-3xl font-bold">CP</span>
             </div>
             <h1 className="text-4xl font-bold mb-4">시작해보세요</h1>
-            <p className="text-xl text-white/80 mb-8">몇 분만에 계정을 만들고 프로젝트 관리를 시작하세요</p>
+            <p className="text-xl text-white/80 mb-8">몇 초만에 계정을 만들고 프로젝트 관리를 시작하세요</p>
           </div>
           <div className="space-y-6 text-white/70">
             <div className="flex items-center space-x-4">
               <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">
                 <span className="text-sm">1</span>
               </div>
-              <span>계정 생성 (2분)</span>
+              <span>쉬운 계정 생성</span>
             </div>
             <div className="flex items-center space-x-4">
               <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">
@@ -151,7 +151,7 @@ export default function SignupPage() {
           <Card className="shadow-xl border-0">
             <CardHeader className="space-y-1 pb-6">
               <CardTitle className="text-2xl font-bold text-center">회원가입</CardTitle>
-              <CardDescription className="text-center">무료로 시작하고 프로젝트를 효율적으로 관리하세요</CardDescription>
+              <CardDescription className="text-center">바로 시작하고 프로젝트를 효율적으로 관리하세요</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -221,19 +221,6 @@ export default function SignupPage() {
                   </Label>
                 </div>
                 {errors.agreeTerms && <p className="text-sm text-red-600">{errors.agreeTerms}</p>}
-                <div className="flex items-start space-x-2">
-                  <input
-                    id="agreeMarketing"
-                    type="checkbox"
-                    checked={!!formData.agreeMarketing}
-                    onChange={e => handleInputChange("agreeMarketing", e.target.checked)}
-                    className="mt-1"
-                    disabled={loading}
-                  />
-                  <Label htmlFor="agreeMarketing" className="text-sm text-gray-600 leading-5">
-                    마케팅 정보 수신에 동의합니다 (선택)
-                  </Label>
-                </div>
                 {errors.submit && (
                   <Alert variant="destructive">
                     <AlertDescription>{errors.submit}</AlertDescription>
@@ -257,7 +244,7 @@ export default function SignupPage() {
                       회원가입 중...
                     </>
                   ) : (
-                    "무료로 시작하기"
+                    "바로 시작하기"
                   )}
                 </Button>
               </form>

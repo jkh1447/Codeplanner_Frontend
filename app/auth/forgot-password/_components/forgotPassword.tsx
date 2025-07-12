@@ -17,6 +17,7 @@ export default function ForgotPasswordPage() {
   const [isEmailSent, setIsEmailSent] = useState(false)
   const [error, setError] = useState("")
   const [isEmailFocused, setIsEmailFocused] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
 
   const emailInputRef = useRef<HTMLInputElement>(null)
@@ -45,6 +46,7 @@ export default function ForgotPasswordPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitted(true);
     if (!validateEmail(email)) return;
 
     setIsLoading(true);
@@ -130,7 +132,7 @@ export default function ForgotPasswordPage() {
                   <Input
                     ref={emailInputRef}
                     id="email"
-                    type="email"
+                    type="text"
                     className={`pl-10 h-11 pt-6 pb-2 transition-all duration-300 peer ${
                       error
                         ? "border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:shadow-lg focus:shadow-red-500/10"
@@ -142,13 +144,9 @@ export default function ForgotPasswordPage() {
                       if (error) validateEmail(e.target.value)
                     }}
                     onFocus={() => setIsEmailFocused(true)}
-                    onBlur={(e) => {
-                      setIsEmailFocused(false);
-                      validateEmail(e.target.value);
-                    }}
-
+                    // onBlur에서 validateEmail 호출 제거
+                    onBlur={() => setIsEmailFocused(false)}
                     placeholder=" "
-                    required
                   />
                   <Label
                     htmlFor="email"
@@ -161,7 +159,7 @@ export default function ForgotPasswordPage() {
                     이메일 주소
                   </Label>
                 </div>
-                {error && <p className="text-sm text-red-600">{error}</p>}
+                {submitted && error && <p className="text-sm text-red-600">{error}</p>}
               </div>
 
               <Button
