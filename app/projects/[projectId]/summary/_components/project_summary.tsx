@@ -28,6 +28,7 @@ export default function SummaryPage() {
   const [inProgressIssue, setInProgressIssue] = useState(0);
   const [issueTypeData, setIssueTypeData] = useState<any[]>([]);
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
+  const [progressData, setProgressData] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchMemberCount = async () => {
@@ -65,6 +66,18 @@ export default function SummaryPage() {
         data.filter((issue: any) => issue.status === "IN_PROGRESS").length
       );
 
+      const progressCount = data.reduce((acc: any, cur:any) => {
+        const progress = cur.status;
+        acc[progress] = (acc[progress] || 0) + 1;
+        return acc;
+      }, {});
+
+      const progressDataArr = Object.entries(progressCount).map(([progress, count]) =>({
+        id: progress,
+        value: count as number,
+      }));
+
+      setProgressData(progressDataArr);
       // 이슈 타입별 갯수 집계
       const typeCount = data.reduce((acc: any, cur: any) => {
         const type = cur.issueType || "기타";
@@ -217,15 +230,13 @@ export default function SummaryPage() {
           <CardContent className="space-y-4">
             <div className="w-full h-full">
               <div style={{ width: "100%", height: "300px" }}>
+                {progressData.length > 0 ? (
                 <ResponsivePie
-                  data={[
-                    { id: "Done", value: completedIssue },
-                    { id: "In Progress", value: inProgressIssue },
-                    {
-                      id: "To Do",
-                      value: allIssue - completedIssue - inProgressIssue,
-                    },
-                  ]}
+                  data={progressData.map((item) => ({
+                  ...item,
+                  id: String(item.id),
+                  label: item.id,
+                }))}
                   margin={{ top: 40, right: 80, bottom: 80, left: 80 }}
                   innerRadius={0.5}
                   legends={[
@@ -254,6 +265,11 @@ export default function SummaryPage() {
                     },
                   ]}
                 />
+                ) :(
+                  <div className="text-center text-gray-400 py-4">
+                    이슈 상태 분포 데이터가 없습니다.
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>
