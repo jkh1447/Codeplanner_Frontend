@@ -13,12 +13,16 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Modal from "@/components/ui/modal";
 import { getApiUrl } from "@/lib/api";
+import TeamInvite from "./_components/TeamInvite";
 
 export default function SettingsPage() {
     const { projectId } = useParams();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
+    const [userRole, setUserRole] = useState<{ role: string; isLeader: boolean } | null>(null);
+    const [hasAdminPermission, setHasAdminPermission] = useState(false);
+    const [hasLeaderPermission, setHasLeaderPermission] = useState(false);
     const [project, setProject] = useState({
         name: "",
         description: "",
@@ -28,9 +32,7 @@ export default function SettingsPage() {
         status: "진행중",
     });
     const [members, setMembers] = useState<any[]>([]);
-    const [showMemberModal, setShowMemberModal] = useState(false);
-    const [allUsers, setAllUsers] = useState<any[]>([]);
-    const [inviteRoles, setInviteRoles] = useState<{ [userId: string]: string }>({});
+    const [showInviteModal, setShowInviteModal] = useState(false);
     const [projectLeader, setProjectLeader] = useState<any>(null);
 
     // 상태 옵션 (DDL 및 기존 코드 참고)
@@ -44,7 +46,7 @@ export default function SettingsPage() {
     // 날짜를 YYYY-MM-DD로 변환
     function toDateInputString(dateStr: string | null | undefined): string {
         if (!dateStr) return "";
-    
+
         // 한글 형식인지 확인: "2025년 07월 31일"
         const koreanDateRegex = /^(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일$/;
         const match = dateStr.match(koreanDateRegex);
@@ -52,7 +54,7 @@ export default function SettingsPage() {
             const [, year, month, day] = match;
             return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
         }
-    
+
         // 일반 ISO, UTC 형식
         const d = new Date(dateStr);
         if (isNaN(d.getTime())) return "";
@@ -60,9 +62,44 @@ export default function SettingsPage() {
     }
 
     useEffect(() => {
+        async function fetchUserRole() {
+            try {
+                const res = await fetch(`${getApiUrl()}/projects/${projectId}/my-role`, {
+                    credentials: "include",
+                    headers: { "Content-Type": "application/json" },
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    setUserRole(data);
+                    // 관리자 권한과 리더 권한을 분리
+                    const adminPermission = data.role === 'ADMIN';
+                    const leaderPermission = data.isLeader;
+                    setHasAdminPermission(adminPermission);
+                    setHasLeaderPermission(leaderPermission);
+
+                    // 리더 또는 관리자만 접근 가능
+                    if (!leaderPermission && !adminPermission) {
+                        setError("설정 페이지에 접근할 권한이 없습니다.");
+                        return;
+                    }
+                } else {
+                    setError("권한 정보를 확인할 수 없습니다.");
+                    return;
+                }
+            } catch (e: any) {
+                setError("권한 확인 중 오류가 발생했습니다.");
+                return;
+            }
+        }
+
         async function fetchProject() {
             setLoading(true);
             setError(null);
+
+            // 먼저 권한을 확인
+            await fetchUserRole();
+
             try {
                 const res = await fetch(`${getApiUrl()}/projects/${projectId}`, {
                     method: "GET",
@@ -72,7 +109,7 @@ export default function SettingsPage() {
                 if (!res.ok) throw new Error("프로젝트 정보를 불러오지 못했습니다.");
                 const data = await res.json();
 
-        
+
                 setProject({
                     name: data.title ?? "",
                     description: data.description ?? "",
@@ -105,24 +142,7 @@ export default function SettingsPage() {
             .then(data => setMembers(data || []));
     }, [projectId]);
 
-    // 전체 유저 목록 불러오기 (모달 열릴 때)
-    const fetchAllUsers = () => {
-        fetch(`${getApiUrl()}/user/users`, { credentials: "include" })
-            .then(res => res.json())
-            .then(data => {
-                // 배열인지 확인하고 안전하게 처리
-                if (Array.isArray(data)) {
-                    setAllUsers(data);
-                } else {
-                    console.error('API 응답이 배열이 아닙니다:', data);
-                    setAllUsers([]);
-                }
-            })
-            .catch(error => {
-                console.error('유저 목록 불러오기 실패:', error);
-                setAllUsers([]);
-            });
-    };
+
 
     // input/select 변경 핸들러
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -172,26 +192,12 @@ export default function SettingsPage() {
         });
     };
 
-    // 초대 핸들러
-    const handleInvite = (userId: string, role: string) => {
-        fetch(`${getApiUrl()}/projects/${projectId}/members/invite`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({ userId, role }),
-        }).then(() => {
-            setShowMemberModal(false);
-            // 초대 후 멤버 목록 새로고침
-            fetch(`${getApiUrl()}/projects/${projectId}/members`, { credentials: "include" })
-                .then(res => res.json())
-                .then(data => setMembers(data || []));
-        });
-    };
+
 
     // 팀원 제거 핸들러
     const handleRemoveMember = (userId: string) => {
         if (!confirm('정말로 이 팀원을 제거하시겠습니까?')) return;
-        
+
         fetch(`${getApiUrl()}/projects/${projectId}/members/${userId}`, {
             method: "DELETE",
             credentials: "include",
@@ -205,32 +211,64 @@ export default function SettingsPage() {
     };
 
     // 프로젝트 리더 변경 핸들러
-    const handleChangeLeader = (userId: string) => {
-        if (!confirm('이 사용자를 프로젝트 리더로 변경하시겠습니까?')) return;
-        
-        fetch(`${getApiUrl()}/projects/${projectId}/leader`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({ leader_id: userId }),
-        }).then(() => {
-            // 리더 변경 후 프로젝트 정보 새로고침
-            fetch(`${getApiUrl()}/projects/${projectId}`, {
+    const handleChangeLeader = async (userId: string) => {
+        if (!confirm('리더 권한을 위임하시겠습니까?')) return;
+
+        try {
+            // 1. 기존 리더를 멤버로 변경
+            const currentLeader = members.find(m => m.id === projectLeader?.id);
+            if (currentLeader) {
+                await fetch(`${getApiUrl()}/projects/${projectId}/members/${currentLeader.id}/role`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify({ role: 'MEMBER' }),
+                });
+            }
+
+            // 2. 새로운 리더의 역할을 리더로 변경
+            await fetch(`${getApiUrl()}/projects/${projectId}/members/${userId}/role`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ role: 'LEADER' }),
+            });
+
+            // 3. 프로젝트 테이블의 leader_id 업데이트
+            await fetch(`${getApiUrl()}/projects/${projectId}/leader`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ leader_id: userId }),
+            });
+
+            // 4. 로컬 상태 업데이트
+            setMembers(members => members.map(m => {
+                if (m.id === projectLeader?.id) {
+                    return { ...m, role: 'MEMBER' };
+                }
+                if (m.id === userId) {
+                    return { ...m, role: 'LEADER' };
+                }
+                return m;
+            }));
+
+            // 5. 프로젝트 리더 정보 새로고침
+            const projectRes = await fetch(`${getApiUrl()}/projects/${projectId}`, {
                 credentials: "include",
                 headers: { "Content-Type": "application/json" },
-            })
-            .then(res => res.json())
-            .then(data => {
-                setProjectLeader({
-                    id: data.leader_id,
-                    display_name: data.project_leader || 'Unknown',
-                });
             });
+            const projectData = await projectRes.json();
+            setProjectLeader({
+                id: projectData.leader_id,
+                display_name: projectData.project_leader || 'Unknown',
+            });
+
             alert('프로젝트 리더가 변경되었습니다.');
-        }).catch(error => {
+        } catch (error) {
             console.error('리더 변경 실패:', error);
             alert('리더 변경에 실패했습니다.');
-        });
+        }
     };
 
     const handleDelete = async () => {
@@ -258,30 +296,107 @@ export default function SettingsPage() {
             {loading ? (
                 <div className="text-center py-8">불러오는 중...</div>
             ) : error ? (
-                <div className="text-center text-red-500 py-8">{error}</div>
+                <div className="text-center py-8">
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+                        <div className="flex items-center justify-center mb-4">
+                            <Shield className="h-12 w-12 text-red-500" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-red-800 mb-2">접근 권한 없음</h3>
+                        <p className="text-red-600 mb-4">{error}</p>
+                        <div className="text-sm text-red-500 mb-4">
+                            {userRole && (
+                                <p>현재 역할: {userRole.role} {userRole.isLeader && '(리더)'}</p>
+                            )}
+                            <p>설정 페이지는 프로젝트 리더 또는 관리자만 접근할 수 있습니다.</p>
+                            <p className="text-xs">※ 관리자는 조회만 가능하며, 수정은 리더만 가능합니다.</p>
+                        </div>
+                        <Button
+                            variant="outline"
+                            onClick={() => window.history.back()}
+                            className="border-red-300 text-red-700 hover:bg-red-50"
+                        >
+                            뒤로 가기
+                        </Button>
+                    </div>
+                </div>
+            ) : (!hasLeaderPermission && !hasAdminPermission) ? (
+                <div className="text-center py-8">
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+                        <div className="flex items-center justify-center mb-4">
+                            <Shield className="h-12 w-12 text-yellow-500" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-yellow-800 mb-2">권한 부족</h3>
+                        <p className="text-yellow-600 mb-4">설정 페이지에 접근할 권한이 없습니다.</p>
+                        <div className="text-sm text-yellow-600 mb-4">
+                            {userRole && (
+                                <p>현재 역할: {userRole.role} {userRole.isLeader && '(리더)'}</p>
+                            )}
+                            <p>설정 변경은 프로젝트 리더만 가능합니다.</p>
+                            <p className="text-xs">※ 관리자는 조회만 가능합니다.</p>
+                        </div>
+                        <Button
+                            variant="outline"
+                            onClick={() => window.location.href = `/projects/${projectId}/summary`}
+                            className="border-yellow-300 text-yellow-700 hover:bg-yellow-50"
+                        >
+                            프로젝트 요약으로 이동
+                        </Button>
+                    </div>
+                </div>
             ) : (
                 <div className="flex flex-col space-y-4">
-                    {/* 기본 정보 */}
+                    {/* 기본 정보 - 리더와 관리자 모두 접근 가능 */}
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Settings className="h-5 w-5" />
                                 기본 정보
+                                {hasLeaderPermission && <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">리더</span>}
+                                {hasAdminPermission && !hasLeaderPermission && <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded">관리자 (조회 전용)</span>}
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
+                            {/* 관리자 권한 제한 안내 */}
+                            {hasAdminPermission && !hasLeaderPermission && (
+                                <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-2 w-2 bg-orange-500 rounded-full"></div>
+                                        <p className="text-sm text-orange-800">
+                                            관리자 권한: 프로젝트 기본 정보 수정은 리더만 가능합니다.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+                            
                             <div className="space-y-2">
                                 <Label htmlFor="name">프로젝트명</Label>
-                                <Input id="name" value={project.name} onChange={handleChange} />
+                                <Input 
+                                    id="name" 
+                                    value={project.name} 
+                                    onChange={handleChange}
+                                    disabled={!hasLeaderPermission}
+                                />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="description">설명</Label>
-                                <Textarea id="description" value={project.description} onChange={handleChange} rows={3} />
+                                <Textarea 
+                                    id="description" 
+                                    value={project.description} 
+                                    onChange={handleChange} 
+                                    rows={3}
+                                    disabled={!hasLeaderPermission}
+                                />
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="endDate">종료일</Label>
-                                    <Input id="endDate" type="date" value={project.endDate} onChange={handleChange} />
+                                    <Input 
+                                        id="endDate" 
+                                        type="date" 
+                                        value={project.endDate} 
+                                        onChange={handleChange}
+                                        disabled={!hasLeaderPermission}
+                                    />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="status">프로젝트 상태</Label>
@@ -290,6 +405,7 @@ export default function SettingsPage() {
                                         value={project.status}
                                         onChange={e => handleStatusChange(e.target.value)}
                                         className="w-full border rounded-md px-3 py-2"
+                                        disabled={!hasLeaderPermission}
                                     >
                                         {statusOptions.map(opt => (
                                             <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -299,22 +415,32 @@ export default function SettingsPage() {
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="repositoryUrl">프로젝트 URL</Label>
-                                <Input id="repositoryUrl" value={project.repositoryUrl} onChange={handleChange} />
+                                <Input 
+                                    id="repositoryUrl" 
+                                    value={project.repositoryUrl} 
+                                    onChange={handleChange}
+                                    disabled={!hasLeaderPermission}
+                                />
                             </div>
                             <div className="pt-2">
-                                <Button onClick={handleSave} disabled={saving}>
+                                <Button 
+                                    onClick={handleSave} 
+                                    disabled={saving || !hasLeaderPermission}
+                                >
                                     {saving ? "저장 중..." : "저장"}
                                 </Button>
                             </div>
                         </CardContent>
                     </Card>
 
-                    {/* 팀 관리 */}
+                    {/* 팀 관리 - 리더와 관리자 접근 가능 */}
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <Users className="h-5 w-5" />
                                 팀 관리
+                                {hasLeaderPermission && <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">리더</span>}
+                                {hasAdminPermission && !hasLeaderPermission && <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded">관리자 (제한된 관리)</span>}
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
@@ -330,77 +456,108 @@ export default function SettingsPage() {
                                     </div>
                                 </div>
                             )}
-                            
-                            <div className="space-y-2 max-h-48 overflow-y-auto">
-                                {members.map(member => (
-                                    <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
-                                        <div>
-                                            <p className="font-medium">{member.display_name}</p>
-                                            <p className="text-sm text-muted-foreground">{member.role}</p>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <Select value={member.role} onValueChange={role => handleRoleChange(member.id, role)}>
-                                                <SelectTrigger className="w-[100px]">
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="ADMIN">관리자</SelectItem>
-                                                    <SelectItem value="MEMBER">멤버</SelectItem>
-                                                    <SelectItem value="VIEWER">뷰어</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            <Button 
-                                                variant="outline" 
-                                                size="sm"
-                                                onClick={() => handleRemoveMember(member.id)}
-                                                className="text-red-600 hover:text-red-700"
-                                            >
-                                                제거
-                                            </Button>
-                                        </div>
+
+                            {/* 관리자 권한 제한 안내 */}
+                            {hasAdminPermission && !hasLeaderPermission && (
+                                <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-2 w-2 bg-orange-500 rounded-full"></div>
+                                        <p className="text-sm text-orange-800">
+                                            관리자 권한: 멤버/뷰어 관리만 가능합니다. 관리자 관련 권한은 리더만 가능합니다.
+                                        </p>
                                     </div>
-                                ))}
-                            </div>
-                            <Button variant="outline" className="w-full" onClick={() => { setShowMemberModal(true); fetchAllUsers(); }}>
-                                팀원 관리
-                            </Button>
-                            {showMemberModal && (
-                                <Modal onClose={() => setShowMemberModal(false)}>
-                                    <div className="p-4">
-                                        <h2 className="text-lg font-bold mb-4">전체 유저 목록</h2>
-                                        <div className="space-y-2 max-h-96 overflow-y-auto">
-                                            {allUsers.map(user => (
-                                                <div key={user.id} className="flex items-center justify-between p-2 border rounded-lg">
-                                                    <span>{user.display_name}</span>
-                                                    <div className="flex items-center gap-2">
-                                                        <Select value={inviteRoles[user.id] || "MEMBER"} onValueChange={role => setInviteRoles(r => ({ ...r, [user.id]: role }))}>
-                                                            <SelectTrigger className="w-[100px]">
-                                                                <SelectValue />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                <SelectItem value="ADMIN">관리자</SelectItem>
-                                                                <SelectItem value="MEMBER">멤버</SelectItem>
-                                                                <SelectItem value="VIEWER">뷰어</SelectItem>
-                                                            </SelectContent>
-                                                        </Select>
-                                                        <Button 
-                                                            onClick={() => handleInvite(user.id, inviteRoles[user.id] || "MEMBER")}
-                                                            size="sm"
-                                                        >
-                                                            초대
-                                                        </Button>
-                                                        <Button 
-                                                            variant="outline"
-                                                            onClick={() => handleChangeLeader(user.id)}
-                                                            size="sm"
-                                                            className="text-blue-600 hover:text-blue-700"
-                                                        >
-                                                            리더로
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            ))}
+                                </div>
+                            )}
+
+                            <div className="space-y-2 max-h-48 overflow-y-auto">
+                                {members
+                                    .filter(member => {
+                                        // 리더는 항상 제외
+                                        if (member.role === 'LEADER') return false;
+                                        // 관리자가 보는 경우: 자신(ADMIN)도 제외
+                                        if (hasAdminPermission && !hasLeaderPermission && member.role === 'ADMIN') return false;
+                                        return true;
+                                    })
+                                    .map(member => (
+                                        <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
+                                            <div>
+                                                <p className="font-medium">{member.display_name}</p>
+                                                <p className="text-sm text-muted-foreground">{member.role}</p>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Select 
+                                                    value={member.role} 
+                                                    onValueChange={role => handleRoleChange(member.id, role)}
+                                                    disabled={
+                                                        (!hasLeaderPermission && !hasAdminPermission) || 
+                                                        (hasAdminPermission && !hasLeaderPermission && member.role === 'ADMIN')
+                                                    }
+                                                >
+                                                    <SelectTrigger className="w-[100px]">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {/* 관리자 옵션은 리더만 또는 현재 ADMIN인 경우 표시 */}
+                                                        {(hasLeaderPermission || member.role === 'ADMIN') && <SelectItem value="ADMIN">관리자</SelectItem>}
+                                                        <SelectItem value="MEMBER">멤버</SelectItem>
+                                                        <SelectItem value="VIEWER">뷰어</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                {/* 리더 권한 위임은 리더만 가능 */}
+                                                {hasLeaderPermission && (
+                                                    <Button 
+                                                        variant="outline"
+                                                        onClick={() => handleChangeLeader(member.id)}
+                                                        size="sm"
+                                                        className="text-blue-600 hover:text-blue-700"
+                                                    >
+                                                        리더로
+                                                    </Button>
+                                                )}
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => handleRemoveMember(member.id)}
+                                                    className="text-red-600 hover:text-red-700"
+                                                    disabled={
+                                                        (!hasLeaderPermission && !hasAdminPermission) ||
+                                                        (hasAdminPermission && !hasLeaderPermission && member.role === 'ADMIN')
+                                                    }
+                                                >
+                                                    제거
+                                                </Button>
+                                            </div>
                                         </div>
+                                    ))}
+                                {members.filter(member => {
+                                    // 리더는 항상 제외
+                                    if (member.role === 'LEADER') return false;
+                                    // 관리자가 보는 경우: 자신(ADMIN)도 제외
+                                    if (hasAdminPermission && !hasLeaderPermission && member.role === 'ADMIN') return false;
+                                    return true;
+                                }).length === 0 && (
+                                    <div className="text-center py-4 text-sm text-muted-foreground">
+                                        {hasAdminPermission && !hasLeaderPermission ? '관리할 수 있는 팀원이 없습니다.' : '다른 팀원이 없습니다.'}
+                                    </div>
+                                )}
+                            </div>
+                            <Button 
+                                variant="outline" 
+                                className="w-full" 
+                                onClick={() => setShowInviteModal(true)}
+                                disabled={!hasLeaderPermission && !hasAdminPermission}
+                            >
+                                이메일로 팀원 초대
+                            </Button>
+                            {showInviteModal && (
+                                <Modal onClose={() => setShowInviteModal(false)}>
+                                    <div className="p-4 w-full">
+                                        <TeamInvite
+                                            projectId={String(projectId)}
+                                            hasLeaderPermission={hasLeaderPermission}
+                                            hasAdminPermission={hasAdminPermission}
+                                            onClose={() => setShowInviteModal(false)}
+                                        />
                                     </div>
                                 </Modal>
                             )}
@@ -442,20 +599,51 @@ export default function SettingsPage() {
                         </CardContent>
                     </Card> */}
 
-                    {/* 데이터 관리 - 프로젝트 삭제만 남김 */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Database className="h-5 w-5" />
-                                데이터
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <Button variant="destructive" className="w-full" onClick={handleDelete}>
-                                프로젝트 삭제
-                            </Button>
-                        </CardContent>
-                    </Card>
+                    {/* 데이터 관리 - 리더만 접근 가능 */}
+                    {hasLeaderPermission && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Database className="h-5 w-5" />
+                                    데이터 관리
+                                    <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">리더 전용</span>
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-4">
+                                    <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                                        <h4 className="font-medium text-red-800 mb-2">위험 구역</h4>
+                                        <p className="text-sm text-red-600 mb-3">
+                                            프로젝트 삭제는 되돌릴 수 없습니다. 모든 데이터가 영구적으로 삭제됩니다.
+                                        </p>
+                                        <Button variant="destructive" className="w-full" onClick={handleDelete}>
+                                            프로젝트 삭제
+                                        </Button>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+                    
+                    {/* 관리자에게는 삭제 권한 없음을 알림 */}
+                    {hasAdminPermission && !hasLeaderPermission && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Database className="h-5 w-5" />
+                                    데이터 관리
+                                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">권한 제한</span>
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
+                                    <p className="text-sm text-gray-600">
+                                        프로젝트 삭제는 리더만 수행할 수 있습니다.
+                                    </p>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
             )}
         </div>

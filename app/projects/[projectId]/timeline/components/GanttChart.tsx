@@ -11,7 +11,7 @@ declare global {
         Gantt: any;
     }
 }
-
+  
 interface GanttChartProps {
     tasks: GanttTask[];
     loading?: boolean;
@@ -36,10 +36,10 @@ export default function GanttChart({ tasks, loading = false, error = null }: Gan
         }),
       });
       if (!response.ok) {
-        throw new Error('날짜 변경 실패');
+        throw new Error('이슈 날짜 변경 실패');
       }
     } catch {
-      alert('날짜 변경에 실패했습니다.');
+      alert('이슈 날짜 변경에 실패했습니다.');
     }
   }, []);
 
@@ -86,9 +86,10 @@ export default function GanttChart({ tasks, loading = false, error = null }: Gan
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     new (window as any).Gantt(ganttRef.current, tasks, {
-      view_mode: 'Week',
+      view_mode: 'Day',
       today_button: true,
       view_mode_select: true,
+      language: 'ko',
       on_date_change: handleDateChange,
     });
   }
@@ -96,7 +97,7 @@ export default function GanttChart({ tasks, loading = false, error = null }: Gan
   if (loading) {
     return (
       <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        Gantt 차트 로딩 중...
+        타임라인 차트 로딩 중...
       </div>
     );
   }
@@ -112,7 +113,7 @@ export default function GanttChart({ tasks, loading = false, error = null }: Gan
   if (tasks.length === 0) {
     return (
       <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        표시할 작업이 없습니다.
+        표시할 이슈가 없습니다.
       </div>
     );
   }
