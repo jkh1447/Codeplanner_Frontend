@@ -32,6 +32,11 @@ interface Project {
     status: string;
 }
 
+interface UserRole {
+    role: string;
+    isLeader: boolean;
+}
+
 export default function SideBar() {
     const [projects, setProjects] = React.useState<Project[]>([]);
     const [loading, setLoading] = React.useState<boolean>(true);
@@ -41,6 +46,7 @@ export default function SideBar() {
     const match = pathname.match(/\/projects\/([^/]+)/);
     const projectId = match ? match[1] : null;
     const [myIssueCount, setMyIssueCount] = React.useState<number | null>(null);
+    const [userRole, setUserRole] = React.useState<UserRole | null>(null);
     
     const project_id = usePathname().split("/");
     console.log("project_id", project_id);
@@ -111,7 +117,38 @@ export default function SideBar() {
                 console.error(err);
             }
         };
-        fetchMyIssueCount();
+        
+        const fetchUserRole = async () => {
+            try {
+                // 현재 사용자의 프로젝트 내 역할을 가져오기
+                const res = await fetch(
+                    `${getApiUrl()}/projects/${projectId}/my-role`,
+                    {
+                        credentials: "include",
+                        headers: { "Content-Type": "application/json" },
+                    }
+                );
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    setUserRole({
+                        role: data.role,
+                        isLeader: data.isLeader || false
+                    });
+                } else {
+                    // 멤버 정보가 없는 경우 (프로젝트에 속하지 않음)
+                    setUserRole({ role: 'NONE', isLeader: false });
+                }
+            } catch (err) {
+                console.error('Failed to fetch user role:', err);
+                setUserRole({ role: 'NONE', isLeader: false });
+            }
+        };
+
+        if (projectId) {
+            fetchMyIssueCount();
+            fetchUserRole();
+        }
     }, [projectId]);
 
     const menuItems = [
@@ -159,9 +196,56 @@ export default function SideBar() {
         },
     ];
 
+    // 역할 표시 텍스트 및 색상 결정
+    const getRoleDisplay = () => {
+        if (!userRole || userRole.role === 'NONE') return null;
+        
+        // 리더가 최고 권한자이므로 우선 표시
+        if (userRole.isLeader) {
+            return (
+                <div className="px-2 py-1 rounded-full text-xs font-medium border bg-yellow-100 text-yellow-800 border-yellow-200">
+                    리더
+                </div>
+            );
+        }
+        
+        // 리더가 아닌 경우 일반 역할 표시
+        const roleInfo = {
+            ADMIN: { text: '관리자', color: 'bg-orange-100 text-orange-800 border-orange-200' },
+            MEMBER: { text: '멤버', color: 'bg-blue-100 text-blue-800 border-blue-200' },
+            VIEWER: { text: '뷰어', color: 'bg-gray-100 text-gray-800 border-gray-200' },
+        };
+        
+        const currentRole = roleInfo[userRole.role as keyof typeof roleInfo];
+        if (!currentRole) return null;
+        
+        return (
+            <div className={`px-2 py-1 rounded-full text-xs font-medium border ${currentRole.color}`}>
+                {currentRole.text}
+            </div>
+        );
+    };
+    
     return (
         <div className="w-64 border-r bg-background text-foreground h-screen overflow-y-auto">
             <div className="p-4 space-y-4">
+                {/* 현재 프로젝트와 역할 정보 */}
+                {userRole && userRole.role !== 'NONE' && (
+                    <div className="bg-muted/50 rounded-lg p-3 border">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium text-muted-foreground">
+                                {userRole.isLeader ? '프로젝트 리더' : '프로젝트 권한'}
+                            </span>
+                            {getRoleDisplay()}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                            {userRole.isLeader && '프로젝트 최고 관리자 권한'}
+                            {!userRole.isLeader && userRole.role === 'VIEWER' && '읽기 전용 권한'}
+                            {!userRole.isLeader && userRole.role === 'MEMBER' && '이슈 생성/수정 가능'}
+                            {!userRole.isLeader && userRole.role === 'ADMIN' && '제한된 관리 권한'}
+                        </div>                
+                    </div>
+                )}
                 {/* 프로젝트 섹션 */}
                 <Collapsible
                     open={isProjectsOpen}
@@ -174,20 +258,12 @@ export default function SideBar() {
                                 <span className="font-medium">프로젝트</span>
                             </div>
                             <div className="flex items-center gap-1">
-                                <div
-                                    className="h-5 w-5 rounded-sm hover:bg-accent flex items-center justify-center cursor-pointer"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        // 새 프로젝트 추가 로직
-                                    }}
-                                >
-                                    <Plus className="h-3 w-3" />
-                                </div>
+                                {/* 새 프로젝트 플러스 버튼 삭제됨 */}
                                 <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
                             </div>
                         </CollapsibleTrigger>
                         <CollapsibleContent>
-                            <div className="ml-6 space-y-1">
+                            <div className="ml-6 space-y-3">
                                 {loading ? (
                                     <div className="text-xs text-muted-foreground">
                                         불러오는 중...
@@ -196,35 +272,62 @@ export default function SideBar() {
                                     <div className="text-xs text-red-500">
                                         {error}
                                     </div>
-                                ) : projects.length === 0 ? (
-                                    <div className="text-xs text-muted-foreground">
-                                        프로젝트가 없습니다.
-                                    </div>
                                 ) : (
-                                    projects.map((project) => (
-                                        <Link
-                                            key={project.id}
-                                            href={`/projects/${project.id}/summary`}
-                                            className="flex items-center justify-between p-2 text-sm hover:bg-accent hover:text-accent-foreground rounded-md"
-                                        >
-                                            <span className="truncate">
-                                                {project.name}
-                                            </span>
-                                            <span
-                                                className={`h-2 w-2 rounded-full ${
-                                                    project.status === "대기중"
-                                                        ? "bg-yellow-500"
-                                                        : project.status === "진행중"
-                                                        ? "bg-blue-500"
-                                                        : project.status === "완료"
-                                                        ? "bg-green-500"
-                                                        : project.status === "보류"
-                                                        ? "bg-red-500"
-                                                        : "bg-gray-500"
-                                                }`}
-                                            />
-                                        </Link>
-                                    ))
+                                    projects.length === 0 ? (
+                                        <div className="text-xs text-muted-foreground">
+                                            프로젝트가 없습니다.
+                                        </div>
+                                    ) : (
+                                        projects.map((project) => {
+                                            const isCurrentProject = String(project.id) === String(projectId);
+                                            return isCurrentProject ? (
+                                                <div
+                                                    key={project.id}
+                                                    className="flex items-center justify-between p-2 text-sm bg-accent/50 rounded-md border"
+                                                >
+                                                    <span className="truncate font-medium">
+                                                        {project.name}
+                                                    </span>
+                                                    <span
+                                                        className={`h-2 w-2 rounded-full ${
+                                                            project.status === "대기중"
+                                                                ? "bg-yellow-500"
+                                                                : project.status === "진행중"
+                                                                ? "bg-blue-500"
+                                                                : project.status === "완료"
+                                                                ? "bg-green-500"
+                                                                : project.status === "보류"
+                                                                ? "bg-red-500"
+                                                                : "bg-gray-500"
+                                                        }`}
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <Link
+                                                    key={project.id}
+                                                    href={`/projects/${project.id}/summary`}
+                                                    className="flex items-center justify-between p-2 text-sm hover:bg-accent hover:text-accent-foreground rounded-md"
+                                                >
+                                                    <span className="truncate">
+                                                        {project.name}
+                                                    </span>
+                                                    <span
+                                                        className={`h-2 w-2 rounded-full ${
+                                                            project.status === "대기중"
+                                                                ? "bg-yellow-500"
+                                                                : project.status === "진행중"
+                                                                ? "bg-blue-500"
+                                                                : project.status === "완료"
+                                                                ? "bg-green-500"
+                                                                : project.status === "보류"
+                                                                ? "bg-red-500"
+                                                                : "bg-gray-500"
+                                                        }`}
+                                                    />
+                                                </Link>
+                                            );
+                                        })
+                                    )
                                 )}
                             </div>
                         </CollapsibleContent>
@@ -233,30 +336,47 @@ export default function SideBar() {
 
                 {/* 메인 메뉴 섹션 */}
                 <div className="space-y-1">
-                    {menuItems.map((item) => {
-                        const isActive = pathname.includes(item.url);
-                        return (
-                            <a
-                                key={item.title}
-                                href={`/projects/${projectId}/${item.url}`}
-                                className={`flex items-center justify-between p-2 rounded-md transition-colors ${
-                                    isActive
-                                        ? "bg-accent text-accent-foreground font-medium"
-                                        : "hover:bg-accent hover:text-accent-foreground"
-                                }`}
-                            >
-                                <div className="flex items-center gap-2">
-                                    <item.icon className="h-4 w-4" />
-                                    <span>{item.title}</span>
-                                </div>
-                                {item.badge && (
-                                    <span className="bg-accent text-accent-foreground rounded-full px-2 py-0.5 text-xs font-medium">
-                                        {item.badge}
-                                    </span>
-                                )}
-                            </a>
-                        );
-                    })}
+                    {menuItems
+                        .filter((item) => {
+                            if (!userRole || userRole.role === 'NONE') return false;
+                            
+                            // 설정 메뉴는 프로젝트 리더 또는 관리자만 볼 수 있음
+                            if (item.url === 'settings') {
+                                return userRole.isLeader || userRole.role === 'ADMIN';
+                            }
+                            
+                            // AI 이슈 생성은 리더, 관리자, 멤버만 사용 가능 (뷰어 제외)
+                            if (item.url === 'issue-generater-ai') {
+                                return userRole.isLeader || userRole.role === 'ADMIN' || userRole.role === 'MEMBER';
+                            }
+                            
+                            // 내 이슈, 요약, 타임라인, 보드, 목록, 코드는 모든 역할에서 볼 수 있음
+                            return true;
+                        })
+                        .map((item) => {
+                            const isActive = pathname.includes(item.url);
+                            return (
+                                <a
+                                    key={item.title}
+                                    href={`/projects/${projectId}/${item.url}`}
+                                    className={`flex items-center justify-between p-2 rounded-md transition-colors ${
+                                        isActive
+                                            ? "bg-accent text-accent-foreground font-medium"
+                                            : "hover:bg-accent hover:text-accent-foreground"
+                                    }`}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <item.icon className="h-4 w-4" />
+                                        <span>{item.title}</span>
+                                    </div>
+                                    {item.badge && (
+                                        <span className="bg-accent text-accent-foreground rounded-full px-2 py-0.5 text-xs font-medium">
+                                            {item.badge}
+                                        </span>
+                                    )}
+                                </a>
+                            );
+                        })}
                 </div>
             </div>
         </div>

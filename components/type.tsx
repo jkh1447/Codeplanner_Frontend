@@ -83,6 +83,8 @@ export type Notification_issue = {
   projectName: string;
   projectId: string;
   createdAt: string;
+  type?: string;
+  notificationId?: string;
 };
 
 

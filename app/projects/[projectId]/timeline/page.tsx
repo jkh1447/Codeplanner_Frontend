@@ -129,26 +129,10 @@ export default function Page({ params }: { params: Promise<{ projectId: string }
             </Card>
 
             {/* Gantt 차트 */}
-            <GanttChart tasks={ganttData} />
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>프로젝트 개요</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div>
-                        <h4 className="font-semibold mb-2">{overview?.title || '프로젝트'}</h4>
-                        <p className="text-muted-foreground text-sm">
-                            {overview?.description || '프로젝트 설명이 없습니다.'}
-                        </p>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                        {overview?.labels.map((label, index) => (
-                            <Badge key={index} variant="outline">{label}</Badge>
-                        ))}
-                    </div>
-                </CardContent>
-            </Card>
+            <div className="flex flex-col gap-4">
+                <GanttChart tasks={ganttData} />
+            </div>
+            
         </div>
     );
 } 

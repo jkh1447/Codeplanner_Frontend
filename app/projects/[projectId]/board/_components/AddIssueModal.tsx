@@ -91,7 +91,7 @@ export default function AddIssueModal({
         dueDate: undefined,
         position: taskCount || 0,
         tag: "",
-        createBranch: true, // 기본값으로 브랜치 생성 활성화
+        createBranch: false, // 기본값으로 브랜치 생성 활성화
         labels: [],
     });
 
@@ -326,12 +326,12 @@ export default function AddIssueModal({
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="story">
-                                            Story
+                                            스토리
                                         </SelectItem>
                                         <SelectItem value="task">
-                                            Task
+                                            작업
                                         </SelectItem>
-                                        <SelectItem value="bug">Bug</SelectItem>
+                                        <SelectItem value="bug">버그</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -349,19 +349,19 @@ export default function AddIssueModal({
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="BACKLOG">
-                                            Backlog
+                                            백로그
                                         </SelectItem>
                                         <SelectItem value="TODO">
-                                            Todo
+                                            해야 할 일
                                         </SelectItem>
                                         <SelectItem value="IN_PROGRESS">
-                                            In Progress
+                                            진행 중
                                         </SelectItem>
                                         <SelectItem value="IN_REVIEW">
-                                            In Review
+                                            리뷰 중
                                         </SelectItem>
                                         <SelectItem value="DONE">
-                                            Done
+                                            완료
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>
