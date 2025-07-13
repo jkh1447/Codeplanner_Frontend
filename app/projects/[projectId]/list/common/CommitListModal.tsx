@@ -94,6 +94,14 @@ export default function CommitListModal({
     }>({});
     const [analyzing, setAnalyzing] = useState<{ [filename: string]: boolean }>({});
 
+    // 파일 모달이 열릴 때마다 분석 상태 초기화
+    useEffect(() => {
+      if (fileModalOpen) {
+        setAnalyzeResults({});
+        setAnalyzing({});
+      }
+    }, [fileModalOpen]);
+
     // 초기 커밋 목록 불러오기
     useEffect(() => {
         const fetchInitialCommits = async () => {

@@ -873,7 +873,7 @@ export default function TaskDrawer({
                           onClick={() => setShowCommitModal(true)}
                         >
                           <Plus className="w-4 h-4 mr-2" />
-                          커밋 연결
+                          커밋 분석
                         </Button>
                       </div>
                       <CommitListInline
