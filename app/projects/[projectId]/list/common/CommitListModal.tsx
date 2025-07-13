@@ -213,7 +213,6 @@ export default function CommitListModal({
             const res = await fetch(`${getApiUrl()}/github/repos/${projectOwner}/${projectRepo}/commit/${sha}/files`, { credentials: "include" });
             if (!res.ok) throw new Error("파일 목록을 불러오지 못했습니다.");
             const data = await res.json();
-            console.log("들어온새끼: ", data)
             setFileList(data || []);
         } catch (err: any) {
             setError(err.message || "파일 목록 오류");

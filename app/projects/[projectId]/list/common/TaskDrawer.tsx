@@ -45,6 +45,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import CommitListInline from './CommitListInline';
 
 {
   /* 이슈에 대한 카드 모달 */
