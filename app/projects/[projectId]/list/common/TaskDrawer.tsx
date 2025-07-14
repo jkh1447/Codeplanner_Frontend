@@ -234,9 +234,6 @@ export default function TaskDrawer({
         if (!formData.status || formData.status.trim() === '') {
             missingFields.push('상태');
         }
-        if (!formData.assigneeId) {
-            missingFields.push('담당자');
-        }
         if (!formData.reporterId) {
             missingFields.push('보고자');
         }
@@ -276,21 +273,16 @@ export default function TaskDrawer({
                 throw new Error(`저장 실패: ${res.status} ${errorText}`);
             }
             
-            // 부모 컴포넌트에게 데이터 새로고침 요청
-            if (onSave) {
-                onSave();
-            }
-            
-            // 저장 성공 메시지 표시 후 잠시 대기
             setError(""); // 에러 메시지 초기화
             setSuccessMessage("저장이 완료되었습니다!"); // 성공 메시지 표시
-            setTimeout(() => {
-                onClose(); // -> 저장 완료하면, 모달 닫는다.
-            }, 1000); // 1초 대기
+            // onSave가 Promise를 반환할 수 있으므로 await 처리
+            if (onSave) {
+                await onSave();
+            }
+            onClose(); // 저장 후 바로 닫기
         } catch (err: any) {
             setError(err.message || "저장 중 오류 발생"); // 저장 실패시 오류
         } finally {
-            // UI 로딩 실행 종료 -> setLoading
             setLoading(false);
         }
     };
@@ -301,7 +293,7 @@ export default function TaskDrawer({
         setError("");
         try {
             await fetch(
-                `${getApiUrl()}/projects/${task.project_id}/${task.id}`,
+                `${getApiUrl()}/projects/${task.project_id}/issues/${task.id}`,
                 {
                     method: "DELETE",
                     headers: { "Content-Type": "application/json" },
@@ -479,7 +471,7 @@ export default function TaskDrawer({
                                                                 <SelectItem value="BACKLOG" className="text-black">백로그</SelectItem>
                                                                 <SelectItem value="TODO" className="text-black">해야 할 일</SelectItem>
                                                                 <SelectItem value="IN_PROGRESS" className="text-black">진행 중</SelectItem>
-                                                                <SelectItem value="IN-REVIEW" className="text-black">리뷰 중</SelectItem>
+                                                                <SelectItem value="IN_REVIEW" className="text-black">리뷰 중</SelectItem>
                                                                 <SelectItem value="DONE" className="text-black">완료</SelectItem>
                                                             </SelectContent>
                                                         </Select>
