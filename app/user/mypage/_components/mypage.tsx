@@ -185,6 +185,25 @@ export default function MyPage() {
     const redirectUri = `${getApiUrl()}/auth/github-oauth`;
     window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&scope=repo read:org write:org write:repo_hook`;
   };
+
+  const unRegister = async () => {
+    const response = await fetch(`${getApiUrl()}/user/unRegister`, {
+      method: "DELETE",
+      credentials: "include",
+    })
+
+    if (response.ok) {
+      const logoutResponse = await fetch(`${getApiUrl()}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (logoutResponse.ok) {
+        window.location.href = "/auth/login";
+      }
+    } else {
+      setError("회원탈퇴에 실패했습니다.");
+    }
+  }
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-2xl mx-auto">
@@ -347,8 +366,33 @@ export default function MyPage() {
                   </Button>
                 </div>
                 <div className="p-4 bg-green-50 rounded-lg">
-                  <h4 className="font-medium text-green-900 mb-1">계정 상태</h4>
-                  <p className="text-sm text-green-700">활성화</p>
+                  <span className="flex items-center gap-2">
+                    <h4 className="font-medium text-green-900 mb-1">계정 상태</h4>
+                    <p className="text-sm text-green-700">활성화</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="ml-auto"
+                      onClick={async () => {
+                        const confirmed = window.confirm("정말로 탈퇴하시겠습니까?");
+                        if (confirmed) {
+                          // 실제 탈퇴 API 호출
+                          const response = await fetch(`${getApiUrl()}/user/unRegister`, {
+                            method: "DELETE",
+                            credentials: "include",
+                          });
+                          if (response.ok) {
+                            alert("탈퇴가 완료되었습니다.");
+                            window.location.href = "/"; // 탈퇴 후 메인페이지 등으로 이동
+                          } else {
+                            alert("탈퇴에 실패했습니다. 다시 시도해주세요.");
+                          }
+                        }
+                      }}
+                    >
+                      회원탈퇴
+                    </Button>
+                  </span>
                 </div>
               </div>
             </div>
