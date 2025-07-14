@@ -779,16 +779,19 @@ export default function IssueDetail() {
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="BACKLOG">
-                                                Backlog
+                                                백로그
                                             </SelectItem>
                                             <SelectItem value="TODO">
-                                                Todo
+                                                해야 할 일
                                             </SelectItem>
                                             <SelectItem value="IN_PROGRESS">
-                                                In Progress
+                                                진행 중
+                                            </SelectItem>
+                                            <SelectItem value="IN_REVIEW">
+                                                리뷰 중
                                             </SelectItem>
                                             <SelectItem value="DONE">
-                                                Done
+                                                완료
                                             </SelectItem>
                                         </SelectContent>
                                     </Select>

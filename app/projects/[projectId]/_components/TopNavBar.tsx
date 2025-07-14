@@ -36,6 +36,9 @@ export default function Header() {
 
     const [notification, setNotification] = useState<Notification_issue[]>([]);
     const [notificationCount, setNotificationCount] = useState(0);
+    const [currentUserName, setCurrentUserName] = useState("");
+    const [currentUserEmail, setCurrentUserEmail] = useState("");
+    const [currentUserNameFirst, setCurrentUserNameFirst] = useState("");
 
     const handleLogout = async () => {
         try {
@@ -51,6 +54,31 @@ export default function Header() {
                 err instanceof Error
                     ? err.message
                     : "로그아웃 중 오류가 발생했습니다."
+            );
+        }
+    };
+
+    const currentUserDisplayName = async () => {
+        try {
+            const response = await fetch(`${getApiUrl()}/user/me`, {
+                method: "GET",
+                credentials: "include",
+            });
+            if (response.ok) {
+                const data = await response.json();
+                console.log("display name: ", data.display_name);
+                console.log("display email: ", data.email);
+                setCurrentUserName(data.display_name);
+                setCurrentUserEmail(data.email);
+                setCurrentUserNameFirst(
+                    data.display_name ? data.display_name[0] : ""
+                );
+            }
+        } catch (err) {
+            setError(
+                err instanceof Error
+                    ? err.message
+                    : "사용자 이름을 불러오는 데에 오류가 발생하였습니다."
             );
         }
     };
@@ -129,19 +157,29 @@ export default function Header() {
 
     useEffect(() => {
         handleNotification();
+        currentUserDisplayName();
     }, []);
 
     return (
-        <header className="bg-white border-b border-slate-200 sticky top-0 z-40" suppressHydrationWarning>
+        <header
+            className="bg-white border-b border-slate-200 sticky top-0 z-40"
+            suppressHydrationWarning
+        >
             <div className="w-full px-6 py-4" suppressHydrationWarning>
                 <div className="flex items-center" suppressHydrationWarning>
-                    <div className="flex items-center gap-4" suppressHydrationWarning>
+                    <div
+                        className="flex items-center gap-4"
+                        suppressHydrationWarning
+                    >
                         <Link
                             href="/projectList"
                             className="flex items-center gap-3 hover:opacity-80 transition-opacity"
                         >
                             {/* 로고 */}
-                            <div className="w-10 h-10 rounded-lg flex items-center justify-center" suppressHydrationWarning>
+                            <div
+                                className="w-10 h-10 rounded-lg flex items-center justify-center"
+                                suppressHydrationWarning
+                            >
                                 <img
                                     src="/CodePlannerIcon.png"
                                     alt="Code Planner Icon"
@@ -153,15 +191,29 @@ export default function Header() {
                             </h1>
                         </Link>
                     </div>
-                    <div className="flex flex-1 justify-center " suppressHydrationWarning>
-                        <div className="w-full max-w-[60rem]" suppressHydrationWarning></div>
+                    <div
+                        className="flex flex-1 justify-center "
+                        suppressHydrationWarning
+                    >
+                        <div
+                            className="w-full max-w-[60rem]"
+                            suppressHydrationWarning
+                        ></div>
                     </div>
-                    <div className="flex items-center gap-3" suppressHydrationWarning>
+                    <div
+                        className="flex items-center gap-3"
+                        suppressHydrationWarning
+                    >
                         {/* 헬스체크 */}
-                        {typeof window !== "undefined" && !isDevelopment() && <HealthCheck />}
+                        {typeof window !== "undefined" && !isDevelopment() && (
+                            <HealthCheck />
+                        )}
 
                         {/* 알림 */}
-                        <div className="relative group" suppressHydrationWarning>
+                        <div
+                            className="relative group"
+                            suppressHydrationWarning
+                        >
                             <button className="p-2 text-slate-600 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors relative">
                                 <Bell className="w-6 h-6" />
                                 {Array.isArray(notification) &&
@@ -171,7 +223,10 @@ export default function Header() {
                             </button>
 
                             {/* 알림 팝업 */}
-                            <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-lg border border-slate-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50" suppressHydrationWarning>
+                            <div
+                                className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-lg border border-slate-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50"
+                                suppressHydrationWarning
+                            >
                                 <div className="p-4 border-b border-slate-200">
                                     <h3 className="font-semibold text-slate-800">
                                         알림
@@ -183,7 +238,10 @@ export default function Header() {
                                     {Array.isArray(notification) &&
                                     notification.length > 0 ? (
                                         notification.map((item, idx) => (
-                                            <div className="relative group/item">
+                                            <div
+                                                className="relative group/item"
+                                                key={item.notificationId || idx}
+                                            >
                                                 <Link
                                                     key={`${item.issueId}-${item.createdAt}-${idx}`}
                                                     href={`/projects/${item.projectId}/issue/${item.issueId}`}
@@ -259,32 +317,34 @@ export default function Header() {
                         </div>
 
                         {/* 프로필 */}
-                        <div className="relative group" suppressHydrationWarning>
+                        <div
+                            className="relative group"
+                            suppressHydrationWarning
+                        >
                             <button className="flex items-center gap-2 p-1 text-slate-600 hover:text-blue-600 rounded-lg transition-colors">
                                 <Link href="/user/mypage">
-                                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center" suppressHydrationWarning>
-                                        <span className="text-white text-sm font-semibold">
-                                            김
-                                        </span>
-                                    </div>
+                                    <span className="w-8 h-8 rounded-full bg-blue-200 text-blue-800 flex items-center justify-center font-bold">
+                                        {currentUserNameFirst}
+                                    </span>
                                 </Link>
                             </button>
 
                             {/* 프로필 팝업 */}
-                            <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg border border-slate-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50" suppressHydrationWarning>
+                            <div
+                                className="absolute right-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg border border-slate-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50"
+                                suppressHydrationWarning
+                            >
                                 <div className="p-4 border-b border-slate-200">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                                            <span className="text-white font-semibold">
-                                                김
-                                            </span>
-                                        </div>
+                                        <span className="w-8 h-8 rounded-full bg-blue-200 text-blue-800 flex items-center justify-center font-bold">
+                                            {currentUserNameFirst}
+                                        </span>
                                         <div>
                                             <p className="font-semibold text-slate-800">
-                                                김개발
+                                                {currentUserName}
                                             </p>
                                             <p className="text-sm text-slate-500">
-                                                kim.dev@example.com
+                                                {currentUserEmail}
                                             </p>
                                         </div>
                                     </div>
