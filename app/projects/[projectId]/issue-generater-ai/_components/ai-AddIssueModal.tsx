@@ -100,7 +100,7 @@ export default function AddIssueModal({
         dueDate: undefined,
         position: 0,
         tag: "",
-        createBranch: true, // 기본값으로 브랜치 생성 활성화
+        createBranch: false, // 기본값으로 브랜치 생성 활성화
         labels: [],
     });
 
@@ -133,7 +133,8 @@ export default function AddIssueModal({
         }
 
         formData.tag = projectTag;
-
+        
+        if (formData.assigneeId === "none") formData.assigneeId = "";
         // createTask에 formData 전체를 넘김 (KanbanBoard에서 서버에 POST 후 fetchLatestTasks 실행)
         createTask(formData);
 
@@ -341,7 +342,9 @@ export default function AddIssueModal({
                                         <SelectItem value="task">
                                             작업
                                         </SelectItem>
-                                        <SelectItem value="bug">버그</SelectItem>
+                                        <SelectItem value="bug">
+                                            버그
+                                        </SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -537,6 +540,9 @@ export default function AddIssueModal({
                                         <SelectValue placeholder="담당자 선택" />
                                     </SelectTrigger>
                                     <SelectContent>
+                                        <SelectItem value="none">
+                                            선택 안함
+                                        </SelectItem>
                                         {projectMembers.map((user) => (
                                             <SelectItem
                                                 key={user.id}
@@ -714,7 +720,12 @@ export default function AddIssueModal({
                         >
                             취소
                         </Button>
-                        <Button type="submit">이슈 등록</Button>
+                        <Button
+                            className="bg-slate-600 hover:bg-slate-700"
+                            type="submit"
+                        >
+                            이슈 등록
+                        </Button>
                     </DialogFooter>
                 </form>
             </DialogContent>
