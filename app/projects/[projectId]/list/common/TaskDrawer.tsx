@@ -45,6 +45,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import CommitListInline from "./CommitListInline";
 
 {
     /* 이슈에 대한 카드 모달 */
@@ -323,7 +324,7 @@ export default function TaskDrawer({
         setError("");
         try {
             await fetch(
-                `${getApiUrl()}/projects/${task.project_id}/${task.id}`,
+                `${getApiUrl()}/projects/${task.project_id}/issues/${task.id}`,
                 {
                     method: "DELETE",
                     headers: { "Content-Type": "application/json" },
@@ -1056,18 +1057,20 @@ export default function TaskDrawer({
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
+                                                    onClick={() =>
+                                                        setShowCommitModal(true)
+                                                    }
                                                 >
                                                     <Plus className="w-4 h-4 mr-2" />
-                                                    커밋 연결
+                                                    커밋 분석
                                                 </Button>
                                             </div>
-                                            <div className="text-center py-8 text-black">
-                                                <p>연결된 커밋이 없습니다.</p>
-                                                <p className="text-sm mt-1">
-                                                    GitHub 저장소와 연결하여
-                                                    커밋을 추적하세요.
-                                                </p>
-                                            </div>
+                                            <CommitListInline
+                                                projectId={String(
+                                                    task.project_id
+                                                )}
+                                                taskId={String(task.id)}
+                                            />
                                         </div>
                                     ) : (
                                         <div className="space-y-4">
