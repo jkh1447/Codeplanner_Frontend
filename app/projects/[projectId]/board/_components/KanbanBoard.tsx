@@ -22,6 +22,9 @@ import PlusIcon from "@/components/icons/PlusIcon";
 import { Column, Id, Task } from "@/components/type";
 import { useDebouncedCallback } from "use-debounce";
 import { getApiUrl } from "@/lib/api";
+import { Book, Bug, SquareCheckBig } from "lucide-react";
+import dynamic from "next/dynamic";
+const ReactSelect = dynamic(() => import("react-select"), { ssr: false });
 
 function KanbanBoard({ projectId }: { projectId: string }) {
     const [columns, setColumns] = useState<Column[]>([
@@ -99,16 +102,12 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                         due_date: issue.dueDate,
                         tag: issue.tag,
                         labels: issue.labels,
-                        
                     }))
                 );
             }
         } catch (error) {
             console.error("Error fetching latest tasks:", error);
         }
-
-        
-
     }, [projectId]);
 
     // 컴포넌트 마운트 시 또는 projectId 변경 시 최신 데이터 가져오기
@@ -127,7 +126,6 @@ function KanbanBoard({ projectId }: { projectId: string }) {
     // overId: 드래그 중인 task가 드롭될 위치의 id
     // overType: 드롭될 위치의 타입 (Task 또는 Column)
     const moveTask = (activeId: Id, overId: Id, overType: string) => {
-        
         setTasks((tasks) => {
             // 현재 드래그 중인 task의 id가 tasks 배열에 있는지 확인하고 저장.
             const activeIndex = tasks.findIndex((t) => t.id === activeId);
@@ -135,7 +133,7 @@ function KanbanBoard({ projectId }: { projectId: string }) {
             if (activeIndex === -1) return tasks;
             // 드롭될 위치의 타입이 "Task"인 경우, 드래그 중인 테스크가 속한 컬럼을 드롭될 위치의 컬럼의 status로 변경
             if (overType === "Task") {
-                // tasks배열 안에서 드롭될 위치에 있는 task의 인덱스 찾기   
+                // tasks배열 안에서 드롭될 위치에 있는 task의 인덱스 찾기
                 const overIndex = tasks.findIndex((t) => t.id === overId);
                 // 없으면 task배열 그대로 반환
                 if (overIndex === -1) return tasks;
@@ -147,7 +145,7 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                         : task
                 );
                 return arrayMove(updatedTasks, activeIndex, overIndex);
-            // 테스크 위에 있지 않고 컬럼위에 있는 경우, 현재 테스크의 status를 드롭될 위치의 컬럼의 id로 변경
+                // 테스크 위에 있지 않고 컬럼위에 있는 경우, 현재 테스크의 status를 드롭될 위치의 컬럼의 id로 변경
             }
             // 의미없음.
             else if (overType === "Column") {
@@ -166,14 +164,149 @@ function KanbanBoard({ projectId }: { projectId: string }) {
     // 0ms 디바운스된 moveTask
     const debouncedMoveTask = useDebouncedCallback(moveTask, 0);
 
+    const [typeFilter, setTypeFilter] = useState<string>("all");
+    const [labelFilter, setLabelFilter] = useState<string[]>([]);
+    const [allProjectLabels, setAllProjectLabels] = useState<any[]>([]);
+
+    // 레이블 전체 목록 가져오기 (프로젝트 기준)
+    useEffect(() => {
+        async function fetchLabels() {
+            try {
+                const response = await fetch(
+                    `${getApiUrl()}/projects/${projectId}/labels`,
+                    {
+                        method: "GET",
+                        headers: { "Content-Type": "application/json" },
+                        credentials: "include",
+                    }
+                );
+                if (response.ok) {
+                    const data = await response.json();
+                    setAllProjectLabels(data);
+                }
+            } catch (e) {
+                // ignore
+            }
+        }
+        fetchLabels();
+    }, [projectId]);
+
+    // 필터링된 tasks
+    const filteredTasks = useMemo(() => {
+        return tasks.filter((task) => {
+            const typeMatch =
+                typeFilter === "all" || task.issue_type === typeFilter;
+            // labelFilter: []이면 전체, 아니면 하나라도 포함된 카드만
+            const labelMatch =
+                labelFilter.length === 0 ||
+                (Array.isArray(task.labels) &&
+                    task.labels.some((l: any) => labelFilter.includes(l.id)));
+            return typeMatch && labelMatch;
+        });
+    }, [tasks, typeFilter, labelFilter]);
+
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const minimapRef = useRef<HTMLDivElement>(null);
+    const [isDraggingMinimap, setIsDraggingMinimap] = useState(false);
+    const [viewportPosition, setViewportPosition] = useState(0);
+    const [viewportWidth, setViewportWidth] = useState(100);
+    const minimapColumnCount = 5;
+
+    // 스크롤 위치 업데이트
+    const updateViewportIndicator = () => {
+        if (!scrollContainerRef.current || !minimapRef.current) return;
+        const container = scrollContainerRef.current;
+        const scrollLeft = container.scrollLeft;
+        const scrollWidth = container.scrollWidth;
+        const clientWidth = container.clientWidth;
+        setViewportWidth((clientWidth / scrollWidth) * 100);
+        setViewportPosition((scrollLeft / scrollWidth) * 100);
+    };
+
+    // 미니맵에서 드래그/클릭 시 메인 보드 스크롤
+    const handleMinimapMouseDown = (e: React.MouseEvent) => {
+        if (!minimapRef.current || !scrollContainerRef.current) return;
+        setIsDraggingMinimap(true);
+        const minimapRect = minimapRef.current.getBoundingClientRect();
+        const clickX = e.clientX - minimapRect.left;
+        const clickPercent = (clickX / minimapRect.width) * 100;
+        const container = scrollContainerRef.current;
+        const maxScroll = container.scrollWidth - container.clientWidth;
+        const newScrollLeft =
+            (clickPercent / 100) * container.scrollWidth -
+            container.clientWidth / 2;
+        container.scrollLeft = Math.max(0, Math.min(maxScroll, newScrollLeft));
+        updateViewportIndicator();
+    };
+    const handleMinimapMouseMove = (e: MouseEvent) => {
+        if (
+            !isDraggingMinimap ||
+            !minimapRef.current ||
+            !scrollContainerRef.current
+        )
+            return;
+        const minimapRect = minimapRef.current.getBoundingClientRect();
+        const clickX = e.clientX - minimapRect.left;
+        const clickPercent = Math.max(
+            0,
+            Math.min(100, (clickX / minimapRect.width) * 100)
+        );
+        const container = scrollContainerRef.current;
+        const maxScroll = container.scrollWidth - container.clientWidth;
+        const newScrollLeft =
+            (clickPercent / 100) * container.scrollWidth -
+            container.clientWidth / 2;
+        container.scrollLeft = Math.max(0, Math.min(maxScroll, newScrollLeft));
+        updateViewportIndicator();
+    };
+    const handleMinimapMouseUp = () => {
+        setIsDraggingMinimap(false);
+    };
+    // 메인 스크롤 이벤트 리스너
+    useEffect(() => {
+        const container = scrollContainerRef.current;
+        if (!container) return;
+        const handleScroll = () => updateViewportIndicator();
+        container.addEventListener("scroll", handleScroll);
+        setTimeout(updateViewportIndicator, 100);
+        return () => container.removeEventListener("scroll", handleScroll);
+    }, []);
+    // 전역 마우스 이벤트 리스너
+    useEffect(() => {
+        const handleGlobalMouseMove = (e: MouseEvent) => {
+            if (isDraggingMinimap) handleMinimapMouseMove(e);
+        };
+        const handleGlobalMouseUp = () => setIsDraggingMinimap(false);
+        if (isDraggingMinimap) {
+            document.addEventListener("mousemove", handleGlobalMouseMove);
+            document.addEventListener("mouseup", handleGlobalMouseUp);
+        }
+        return () => {
+            document.removeEventListener("mousemove", handleGlobalMouseMove);
+            document.removeEventListener("mouseup", handleGlobalMouseUp);
+        };
+    }, [isDraggingMinimap]);
+
+    // 창 크기 변경 시 미니맵 인디케이터 갱신 (setTimeout으로 딜레이 추가)
+    useEffect(() => {
+        const handleResize = () => {
+            setTimeout(() => {
+                updateViewportIndicator();
+            }, 50);
+        };
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
+
     return (
         <>
             <h6 className="text-sm text-slate-500 mb-2">프로젝트</h6>
             <h1 className="text-2xl font-bold text-slate-800 mb-4">
                 {project_title_name}
             </h1>
-            {/* 검색 기능 */}
+
             <div className="flex justify-start space-x-4">
+                {/* 검색 기능 */}
                 <div className="pt-2 relative text-gray-600">
                     <input
                         className="border-2 border-gray-300 bg-white h-10 px-5 pr-16 rounded-lg text-sm focus:outline-none"
@@ -187,9 +320,168 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                         className="absolute right-0 top-0 mt-5 mr-4"
                     ></button>
                 </div>
+
+                {/* 필터 기능 */}
+                <div className="flex items-center gap-2">
+                    {/* 업무 유형 필터 */}
+                    <span className="text-xs text-gray-500 mr-1">
+                        업무 유형:
+                    </span>
+                    <button
+                        className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold border ${
+                            typeFilter === "all"
+                                ? "bg-blue-100 border-blue-400 text-blue-700"
+                                : "bg-white border-gray-300 text-gray-600"
+                        }`}
+                        onClick={() => setTypeFilter("all")}
+                    >
+                        전체
+                    </button>
+                    <button
+                        className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold border ${
+                            typeFilter === "bug"
+                                ? "bg-red-100 border-red-400 text-red-700"
+                                : "bg-white border-gray-300 text-gray-600"
+                        }`}
+                        onClick={() => setTypeFilter("bug")}
+                    >
+                        <Bug className="w-4 h-4" color="#ff0000" /> 버그
+                    </button>
+                    <button
+                        className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold border ${
+                            typeFilter === "story"
+                                ? "bg-orange-100 border-orange-400 text-orange-700"
+                                : "bg-white border-gray-300 text-gray-600"
+                        }`}
+                        onClick={() => setTypeFilter("story")}
+                    >
+                        <Book className="w-4 h-4" color="#ff9500" /> 스토리
+                    </button>
+                    <button
+                        className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold border ${
+                            typeFilter === "task"
+                                ? "bg-indigo-100 border-indigo-400 text-indigo-700"
+                                : "bg-white border-gray-300 text-gray-600"
+                        }`}
+                        onClick={() => setTypeFilter("task")}
+                    >
+                        <SquareCheckBig className="w-4 h-4" color="#3729ff" />{" "}
+                        작업
+                    </button>
+                </div>
+                <div className="flex items-center gap-2 ml-4 min-w-[200px]">
+                    {/* 레이블 필터 (멀티 셀렉트) */}
+                    <span className="text-xs text-gray-500 mr-1">레이블:</span>
+                    <div style={{ minWidth: 180 }}>
+                        <ReactSelect
+                            isMulti
+                            options={allProjectLabels.map((label) => ({
+                                value: label.id,
+                                label: label.name,
+                                color: label.color,
+                            }))}
+                            value={allProjectLabels
+                                .filter((label) =>
+                                    labelFilter.includes(label.id)
+                                )
+                                .map((label) => ({
+                                    value: label.id,
+                                    label: label.name,
+                                    color: label.color,
+                                }))}
+                            onChange={(selected) => {
+                                setLabelFilter(
+                                    Array.isArray(selected)
+                                        ? selected.map((s) => s.value)
+                                        : []
+                                );
+                            }}
+                            placeholder="전체"
+                            closeMenuOnSelect={false}
+                            styles={{
+                                multiValue: (base, state) => {
+                                    const label = state.data as {
+                                        color: string;
+                                    };
+                                    return {
+                                        ...base,
+                                        backgroundColor: label.color,
+                                        color: "#fff",
+                                    };
+                                },
+                                multiValueLabel: (base) => ({
+                                    ...base,
+                                    color: "#fff",
+                                }),
+                                multiValueRemove: (base) => ({
+                                    ...base,
+                                    color: "#fff",
+                                    ":hover": {
+                                        backgroundColor: "#333",
+                                        color: "#fff",
+                                    },
+                                }),
+                            }}
+                            components={{
+                                Option: (props) => {
+                                    const label = props.data as {
+                                        color: string;
+                                        label: string;
+                                    };
+                                    return (
+                                        <div
+                                            {...props.innerProps}
+                                            className={
+                                                props.isFocused
+                                                    ? "bg-gray-100 px-3 py-2 flex items-center gap-2"
+                                                    : "px-3 py-2 flex items-center gap-2"
+                                            }
+                                        >
+                                            <span
+                                                style={{
+                                                    backgroundColor:
+                                                        label.color,
+                                                    display: "inline-block",
+                                                    width: 12,
+                                                    height: 12,
+                                                    borderRadius: "50%",
+                                                }}
+                                            />
+                                            {label.label}
+                                        </div>
+                                    );
+                                },
+                                MultiValueLabel: (props) => {
+                                    const label = props.data as {
+                                        color: string;
+                                        label: string;
+                                    };
+                                    return (
+                                        <div className="flex items-center gap-1">
+                                            <span
+                                                style={{
+                                                    backgroundColor:
+                                                        label.color,
+                                                    display: "inline-block",
+                                                    width: 10,
+                                                    height: 10,
+                                                    borderRadius: "50%",
+                                                }}
+                                            />
+                                            {label.label}
+                                        </div>
+                                    );
+                                },
+                            }}
+                        />
+                    </div>
+                </div>
             </div>
 
-            <div className="w-full overflow-x-scroll overflow-y-hidden">
+            <div
+                className=""
+                ref={scrollContainerRef}
+            >
                 {isClient && (
                     <DndContext
                         sensors={sensors}
@@ -208,7 +500,7 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                                             deleteColumn={deleteColumn}
                                             updateColumn={updateColumn}
                                             createTask={createTask}
-                                            tasks={tasks.filter(
+                                            tasks={filteredTasks.filter(
                                                 (task) => task.status === col.id
                                             )}
                                             deleteTask={deleteTask}
@@ -293,6 +585,41 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                         </button> */}
                     </div>
                 )}
+            </div>
+            {/* 미니맵 - 오른쪽 하단 */}
+            <div className="fixed bottom-4 right-4 bg-white border border-gray-300 rounded-lg shadow-lg p-2 z-30 select-none">
+                {/* <div className="text-xs text-gray-500 mb-2">미니맵</div> */}
+                <div
+                    ref={minimapRef}
+                    className="relative w-28 h-10 bg-gray-100 rounded cursor-pointer border"
+                    onMouseDown={handleMinimapMouseDown}
+                >
+                    {/* 미니맵 컬럼들 */}
+                    <div className="flex h-full">
+                        {Array.from({ length: minimapColumnCount }).map(
+                            (_, idx) => (
+                                <div
+                                    key={idx}
+                                    className="flex-shrink-0 bg-gray-200 border-r border-gray-300 last:border-r-0"
+                                    style={{
+                                        width: `${100 / minimapColumnCount}%`,
+                                    }}
+                                >
+                                    <div className="h-full bg-gradient-to-b from-gray-300 to-gray-200"></div>
+                                </div>
+                            )
+                        )}
+                    </div>
+                    {/* 현재 뷰포트 표시 */}
+                    <div
+                        className="absolute top-0 h-full bg-blue-500 bg-opacity-30 border-2 border-blue-500 rounded cursor-grab active:cursor-grabbing"
+                        style={{
+                            left: `${viewportPosition}%`,
+                            width: `${viewportWidth}%`,
+                            minWidth: "8px",
+                        }}
+                    />
+                </div>
             </div>
         </>
     );
@@ -394,7 +721,7 @@ function KanbanBoard({ projectId }: { projectId: string }) {
         }
     }
 
-    // 
+    //
     function onDragEnd(event: DragEndEvent) {
         setActiveColumn(null);
         setActiveTask(null);
@@ -511,7 +838,6 @@ function KanbanBoard({ projectId }: { projectId: string }) {
 
     // tasks의 상태와 위치를 임시로 바꿔서 시각적 피드백을 준다.
     function onDragOver(event: DragOverEvent) {
-        
         const { active, over } = event;
         if (!over) return;
         const activeId = active.id;
