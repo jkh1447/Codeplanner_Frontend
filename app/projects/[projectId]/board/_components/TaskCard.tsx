@@ -20,7 +20,7 @@ interface Props {
 function TaskCard({ task, deleteTask, projectId, onSave }: Props) {
     const [mouseIsOver, setMouseIsOver] = useState(false);
     const [showDrawer, setShowDrawer] = useState(false);
-
+    const [currentUserName, setCurrentUserName] = useState("");
     const {
         setNodeRef,
         attributes,
@@ -141,9 +141,10 @@ function TaskCard({ task, deleteTask, projectId, onSave }: Props) {
                             ))}
                         </div>
                     )}
+                    {/* 담당자 표시 (오른쪽 하단, 담당자 있을 때만) */}
                     <div className="flex-1" />
-                    <div className="flex items-end">
-                        <span className="flex items-center gap-1 py-1 rounded-full text-xs font-semibold mt-1">
+                    <div className="flex items-end justify-between mt-2">
+                        <span className="flex items-center gap-1 py-1 rounded-full text-xs font-semibold">
                             {task.issue_type === "task" && (
                                 <SquareCheckBig
                                     className="w-5 h-5 mr-1"
@@ -161,6 +162,20 @@ function TaskCard({ task, deleteTask, projectId, onSave }: Props) {
                             )}
                             {task.tag}
                         </span>
+                        {assignee_display_name &&
+                            assignee_display_name !== "N/A" && (
+                                <div className="flex items-center gap-2">
+                                    <span
+                                        className="w-6 h-6 rounded-full bg-blue-200 text-blue-800 flex items-center justify-center text-xs font-bold"
+                                        title={assignee_display_name}
+                                    >
+                                        {assignee_display_name[0]}
+                                    </span>
+                                    <span className="text-xs text-gray-700 font-bold truncate max-w-[80px]">
+                                        {assignee_display_name}
+                                    </span>
+                                </div>
+                            )}
                     </div>
                     {/* {mouseIsOver && (
                         <button

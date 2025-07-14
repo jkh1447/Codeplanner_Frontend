@@ -94,6 +94,14 @@ export default function CommitListModal({
     }>({});
     const [analyzing, setAnalyzing] = useState<{ [filename: string]: boolean }>({});
 
+    // 파일 모달이 열릴 때마다 분석 상태 초기화
+    useEffect(() => {
+      if (fileModalOpen) {
+        setAnalyzeResults({});
+        setAnalyzing({});
+      }
+    }, [fileModalOpen]);
+
     // 초기 커밋 목록 불러오기
     useEffect(() => {
         const fetchInitialCommits = async () => {
@@ -213,7 +221,6 @@ export default function CommitListModal({
             const res = await fetch(`${getApiUrl()}/github/repos/${projectOwner}/${projectRepo}/commit/${sha}/files`, { credentials: "include" });
             if (!res.ok) throw new Error("파일 목록을 불러오지 못했습니다.");
             const data = await res.json();
-            console.log("들어온새끼: ", data)
             setFileList(data || []);
         } catch (err: any) {
             setError(err.message || "파일 목록 오류");

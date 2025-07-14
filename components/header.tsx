@@ -36,6 +36,9 @@ export default function Header() {
 
     const [notification, setNotification] = useState<Notification_issue[]>([]);
     const [notificationCount, setNotificationCount] = useState(0);
+    const [currentUserName, setCurrentUserName] = useState("");
+    const [currentUserEmail, setCurrentUserEmail] = useState("");
+    const [currentUserNameFirst, setCurrentUserNameFirst] = useState("");
 
     const handleLogout = async () => {
         try {
@@ -51,6 +54,31 @@ export default function Header() {
                 err instanceof Error
                     ? err.message
                     : "로그아웃 중 오류가 발생했습니다."
+            );
+        }
+    };
+
+    const currentUserDisplayName = async () => {
+        try {
+            const response = await fetch(`${getApiUrl()}/user/me`, {
+                method: "GET",
+                credentials: "include",
+            });
+            if (response.ok) {
+                const data = await response.json();
+                console.log("display name: ", data.display_name);
+                console.log("display email: ", data.email);
+                setCurrentUserName(data.display_name);
+                setCurrentUserEmail(data.email);
+                setCurrentUserNameFirst(
+                    data.display_name ? data.display_name[0] : ""
+                );
+            }
+        } catch (err) {
+            setError(
+                err instanceof Error
+                    ? err.message
+                    : "사용자 이름을 불러오는 데에 오류가 발생하였습니다."
             );
         }
     };
@@ -129,6 +157,7 @@ export default function Header() {
 
     useEffect(() => {
         handleNotification();
+        currentUserDisplayName();
     }, []);
 
     return (
@@ -158,7 +187,9 @@ export default function Header() {
                     </div>
                     <div className="flex items-center gap-3">
                         {/* 헬스체크 */}
-                        {typeof window !== "undefined" && !isDevelopment() && <HealthCheck />}
+                        {typeof window !== "undefined" && !isDevelopment() && (
+                            <HealthCheck />
+                        )}
 
                         {/* 알림 */}
                         <div className="relative group">
@@ -262,11 +293,9 @@ export default function Header() {
                         <div className="relative group">
                             <button className="flex items-center gap-2 p-1 text-slate-600 hover:text-blue-600 rounded-lg transition-colors">
                                 <Link href="/user/mypage">
-                                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                                        <span className="text-white text-sm font-semibold">
-                                            김
-                                        </span>
-                                    </div>
+                                    <span className="w-8 h-8 rounded-full bg-blue-200 text-blue-800 flex items-center justify-center font-bold">
+                                        {currentUserNameFirst}
+                                    </span>
                                 </Link>
                             </button>
 
@@ -274,17 +303,15 @@ export default function Header() {
                             <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-lg shadow-lg border border-slate-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                                 <div className="p-4 border-b border-slate-200">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                                            <span className="text-white font-semibold">
-                                                김
-                                            </span>
-                                        </div>
+                                        <span className="w-8 h-8 rounded-full bg-blue-200 text-blue-800 flex items-center justify-center font-bold">
+                                            {currentUserNameFirst}
+                                        </span>
                                         <div>
                                             <p className="font-semibold text-slate-800">
-                                                김개발
+                                                {currentUserName}
                                             </p>
                                             <p className="text-sm text-slate-500">
-                                                kim.dev@example.com
+                                                {currentUserEmail}
                                             </p>
                                         </div>
                                     </div>

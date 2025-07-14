@@ -19,6 +19,8 @@ import { getApiUrl } from "@/lib/api";
 import { ResponsivePie } from "@nivo/pie";
 import { ResponsiveWaffle } from "@nivo/waffle";
 import { PieChart } from "lucide-react";
+import { BarChart } from "lucide-react";
+import { ResponsiveBar } from "@nivo/bar";
 
 export default function SummaryPage() {
   const { projectId } = useParams();
@@ -29,6 +31,7 @@ export default function SummaryPage() {
   const [issueTypeData, setIssueTypeData] = useState<any[]>([]);
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [progressData, setProgressData] = useState<any[]>([]);
+  const [labelData, setLabelData] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchMemberCount = async () => {
@@ -113,10 +116,31 @@ export default function SummaryPage() {
       }
     };
 
+    const fetchLabelData = async () => {
+      const response = await fetch(`${getApiUrl()}/projects/${projectId}/labels-count`,
+      {
+        method: "GET",
+        credentials: "include",
+      });
+      if (response.ok) {
+        const data = await response.json();
+        // 전체 count 합계 계산
+        const totalCount = data.reduce((sum: number, item: any) => sum + item.count, 0);
+        // 백분율로 변환하여 value에 할당
+        const labelDataArr = data.map((item: any) => ({
+          id: item.name,
+          value: totalCount > 0 ? Math.round((item.count / totalCount) * 100) : 0,
+        }));
+        setLabelData(labelDataArr);
+      }
+    }
     fetchMemberCount();
     fetchAllIssue();
     fetchRecentActivities();
+    fetchLabelData();
   }, [projectId]);
+
+  
 
   // 활동 타입에 따른 스타일과 메시지 설정
   const getActivityStyle = (actionType: string) => {
@@ -348,6 +372,37 @@ export default function SummaryPage() {
               />
             </div>
           </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>이슈 라벨 분포
+              </CardTitle>
+          </CardHeader>
+            <CardContent>
+              <div style={{ width: "100%", height: "300px" }}>
+                {labelData.length > 0 ? (
+                  <ResponsiveBar
+                    data={labelData.map((item) => ({
+                      ...item,
+                      id: String(item.id),
+                      label: item.id,
+                    }))}
+                    keys={["value"]}
+                    indexBy="id"
+                    margin={{ top: 30, right: 30, bottom: 30, left: 30 }}
+                    padding={0.3}
+                    valueScale={{ type: "linear" }}
+                    indexScale={{ type: "band", round: true }}
+                    colors={{ scheme: "pastel1" }}
+                    colorBy="indexValue"
+                  />
+                ) : (
+                  <div className="text-center text-gray-400 py-4">
+                    이슈 라벨 분포 데이터가 없습니다.
+                  </div>
+                )}
+              </div>
+            </CardContent>
         </Card>
       </div>
     </div>

@@ -126,6 +126,7 @@ export default function AddIssueModal({
 
         formData.tag = projectTag;
 
+        if (formData.assigneeId === "none") formData.assigneeId = "";
         // createTask에 formData 전체를 넘김 (KanbanBoard에서 서버에 POST 후 fetchLatestTasks 실행)
         createTask(formData);
 
@@ -331,7 +332,9 @@ export default function AddIssueModal({
                                         <SelectItem value="task">
                                             작업
                                         </SelectItem>
-                                        <SelectItem value="bug">버그</SelectItem>
+                                        <SelectItem value="bug">
+                                            버그
+                                        </SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -381,27 +384,58 @@ export default function AddIssueModal({
                                         <ReactSelect
                                             isMulti
                                             options={labelOptions}
-                                            value={labelOptions.filter(opt => formData.labels.some(l => l.id === opt.id))}
+                                            value={labelOptions.filter((opt) =>
+                                                formData.labels.some(
+                                                    (l) => l.id === opt.id
+                                                )
+                                            )}
                                             onChange={(selected) => {
                                                 setFormData((prev) => ({
                                                     ...prev,
-                                                    labels: (selected as any[]).map(({ id, name, color }) => ({ id, name, color })),
+                                                    labels: (
+                                                        selected as any[]
+                                                    ).map(
+                                                        ({
+                                                            id,
+                                                            name,
+                                                            color,
+                                                        }) => ({
+                                                            id,
+                                                            name,
+                                                            color,
+                                                        })
+                                                    ),
                                                 }));
                                             }}
-                                            getOptionLabel={(option) => option.label}
-                                            getOptionValue={(option) => option.value}
+                                            getOptionLabel={(option) =>
+                                                option.label
+                                            }
+                                            getOptionValue={(option) =>
+                                                option.value
+                                            }
                                             closeMenuOnSelect={false}
                                             placeholder="레이블 선택"
                                             components={{
                                                 Option: (props) => (
-                                                    <div {...props.innerProps} className={props.isFocused ? "bg-gray-100 px-3 py-2 flex items-center gap-2" : "px-3 py-2 flex items-center gap-2"}>
+                                                    <div
+                                                        {...props.innerProps}
+                                                        className={
+                                                            props.isFocused
+                                                                ? "bg-gray-100 px-3 py-2 flex items-center gap-2"
+                                                                : "px-3 py-2 flex items-center gap-2"
+                                                        }
+                                                    >
                                                         <span
                                                             style={{
-                                                                backgroundColor: props.data.color,
-                                                                display: "inline-block",
+                                                                backgroundColor:
+                                                                    props.data
+                                                                        .color,
+                                                                display:
+                                                                    "inline-block",
                                                                 width: 12,
                                                                 height: 12,
-                                                                borderRadius: "50%",
+                                                                borderRadius:
+                                                                    "50%",
                                                             }}
                                                         />
                                                         {props.data.label}
@@ -411,11 +445,15 @@ export default function AddIssueModal({
                                                     <div className="flex items-center gap-1">
                                                         <span
                                                             style={{
-                                                                backgroundColor: props.data.color,
-                                                                display: "inline-block",
+                                                                backgroundColor:
+                                                                    props.data
+                                                                        .color,
+                                                                display:
+                                                                    "inline-block",
                                                                 width: 10,
                                                                 height: 10,
-                                                                borderRadius: "50%",
+                                                                borderRadius:
+                                                                    "50%",
                                                             }}
                                                         />
                                                         {props.data.label}
@@ -425,7 +463,8 @@ export default function AddIssueModal({
                                             styles={{
                                                 multiValue: (base, state) => ({
                                                     ...base,
-                                                    backgroundColor: state.data.color,
+                                                    backgroundColor:
+                                                        state.data.color,
                                                     color: "#fff",
                                                 }),
                                                 multiValueLabel: (base) => ({
@@ -495,6 +534,9 @@ export default function AddIssueModal({
                                         <SelectValue placeholder="담당자 선택" />
                                     </SelectTrigger>
                                     <SelectContent>
+                                        <SelectItem value="none">
+                                            선택 안함
+                                        </SelectItem>
                                         {projectMembers.map((user) => (
                                             <SelectItem
                                                 key={user.id}
@@ -672,7 +714,12 @@ export default function AddIssueModal({
                         >
                             취소
                         </Button>
-                        <Button type="submit">이슈 등록</Button>
+                        <Button
+                            className="bg-slate-600 hover:bg-slate-700"
+                            type="submit"
+                        >
+                            이슈 등록
+                        </Button>
                     </DialogFooter>
                 </form>
             </DialogContent>
