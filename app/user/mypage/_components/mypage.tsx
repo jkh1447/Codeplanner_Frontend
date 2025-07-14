@@ -191,8 +191,14 @@ export default function MyPage() {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">CP</span>
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-sm">
+                <img
+                  src="/CodePlannerIcon.png"
+                  alt="Code Planner Icon"
+                  className="w-10 h-10 object-contain"
+                />
+              </span>
             </div>
             <h1 className="text-2xl font-bold text-gray-900">Code Planner</h1>
           </div>
@@ -201,7 +207,7 @@ export default function MyPage() {
             <Button
               size="sm"
               variant="outline"
-              onClick={() => router.back()}
+              onClick={() => router.push("/projectList")}
               disabled={updateLoading}
               className="h-10 w-10 bg-transparent absolute top-0 right-0"
               style={{ zIndex: 10 }}
