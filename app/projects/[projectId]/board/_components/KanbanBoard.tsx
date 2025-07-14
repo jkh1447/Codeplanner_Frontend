@@ -479,7 +479,7 @@ function KanbanBoard({ projectId }: { projectId: string }) {
             </div>
 
             <div
-                className=""
+                className="overflow-x-auto overflow-y-hidden"
                 ref={scrollContainerRef}
             >
                 {isClient && (
