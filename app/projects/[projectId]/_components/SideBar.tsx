@@ -15,7 +15,8 @@ import {
     Kanban,
     TableOfContents,
     Code,
-    Bot
+    Bot,
+    TrendingUp
 } from "lucide-react";
 import Link from "next/link";
 import { getApiUrl } from "@/lib/api";
@@ -187,8 +188,14 @@ export default function SideBar() {
             title: "AI 이슈 생성",
             icon: Bot,
             url: "issue-generater-ai",
-            highlight: true, // ← 추가
-          },
+            highlight: true,
+        },
+        {
+            title: "Summary AI (회고/기여도)",
+            icon: TrendingUp,
+            url: "summaryai",
+            highlight: true,
+        },
         {
             title: "설정",
             icon: Settings,
@@ -350,11 +357,17 @@ export default function SideBar() {
                                 return userRole.isLeader || userRole.role === 'ADMIN' || userRole.role === 'MEMBER';
                             }
                             
+                            // 기여도 분석은 모든 역할에서 사용 가능
+                            if (item.url === 'summaryai') {
+                                return true;
+                            }
+                            
                             // 내 이슈, 요약, 타임라인, 보드, 목록, 코드는 모든 역할에서 볼 수 있음
                             return true;
                         })
                         .map((item) => {
-                            const isActive = pathname.includes(item.url);
+                            // url path가 완전히 일치할 때만 active
+                            const isActive = pathname.endsWith(`/${item.url}`);
                             return (
                                 <a
                                     key={item.title}
