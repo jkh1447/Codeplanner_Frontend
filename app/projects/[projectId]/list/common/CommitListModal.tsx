@@ -30,6 +30,13 @@ interface CommitListModalProps {
     taskId: string;
 }
 
+interface CommitFile {
+  filename: string;
+  status: 'added' | 'modified' | 'removed' | string; // github에서 오는 값 기준
+  language?: string;
+  content?: string;
+}
+
 // 시간을 상대적으로 표시하는 함수
 function formatTimeAgo(dateString: string): string {
     const now = new Date();
@@ -79,6 +86,7 @@ export default function CommitListModal({
     const [selectedCommit, setSelectedCommit] = useState<{owner: string, repo: string, sha: string} | null>(null);
     const [projectOwner, setProjectOwner] = useState("");
     const [projectRepo, setProjectRepo] = useState("");
+    const [fileContents, setFileContents] = useState<{ [filename: string]: string }>({});
     const [analyzeResults, setAnalyzeResults] = useState<{
       [filename: string]: {
         cpp: boolean;
@@ -267,6 +275,30 @@ export default function CommitListModal({
         } finally {
             setAnalyzing(prev => ({ ...prev, [file.filename]: false }));
         }
+    };
+
+    // 파일 가져오는 함수
+    const handleGetContent = async (file: CommitFile) => {
+    const [owner, repo] = file.filename.split('/'); // 예시 처리
+    const sha = selectedCommit?.sha; // 선택된 SHA가 있다고 가정
+
+    try {
+        const res = await fetch(
+        `${getApiUrl()}/github/repos/commit/${projectOwner}/${projectRepo}/${sha}?file=${file.filename}`,
+            {
+                credentials: "include",
+            }
+        );
+        const data = await res.json();
+
+        // 파일 내용 저장 (예: 상태 업데이트)
+        setFileContents((prev) => ({
+        ...prev,
+        [file.filename]: data.content, // API 응답이 content 필드를 포함한다고 가정
+        }));
+    } catch (err) {
+        console.error('파일 내용을 가져오지 못했어요:', err);
+    }
     };
 
     if (!isOpen) return null;
@@ -484,30 +516,72 @@ export default function CommitListModal({
                                         </div>
                                     </div>
                                     
-                                    {/* 분석 버튼 */}
-                                    <button
-                                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
-                                            analyzing[file.filename]
-                                                ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-                                                : 'bg-blue-500 hover:bg-blue-600 text-white shadow-sm hover:shadow-md'
-                                        }`}
-                                        onClick={() => handleAnalyze(file)}
-                                        disabled={!!analyzing[file.filename]}
-                                    >
-                                        {analyzing[file.filename] ? (
-                                            <>
-                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                                분석 중...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                                </svg>
-                                                분석
-                                            </>
-                                        )}
-                                    </button>
+                                    {/* 첫 번째 버튼 */}
+                                    <div className='flex gap-2'>
+                                        <button
+                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
+                                                analyzing[file.filename]
+                                                    ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                                                    : 'bg-blue-500 hover:bg-blue-600 text-white shadow-sm hover:shadow-md'
+                                            }`}
+                                            onClick={() => handleAnalyze(file)}
+                                            disabled={!!analyzing[file.filename]}
+                                        >
+                                            {analyzing[file.filename] ? (
+                                                <>
+                                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                                    분석 중...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                                    </svg>
+                                                    분석
+                                                </>
+                                            )}
+                                        </button>
+                                        {/* 두 번째 버튼 */}
+                                        <button
+                                            className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-gray-200 hover:bg-gray-300 text-gray-800"
+                                            onClick={() => handleGetContent(file)}
+                                        >
+                                            내용 보기
+                                        </button>
+                                    </div>
+                                    {/* 파일 내용 출력 */}
+                                    {fileContents[file.filename] && (
+                                        <div className="mt-4">
+                                            <div className="text-xs text-gray-500 mb-1">변경된 내용:</div>
+                                            <pre className="bg-gray-100 border rounded p-3 text-sm font-mono overflow-x-auto whitespace-pre-wrap max-w-full">
+                                                <code>{fileContents[file.filename]}</code>
+                                            </pre>
+                                        </div>
+                                    )}
+                                    {/* clang-format 등 분석 결과 */}
+                                    {result && (
+                                        <div className="mt-4 space-y-3">
+                                            {/* clang-format 에러 예시 */}
+                                            {result.format === false && ((result.clangFormatIssues?.length ?? 0) > 0 ? (
+                                                <div className="bg-gray-100 border rounded p-3 text-sm font-mono text-purple-700 whitespace-pre-wrap max-w-full">
+                                                    <span className="font-bold text-purple-700">⚠️ Clang-Format 에러</span>
+                                                    <ul className="mt-2 ml-4 list-disc">
+                                                        {(result.clangFormatIssues ?? []).map((issue: any, idx: number) => (
+                                                            <li key={idx}>
+                                                                타입: {issue.type} [{issue.line}, {issue.column}]: {issue.message}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            ) : result.clangFormatOutput && (
+                                                <div className="bg-gray-100 border rounded p-3 text-sm font-mono text-purple-700 whitespace-pre-wrap max-w-full">
+                                                    <span className="font-bold text-purple-700">⚠️ Clang-Format 에러</span>
+                                                    <div className="mt-2 ml-4">{result.clangFormatOutput}</div>
+                                                </div>
+                                            ))}
+                                            {/* cppcheck, clang-tidy 등 다른 에러도 동일하게 스타일 적용 (생략) */}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             
