@@ -251,6 +251,9 @@ export default function Header() {
                                                                 {item.type ===
                                                                     "issue_created_backlog" &&
                                                                     "backlog에 추가되었습니다. "}
+                                                                {item.type ===
+                                                                    "issue_created_mention" &&
+                                                                    "회원님이 언급되었습니다. "}
                                                                 {getRelativeTime(
                                                                     item.createdAt
                                                                 )}

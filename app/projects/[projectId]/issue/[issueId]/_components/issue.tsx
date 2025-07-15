@@ -33,6 +33,9 @@ import { useParams } from "next/navigation";
 import { Issue_detail, User_detail } from "@/components/type";
 import CommitListModal from "../../../list/common/CommitListModal";
 
+import { MentionsInput, Mention } from "react-mentions";
+import { User as UserType } from "@/components/type";
+
 interface Comment {
     id: string;
     issueId: string;
@@ -41,6 +44,37 @@ interface Comment {
     createdAt: string;
     updatedAt: string;
     displayName?: string;
+}
+
+interface data {
+    id: string;
+    display: string;
+    email: string;
+}
+
+const mentionStyle = {
+    backgroundColor: "#d1eaff", // 하이라이트 색상
+    fontWeight: "bold",
+};
+
+// 댓글 내용에서 @[이름](id) 패턴을 @이름만 보이게 가공
+function renderCommentWithMentions(content: string) {
+    return content.split(/(@\[[^\]]+\]\([^\)]+\))/g).map((part, i) => {
+        const match = part.match(/^@\[(.+?)\]\([^\)]+\)$/);
+        console.log("match: ", match);
+        if (match) {
+            const display = match[1];
+            return (
+                <span
+                    key={i}
+                    className="bg-blue-100 text-blue-800 rounded px-1"
+                >
+                    @{display}
+                </span>
+            );
+        }
+        return part;
+    });
 }
 
 export default function IssueDetail() {
@@ -62,6 +96,7 @@ export default function IssueDetail() {
 - 사용자 경험 향상
 - 모바일 사용자 증가
 - 브랜드 이미지 개선`);
+
     const { projectId, issueId, notificationId } = useParams();
 
     const [issue, setIssue] = useState<Issue_detail | null>(null);
@@ -82,6 +117,50 @@ export default function IssueDetail() {
         display_name: string;
     } | null>(null);
     const [showCommitModal, setShowCommitModal] = useState(false);
+
+    // const [projectMembers, setProjectMembers] = useState<UserType[]>([]);
+    const [projectMembers, setProjectMembers] = useState<data[]>([]);
+
+    const mentionData = [
+        { id: "1", display: "kwonho" },
+        { id: "2", display: "james" },
+        { id: "3", display: "lucy" },
+    ];
+
+    const getProjectMembers = async () => {
+        const response = await fetch(
+            `${getApiUrl()}/projects/${projectId}/members`,
+            {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
+            }
+        );
+        const data = await response.json();
+        if (response.ok) {
+            const members: data[] = Array.isArray(data)
+                ? data
+                      .filter(
+                          (m) =>
+                              typeof m.id === "string" &&
+                              typeof m.display_name === "string" &&
+                              typeof m.email === "string"
+                      )
+                      .map((m) => ({
+                          id: String(m.id),
+                          display: String(m.display_name),
+                          email: String(m.email),
+                      }))
+                : [];
+
+            setProjectMembers(members);
+        } else {
+            console.error("Failed to fetch project members:", data);
+        }
+    };
+
     // 현재 사용자 정보 가져오기
     const getCurrentUser = async () => {
         try {
@@ -400,12 +479,19 @@ export default function IssueDetail() {
         }
     };
 
+    const [isClient, setIsClient] = useState<boolean>(false);
     useEffect(() => {
         getCurrentUser();
         getIssue();
         fetchComments();
+        getProjectMembers();
+        setIsClient(true);
         // handleReadIssue();
     }, []);
+
+    useEffect(() => {
+        console.log("project members: ", projectMembers);
+    }, [projectMembers]);
 
     // issue가 바뀔 때마다 tempTitle/tempDescription도 동기화
     useEffect(() => {
@@ -557,25 +643,65 @@ export default function IssueDetail() {
                             <CardContent className="p-6 space-y-6">
                                 {/* Add Comment */}
                                 <div className="space-y-4">
-                                    <Textarea
-                                        placeholder="댓글을 입력하세요..."
+                                    <MentionsInput
                                         value={newComment}
                                         onChange={(e) =>
                                             setNewComment(e.target.value)
                                         }
-                                        onKeyDown={(e) => {
-                                            if (
-                                                e.key === "Enter" &&
-                                                (e.ctrlKey || e.metaKey)
-                                            ) {
-                                                e.preventDefault();
-                                                createComment();
+                                        className="border border-gray-300 rounded focus:border-blue-400 focus:ring-blue-400 min-h-[80px] p-2 bg-white"
+                                        placeholder="댓글을 입력하세요... @로 멘션할 수 있습니다."
+                                    >
+                                        <Mention
+                                            trigger="@"
+                                            data={projectMembers}
+                                            markup="@[__display__](__id__)"
+                                            displayTransform={(id, display) =>
+                                                `@${display}`
                                             }
-                                        }}
-                                        rows={4}
-                                        className="border-gray-300 focus:border-blue-400 focus:ring-blue-400"
-                                        disabled={isSubmittingComment}
-                                    />
+                                            renderSuggestion={(
+                                                entry,
+                                                search,
+                                                highlightedDisplay,
+                                                index,
+                                                focused
+                                            ) => {
+                                                const member =
+                                                    entry as unknown as data;
+                                                return (
+                                                    <div
+                                                        className={`w-72 flex items-center rounded-lg m-1 px-3 py-2 cursor-pointer transition-colors duration-100 ${
+                                                            focused
+                                                                ? "bg-blue-100 text-blue-900"
+                                                                : "bg-white text-gray-900"
+                                                        }`}
+                                                    >
+                                                        <span
+                                                            className={`w-6 h-6 rounded-full flex items-center mr-2 justify-center font-bold transition-colors duration-100 ${
+                                                                focused
+                                                                    ? "bg-white text-blue-700"
+                                                                    : "bg-blue-200 text-blue-800"
+                                                            }`}
+                                                        >
+                                                            {member.display?.[0]?.toUpperCase() ||
+                                                                "U"}
+                                                        </span>
+                                                        <span className="font-semibold text-sm leading-tight">
+                                                            {highlightedDisplay}
+                                                        </span>
+                                                        <span
+                                                            className={`ml-2 text-xs ${
+                                                                focused
+                                                                    ? "text-blue-700"
+                                                                    : "text-gray-500"
+                                                            }`}
+                                                        >
+                                                            {member.email}
+                                                        </span>
+                                                    </div>
+                                                );
+                                            }}
+                                        />
+                                    </MentionsInput>
                                     <div className="flex items-center justify-between">
                                         <Button
                                             onClick={createComment}
@@ -718,7 +844,9 @@ export default function IssueDetail() {
                                                         </div>
                                                     ) : (
                                                         <div className="text-sm bg-gray-50 p-4 rounded-lg border border-gray-200 leading-relaxed">
-                                                            {comment.content}
+                                                            {renderCommentWithMentions(
+                                                                comment.content
+                                                            )}
                                                         </div>
                                                     )}
                                                 </div>

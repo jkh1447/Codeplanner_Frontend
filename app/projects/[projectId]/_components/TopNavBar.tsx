@@ -25,6 +25,20 @@ function getRelativeTime(isoString: string) {
     return date.toLocaleDateString("ko-KR");
 }
 
+// Notification type에 따라 색상 반환
+const getNotificationColor = (type?: string) => {
+    switch (type) {
+        case "issue_created_assignee":
+            return "bg-red-500";
+        case "issue_created_backlog":
+            return "bg-blue-500";
+        case "issue_created_mention":
+            return "bg-purple-500";
+        default:
+            return "bg-gray-400";
+    }
+};
+
 export default function Header() {
     const [showModal, setShowModal] = useState(false);
     const [description, setDescription] = useState("");
@@ -254,12 +268,9 @@ export default function Header() {
                                                 >
                                                     <div className="flex items-start gap-3">
                                                         <div
-                                                            className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
-                                                                item.type ===
-                                                                "issue_created_assignee"
-                                                                    ? "bg-red-500"
-                                                                    : "bg-blue-500"
-                                                            }`}
+                                                            className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${getNotificationColor(
+                                                                item.type
+                                                            )}`}
                                                         ></div>
                                                         <div className="flex-1">
                                                             <p className="text-sm text-slate-800">
@@ -278,6 +289,9 @@ export default function Header() {
                                                                 {item.type ===
                                                                     "issue_created_backlog" &&
                                                                     "backlog에 추가되었습니다. "}
+                                                                {item.type ===
+                                                                    "issue_created_mention" &&
+                                                                    "회원님이 언급되었습니다. "}
                                                                 {getRelativeTime(
                                                                     item.createdAt
                                                                 )}
