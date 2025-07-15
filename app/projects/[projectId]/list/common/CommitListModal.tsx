@@ -622,9 +622,11 @@ export default function CommitListModal({
                                             </div>
                                             <ul className="ml-6 list-disc text-purple-700 text-sm font-mono">
                                                 {(result.clangFormatIssues ?? []).map((issue: any, idx: number) => (
-                                                    <li key={idx}>
-                                                        타입: {issue.type} [{issue.line}, {issue.column}]: {issue.message}
-                                                    </li>
+                                                    issue.type === 'style' ? null : (
+                                                        <li key={idx}>
+                                                            타입: {issue.type} [{issue.line}, {issue.column}]: {issue.message}
+                                                        </li>
+                                                    )
                                                 ))}
                                             </ul>
                                         </div>
