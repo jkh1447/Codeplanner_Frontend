@@ -247,6 +247,7 @@ export default function TaskDrawer({
 
         if (!formData.title || formData.title.trim() === "") {
             missingFields.push("제목");
+
         }
         if (!formData.description || formData.description.trim() === "") {
             missingFields.push("설명");
