@@ -30,6 +30,13 @@ interface CommitListModalProps {
     taskId: string;
 }
 
+interface CommitFile {
+  filename: string;
+  status: 'added' | 'modified' | 'removed' | string; // github에서 오는 값 기준
+  language?: string;
+  content?: string;
+}
+
 // 시간을 상대적으로 표시하는 함수
 function formatTimeAgo(dateString: string): string {
     const now = new Date();
@@ -79,6 +86,7 @@ export default function CommitListModal({
     const [selectedCommit, setSelectedCommit] = useState<{owner: string, repo: string, sha: string} | null>(null);
     const [projectOwner, setProjectOwner] = useState("");
     const [projectRepo, setProjectRepo] = useState("");
+    const [fileContents, setFileContents] = useState<{ [filename: string]: string }>({});
     const [analyzeResults, setAnalyzeResults] = useState<{
       [filename: string]: {
         cpp: boolean;
@@ -269,6 +277,30 @@ export default function CommitListModal({
         }
     };
 
+    // 파일 가져오는 함수
+    const handleGetContent = async (file: CommitFile) => {
+    const [owner, repo] = file.filename.split('/'); // 예시 처리
+    const sha = selectedCommit?.sha; // 선택된 SHA가 있다고 가정
+
+    try {
+        const res = await fetch(
+        `${getApiUrl()}/github/repos/commit/${projectOwner}/${projectRepo}/${sha}?file=${file.filename}`,
+            {
+                credentials: "include",
+            }
+        );
+        const data = await res.json();
+
+        // 파일 내용 저장 (예: 상태 업데이트)
+        setFileContents((prev) => ({
+        ...prev,
+        [file.filename]: data.content, // API 응답이 content 필드를 포함한다고 가정
+        }));
+    } catch (err) {
+        console.error('파일 내용을 가져오지 못했어요:', err);
+    }
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -432,8 +464,11 @@ export default function CommitListModal({
                     let color = "";
                     let statusColor = "";
                     if (result) {
-                        if (result.cpp && result.clang && result.format) color = "bg-green-500";
-                        else if (!result.cpp && !result.clang && !result.format) color = "bg-red-500";
+                        // 새 색상 로직: 둘 다 성공(초록), 둘 다 실패(빨강), 하나만 성공(노랑)
+                        const cppSuccess = !!result.cpp;
+                        const formatSuccess = !!result.format;
+                        if (cppSuccess && formatSuccess) color = "bg-green-500";
+                        else if (!cppSuccess && !formatSuccess) color = "bg-red-500";
                         else color = "bg-yellow-400";
                     }
                     
@@ -484,158 +519,118 @@ export default function CommitListModal({
                                         </div>
                                     </div>
                                     
-                                    {/* 분석 버튼 */}
-                                    <button
-                                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
-                                            analyzing[file.filename]
-                                                ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-                                                : 'bg-blue-500 hover:bg-blue-600 text-white shadow-sm hover:shadow-md'
-                                        }`}
-                                        onClick={() => handleAnalyze(file)}
-                                        disabled={!!analyzing[file.filename]}
-                                    >
-                                        {analyzing[file.filename] ? (
-                                            <>
-                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                                분석 중...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                                </svg>
-                                                분석
-                                            </>
-                                        )}
-                                    </button>
+                                    {/* 첫 번째 버튼 */}
+                                    <div className='flex gap-2'>
+                                        <button
+                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
+                                                analyzing[file.filename]
+                                                    ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                                                    : 'bg-blue-500 hover:bg-blue-600 text-white shadow-sm hover:shadow-md'
+                                            }`}
+                                            onClick={() => handleAnalyze(file)}
+                                            disabled={!!analyzing[file.filename]}
+                                        >
+                                            {analyzing[file.filename] ? (
+                                                <>
+                                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                                    분석 중...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                                    </svg>
+                                                    분석
+                                                </>
+                                            )}
+                                        </button>
+                                        {/* 두 번째 버튼 */}
+                                        <button
+                                            className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-gray-200 hover:bg-gray-300 text-gray-800"
+                                            onClick={() => handleGetContent(file)}
+                                        >
+                                            내용 보기
+                                        </button>
+                                    </div>
+                                    {/* 파일 내용 출력 */}
+                                    {fileContents[file.filename] && (
+                                        <div className="mt-4">
+                                            <div className="text-xs text-gray-500 mb-1">변경된 내용:</div>
+                                            {(() => {
+                                                const codeLines = (fileContents[file.filename] || "").split('\n');
+                                                // cppcheck 에러 라인 추출
+                                                let cppcheckErrorLines = new Set<number>();
+                                                if (result && result.cppcheckIssues) {
+                                                    cppcheckErrorLines = new Set(result.cppcheckIssues.map((issue: any) => issue.line));
+                                                }
+                                                return (
+                                                    <pre className="bg-gray-100 border rounded p-3 text-sm font-mono overflow-x-auto whitespace-pre-wrap max-w-full">
+                                                        {codeLines.map((line, idx) => {
+                                                            const lineNumber = idx + 1;
+                                                            const isCppcheckError = cppcheckErrorLines.has(lineNumber);
+                                                            return (
+                                                                <div
+                                                                    key={idx}
+                                                                    className="flex"
+                                                                >
+                                                                    <span className="w-8 text-right pr-2 select-none text-gray-400">{lineNumber}</span>
+                                                                    <span className={
+                                                                        "whitespace-pre flex-1" +
+                                                                        (isCppcheckError ? " underline decoration-red-500 decoration-2" : "")
+                                                                    }>{line}</span>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </pre>
+                                                );
+                                            })()}
+                                        </div>
+                                    )}
+                                    
                                 </div>
                             </div>
                             
-                            {/* 분석 결과 에러 메시지 */}
+                            {/* clang-format 등 분석 결과 */}
                             {result && (
                                 <div className="mt-4 space-y-3">
                                     {/* cppcheck 에러 */}
-                                    {result.cpp === false && ((result.cppcheckIssues?.length ?? 0) > 0 ? (
-                                        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                                    {result.cpp === false && (result.cppcheckIssues?.length ?? 0) > 0 && (
+                                        <div className="bg-red-50 border border-red-200 rounded p-4">
                                             <div className="flex items-center gap-2 mb-2">
-                                                <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                 </svg>
-                                                <span className="font-semibold text-red-700">cppcheck 에러</span>
+                                                <span className="font-bold text-red-700">cppcheck 에러</span>
                                             </div>
-                                            <ul className="space-y-1 ml-6">
+                                            <ul className="ml-6 list-disc text-red-700 text-sm font-mono">
                                                 {(result.cppcheckIssues ?? []).map((issue: any, idx: number) => (
-                                                    <li key={idx} className="text-red-600 text-sm flex items-start gap-2">
-                                                        <span className="text-red-400 mt-1">•</span>
-                                                        <span>타입: {issue.type} [{issue.line}, {issue.column}]: {issue.message}</span>
+                                                    <li key={idx}>
+                                                        타입: {issue.type} [{issue.line}, {issue.column}]: {issue.message}
                                                     </li>
                                                 ))}
                                             </ul>
                                         </div>
-                                    ) : result.cppcheckOutput && (
-                                        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
-                                                <span className="font-semibold text-red-700">cppcheck 에러</span>
-                                            </div>
-                                            <div className="text-red-600 text-sm whitespace-pre-wrap ml-6">
-                                                {result.cppcheckOutput}
-                                            </div>
-                                        </div>
-                                    ))}
-                                    
-                                    {/* clang-tidy 에러 */}
-                                    {result.clang === false && ((result.clangTidyIssues?.length ?? 0) > 0 ? (
-                                        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
-                                                <span className="font-semibold text-orange-700">clang-tidy 에러</span>
-                                            </div>
-                                            <ul className="space-y-1 ml-6">
-                                                {(result.clangTidyIssues ?? []).map((issue: any, idx: number) => (
-                                                    <li key={idx} className="text-orange-600 text-sm flex items-start gap-2">
-                                                        <span className="text-orange-400 mt-1">•</span>
-                                                        <span> 타입: {issue.type} [{issue.line}, {issue.column}]: {issue.message}</span>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    ) : result.clangTidyOutput && (
-                                        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
-                                                <span className="font-semibold text-orange-700">clang-tidy 에러</span>
-                                            </div>
-                                            <ul className="space-y-1 ml-6">
-                                                {(() => {
-                                                    const lines = (result.clangTidyOutput ?? '').split('\n');
-                                                    const errors: string[] = [];
-                                                    
-                                                    lines.forEach(line => {
-                                                        const match = line.match(/:(\d+):(\d+):\s*(error|warning|note):\s*(.+)/);
-                                                        if (match) {
-                                                            const [, lineNum, columnNum, type, message] = match;
-                                                            errors.push(`${type} error[${lineNum}, ${columnNum}]: ${message.trim()}`);
-                                                        }
-                                                    });
-                                                    
-                                                    if (errors.length > 0) {
-                                                        return errors.map((error, idx) => (
-                                                            <li key={idx} className="text-orange-600 text-sm flex items-start gap-2">
-                                                                <span className="text-orange-400 mt-1">•</span>
-                                                                <span>{error}</span>
-                                                            </li>
-                                                        ));
-                                                    } else {
-                                                        return [
-                                                            <li key="original" className="text-orange-600 text-sm flex items-start gap-2">
-                                                                <span className="text-orange-400 mt-1">•</span>
-                                                                <span className="whitespace-pre-wrap">{result.clangTidyOutput}</span>
-                                                            </li>
-                                                        ];
-                                                    }
-                                                })()}
-                                            </ul>
-                                        </div>
-                                    ))}
-                                    
+                                    )}
                                     {/* clang-format 에러 */}
-                                    {result.format === false && ((result.clangFormatIssues?.length ?? 0) > 0 ? (
-                                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                                    {result.format === false && (result.clangFormatIssues?.length ?? 0) > 0 && (
+                                        <div className="bg-purple-50 border border-purple-200 rounded p-4">
                                             <div className="flex items-center gap-2 mb-2">
-                                                <svg className="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                 </svg>
-                                                <span className="font-semibold text-purple-700">clang-format 에러</span>
+                                                <span className="font-bold text-purple-700">clang-format 에러</span>
                                             </div>
-                                            <ul className="space-y-1 ml-6">
+                                            <ul className="ml-6 list-disc text-purple-700 text-sm font-mono">
                                                 {(result.clangFormatIssues ?? []).map((issue: any, idx: number) => (
-                                                    <li key={idx} className="text-purple-600 text-sm flex items-start gap-2">
-                                                        <span className="text-purple-400 mt-1">•</span>
-                                                        <span>타입: {issue.type} [{issue.line}, {issue.column}]: {issue.message}</span>
-                                                    </li>
+                                                    issue.type === 'style' ? null : (
+                                                        <li key={idx}>
+                                                            타입: {issue.type} [{issue.line}, {issue.column}]: {issue.message}
+                                                        </li>
+                                                    )
                                                 ))}
                                             </ul>
                                         </div>
-                                    ) : result.clangFormatOutput && (
-                                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <svg className="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
-                                                <span className="font-semibold text-purple-700">clang-format 에러</span>
-                                            </div>
-                                            <div className="text-purple-600 text-sm whitespace-pre-wrap ml-6">
-                                                {result.clangFormatOutput}
-                                            </div>
-                                        </div>
-                                    ))}
+                                    )}
                                 </div>
                             )}
                         </div>
