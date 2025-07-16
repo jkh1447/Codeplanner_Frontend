@@ -409,7 +409,11 @@ export default function MyPage() {
           </CardHeader>
           <CardContent>
             <div className="flex flex-col sm:flex-row gap-3">
-              <Button variant="outline" className="flex-1 bg-transparent">
+              <Button
+                variant="outline"
+                className="flex-1 bg-transparent"
+                onClick={() => router.push("/auth/change-password")}
+              >
                 비밀번호 변경
               </Button>
               <Button
