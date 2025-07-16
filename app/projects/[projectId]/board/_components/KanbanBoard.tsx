@@ -24,6 +24,7 @@ import { useDebouncedCallback } from "use-debounce";
 import { getApiUrl } from "@/lib/api";
 import { Book, Bug, SquareCheckBig } from "lucide-react";
 import dynamic from "next/dynamic";
+import Modal from "@/components/ui/modal";
 const ReactSelect = dynamic(() => import("react-select"), { ssr: false });
 
 function KanbanBoard({ projectId }: { projectId: string }) {
@@ -61,6 +62,9 @@ function KanbanBoard({ projectId }: { projectId: string }) {
     // 드래그 상태 관리 변수
     const [activeColumn, setActiveColumn] = useState<Column | null>(null);
     const [activeTask, setActiveTask] = useState<Task | null>(null);
+
+    const [overCount, setOverCount] = useState(0);
+
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
@@ -68,6 +72,8 @@ function KanbanBoard({ projectId }: { projectId: string }) {
             },
         })
     );
+
+    const [showMoveModal, setShowMoveModal] = useState(false);
 
     // 클라이언트에서만 렌더링되도록 설정
     useEffect(() => {
@@ -94,6 +100,7 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                 setTasks(
                     latestTasks.map((issue: any) => ({
                         ...issue,
+                        prev_status: issue.status,
                         project_id: issue.projectId,
                         assignee_id: issue.assigneeId,
                         reporter_id: issue.reporterId,
@@ -127,6 +134,7 @@ function KanbanBoard({ projectId }: { projectId: string }) {
     // overType: 드롭될 위치의 타입 (Task 또는 Column)
     const moveTask = (activeId: Id, overId: Id, overType: string) => {
         setTasks((tasks) => {
+            
             // 현재 드래그 중인 task의 id가 tasks 배열에 있는지 확인하고 저장.
             const activeIndex = tasks.findIndex((t) => t.id === activeId);
             // 없으면 task배열 그대로 반환
@@ -152,7 +160,10 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                 // status만 변경, 위치는 그대로
                 const updatedTasks = tasks.map((task, idx) =>
                     idx === activeIndex
-                        ? { ...task, status: overId as string }
+                        ? {
+                              ...task,
+                              status: overId as string,
+                          }
                         : task
                 );
                 return arrayMove(updatedTasks, activeIndex, activeIndex);
@@ -512,14 +523,14 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                                 </SortableContext>
                             </div>
                             {/* <button
-                            onClick={() => {
-                                createNewColumn();
-                            }}
-                            className="h-[60px] w-[350px] min-w-[350px] cursor-pointer rounded-lg bg-[#f8f8f8] border-2 border-gray-300 p-4 ring-rose-500 hover:ring-2 flex gap-2 flex-shrink-0"
-                        >
-                            <PlusIcon />
-                            Add Column
-                        </button> */}
+                                onClick={() => {
+                                    createNewColumn();
+                                }}
+                                className="h-[60px] w-[350px] min-w-[350px] cursor-pointer rounded-lg bg-[#f8f8f8] border-2 border-gray-300 p-4 ring-rose-500 hover:ring-2 flex gap-2 flex-shrink-0"
+                            >
+                                <PlusIcon />
+                                Add Column
+                            </button> */}
                         </div>
 
                         {createPortal(
@@ -538,6 +549,7 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                                         deleteTask={deleteTask}
                                         updateTask={updateTask}
                                         current_user={current_user}
+                                        
                                     />
                                 )}
                                 {activeTask && (
@@ -580,9 +592,9 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                             ))}
                         </div>
                         {/* <button className="h-[60px] w-[350px] min-w-[350px] cursor-pointer rounded-lg bg-[#f8f8f8] border-2 border-gray-300 p-4 ring-rose-500 hover:ring-2 flex gap-2 flex-shrink-0">
-                            <PlusIcon />
-                            Add Column
-                        </button> */}
+                                <PlusIcon />
+                                Add Column
+                            </button> */}
                     </div>
                 )}
             </div>
@@ -621,6 +633,21 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                     />
                 </div>
             </div>
+            {showMoveModal && (
+                <Modal onClose={() => setShowMoveModal(false)}>
+                    <div className="text-center">
+                        <div className="text-lg font-bold mb-4">
+                            업무가 진행 중으로 이동되었습니다!
+                        </div>
+                        <button
+                            className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                            onClick={() => setShowMoveModal(false)}
+                        >
+                            확인
+                        </button>
+                    </div>
+                </Modal>
+            )}
         </>
     );
 
@@ -636,6 +663,7 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                 const result = await res.json();
                 console.log("이슈 생성 응답:", result);
                 console.log("taskData.createBranch:", taskData.createBranch);
+                
                 fetchLatestTasks();
 
                 // 브랜치 생성 결과 알림 (createBranch 옵션이 활성화된 경우에만)
@@ -716,6 +744,8 @@ function KanbanBoard({ projectId }: { projectId: string }) {
             return;
         }
         if (event.active.data.current?.type === "Task") {
+            event.active.data.current.task.prev_status =
+                event.active.data.current.task.status;
             setActiveTask(event.active.data.current.task);
             return;
         }
@@ -771,6 +801,29 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                             -1
                         );
                         newTasks.splice(lastIndex + 1, 0, movedTask);
+                    }
+                    console.log("drag end");
+                    console.log(
+                        "active status: ",
+                        active.data.current?.task.prev_status
+                    );
+                    console.log(
+                        "over status: ",
+                        over.data.current?.task.status
+                    );
+
+                    // 모달 오픈
+                    if (
+                        active.data.current?.task.prev_status === "TODO" &&
+                        over.data.current?.task.status === "IN_PROGRESS"
+                    ) {
+                        setShowMoveModal(true);
+                    } else if (
+                        active.data.current?.task.prev_status ===
+                            "IN_PROGRESS" &&
+                        over.data.current?.task.status === "IN_REVIEW"
+                    ) {
+                        // 모달 오픈
                     }
 
                     // 서버에 업데이트
@@ -853,6 +906,48 @@ function KanbanBoard({ projectId }: { projectId: string }) {
             debouncedMoveTask(activeId, overId, "Column");
         }
     }
+    // function onDragOver(event: DragOverEvent) {
+        
+    //     console.log("onDragOver called");
+    //     const { active, over } = event;
+    //     if (!over) return;
+    //     const activeId = active.id;
+    //     const overId = over.id;
+
+    //     if (activeId === overId) return;
+
+    //     const isActiveATask = active.data.current?.type === "Task";
+    //     const isOverTask = over.data.current?.type === "Task";
+
+    //     if (!isActiveATask) return;
+
+    //     if (isActiveATask && isOverTask) {
+    //         setTasks((tasks) => {
+    //             const activeIndex = tasks.findIndex(
+    //                 (t) => t.id === activeId
+    //             );
+    //             const overIndex = tasks.findIndex((t) => t.id === overId);
+
+    //             tasks[activeIndex].status = tasks[overIndex].status;
+    //             console.log("moveTask called (no debounced) ", Date.now());
+    //             return arrayMove(tasks, activeIndex, overIndex);
+    //         });
+    //     }
+
+    //     const isOverAColumn = over.data.current?.type === "Column";
+
+    //     if (isActiveATask && isOverAColumn) {
+    //         setTasks((tasks) => {
+    //             const activeIndex = tasks.findIndex(
+    //                 (t) => t.id === activeId
+    //             );
+
+    //             tasks[activeIndex].status = overId as string;
+    //             console.log("moveTask called (no debounced) ", Date.now());
+    //             return arrayMove(tasks, activeIndex, activeIndex);
+    //         });
+    //     }
+    // }
 
     function searchTasks(searchTerm: string) {
         const filteredTasks = allTasks.current.filter((task) =>
