@@ -427,14 +427,22 @@ export default function AddIssueModal({
                                             closeMenuOnSelect={false}
                                             placeholder="레이블 선택"
                                             components={{
-                                                Option: (props) => (
+                                                Option: (props: any) => (
                                                     <div
                                                         {...props.innerProps}
                                                         className={
-                                                            props.isFocused
-                                                                ? "bg-gray-100 px-3 py-2 flex items-center gap-2"
-                                                                : "px-3 py-2 flex items-center gap-2"
+                                                            (props.isFocused
+                                                                ? "bg-gray-100 "
+                                                                : "") +
+                                                            "px-3 py-2 flex items-center justify-between gap-2 w-full"
                                                         }
+                                                        style={{
+                                                            display: "flex",
+                                                            alignItems:
+                                                                "center",
+                                                            justifyContent:
+                                                                "space-between",
+                                                        }}
                                                     >
                                                         <span
                                                             style={{
@@ -447,12 +455,32 @@ export default function AddIssueModal({
                                                                 height: 12,
                                                                 borderRadius:
                                                                     "50%",
+                                                                marginRight: 8,
                                                             }}
                                                         />
-                                                        {props.data.label}
+                                                        <span
+                                                            style={{
+                                                                flex: 1,
+                                                                minWidth: 0,
+                                                                overflow:
+                                                                    "hidden",
+                                                                textOverflow:
+                                                                    "ellipsis",
+                                                                whiteSpace:
+                                                                    "nowrap",
+                                                            }}
+                                                        >
+                                                            {props.data.label}
+                                                        </span>
                                                         <button
                                                             type="button"
-                                                            className="ml-2 text-xs text-gray-400 hover:text-red-500"
+                                                            className="ml-2"
+                                                            style={{
+                                                                fontSize:
+                                                                    "18px",
+                                                                color: "#aaa",
+                                                                cursor: "pointer",
+                                                            }}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 setDeleteTargetLabelId(
@@ -463,13 +491,32 @@ export default function AddIssueModal({
                                                                     true
                                                                 );
                                                             }}
+                                                            onMouseOver={(e) =>
+                                                                (e.currentTarget.style.color =
+                                                                    "#ef4444")
+                                                            }
+                                                            onMouseOut={(e) =>
+                                                                (e.currentTarget.style.color =
+                                                                    "#aaa")
+                                                            }
                                                         >
                                                             ×
                                                         </button>
                                                     </div>
                                                 ),
-                                                MultiValueLabel: (props) => (
-                                                    <div className="flex items-center gap-1">
+                                                MultiValueLabel: (
+                                                    props: any
+                                                ) => (
+                                                    <div
+                                                        className="flex items-center justify-between gap-1 w-full"
+                                                        style={{
+                                                            display: "flex",
+                                                            alignItems:
+                                                                "center",
+                                                            justifyContent:
+                                                                "space-between",
+                                                        }}
+                                                    >
                                                         <span
                                                             style={{
                                                                 backgroundColor:
@@ -481,12 +528,32 @@ export default function AddIssueModal({
                                                                 height: 10,
                                                                 borderRadius:
                                                                     "50%",
+                                                                marginRight: 4,
                                                             }}
                                                         />
-                                                        {props.data.label}
+                                                        <span
+                                                            style={{
+                                                                flex: 1,
+                                                                minWidth: 0,
+                                                                overflow:
+                                                                    "hidden",
+                                                                textOverflow:
+                                                                    "ellipsis",
+                                                                whiteSpace:
+                                                                    "nowrap",
+                                                            }}
+                                                        >
+                                                            {props.data.label}
+                                                        </span>
                                                         <button
                                                             type="button"
-                                                            className="ml-1 text-xs text-gray-400 hover:text-red-500"
+                                                            className="ml-1"
+                                                            style={{
+                                                                fontSize:
+                                                                    "18px",
+                                                                color: "#aaa",
+                                                                cursor: "pointer",
+                                                            }}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 setDeleteTargetLabelId(
@@ -497,6 +564,14 @@ export default function AddIssueModal({
                                                                     true
                                                                 );
                                                             }}
+                                                            onMouseOver={(e) =>
+                                                                (e.currentTarget.style.color =
+                                                                    "#ef4444")
+                                                            }
+                                                            onMouseOut={(e) =>
+                                                                (e.currentTarget.style.color =
+                                                                    "#aaa")
+                                                            }
                                                         >
                                                             ×
                                                         </button>

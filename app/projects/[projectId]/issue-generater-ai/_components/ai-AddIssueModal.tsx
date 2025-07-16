@@ -41,7 +41,6 @@ import ReactSelect from "react-select";
 import AddLabelModal from "../../board/_components/AddLabelModal";
 import PlusIcon from "@/components/icons/PlusIcon";
 
-
 interface IssueFormData {
     project_id: string;
     title: string;
@@ -133,7 +132,7 @@ export default function AddIssueModal({
         }
 
         formData.tag = projectTag;
-        
+
         if (formData.assigneeId === "none") formData.assigneeId = "";
         // createTask에 formData 전체를 넘김 (KanbanBoard에서 서버에 POST 후 fetchLatestTasks 실행)
         createTask(formData);
