@@ -69,7 +69,7 @@ function TaskCard({ task, deleteTask, projectId, onSave }: Props) {
 
     useEffect(() => {
         getAssigneeDisplayName();
-    }, []);
+    }, [task.assignee_id]);
 
     const style = {
         transition,
