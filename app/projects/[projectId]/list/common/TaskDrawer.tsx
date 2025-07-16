@@ -383,13 +383,11 @@ export default function TaskDrawer({
             {/* Backdrop */}
             <div
                 className="fixed inset-0 bg-black bg-opacity-50 z-40 animate-in fade-in duration-300"
-                onClick={onClose}
                 style={{ zIndex: 40, position: "fixed" }}
             />
             {/* 모달 컨테이너 */}
             <div
                 className="fixed inset-0 z-50 flex items-center justify-center p-2 overflow-y-auto"
-                style={{ pointerEvents: "none" }}
             >
                 <div
                     className="bg-white rounded-lg shadow-2xl w-full max-w-xl flex flex-col animate-in zoom-in-95 duration-300"
