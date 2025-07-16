@@ -40,6 +40,13 @@ import { Label_issue, User } from "@/components/type";
 import { getApiUrl } from "@/lib/api";
 import AddLabelModal from "./AddLabelModal";
 import ReactSelect from "react-select";
+import {
+    Dialog as ConfirmDialog,
+    DialogContent as ConfirmDialogContent,
+    DialogHeader as ConfirmDialogHeader,
+    DialogTitle as ConfirmDialogTitle,
+    DialogFooter as ConfirmDialogFooter,
+} from "@/components/ui/dialog";
 
 // 더미 데이터 - 실제로는 서버에서 가져올 예정
 
@@ -104,6 +111,10 @@ export default function AddIssueModal({
     const [selectedColor, setSelectedColor] = useState("#3b82f6");
 
     const [label, setLabel] = useState<Label_issue[]>([]);
+    const [deleteTargetLabelId, setDeleteTargetLabelId] = useState<
+        string | null
+    >(null);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -439,6 +450,22 @@ export default function AddIssueModal({
                                                             }}
                                                         />
                                                         {props.data.label}
+                                                        <button
+                                                            type="button"
+                                                            className="ml-2 text-xs text-gray-400 hover:text-red-500"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setDeleteTargetLabelId(
+                                                                    props.data
+                                                                        .id
+                                                                );
+                                                                setShowDeleteConfirm(
+                                                                    true
+                                                                );
+                                                            }}
+                                                        >
+                                                            ×
+                                                        </button>
                                                     </div>
                                                 ),
                                                 MultiValueLabel: (props) => (
@@ -457,6 +484,22 @@ export default function AddIssueModal({
                                                             }}
                                                         />
                                                         {props.data.label}
+                                                        <button
+                                                            type="button"
+                                                            className="ml-1 text-xs text-gray-400 hover:text-red-500"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setDeleteTargetLabelId(
+                                                                    props.data
+                                                                        .id
+                                                                );
+                                                                setShowDeleteConfirm(
+                                                                    true
+                                                                );
+                                                            }}
+                                                        >
+                                                            ×
+                                                        </button>
                                                     </div>
                                                 ),
                                             }}
@@ -723,6 +766,41 @@ export default function AddIssueModal({
                     </DialogFooter>
                 </form>
             </DialogContent>
+            {showDeleteConfirm && (
+                <ConfirmDialog
+                    open={showDeleteConfirm}
+                    onOpenChange={setShowDeleteConfirm}
+                >
+                    <ConfirmDialogContent>
+                        <ConfirmDialogHeader>
+                            <ConfirmDialogTitle>레이블 삭제</ConfirmDialogTitle>
+                        </ConfirmDialogHeader>
+                        <div className="py-4">
+                            정말 이 레이블을 삭제하시겠습니까?
+                        </div>
+                        <ConfirmDialogFooter>
+                            <Button
+                                variant="outline"
+                                onClick={() => setShowDeleteConfirm(false)}
+                            >
+                                취소
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                onClick={async () => {
+                                    if (deleteTargetLabelId) {
+                                        await deleteLabel(deleteTargetLabelId);
+                                    }
+                                    setShowDeleteConfirm(false);
+                                    setDeleteTargetLabelId(null);
+                                }}
+                            >
+                                삭제
+                            </Button>
+                        </ConfirmDialogFooter>
+                    </ConfirmDialogContent>
+                </ConfirmDialog>
+            )}
         </Dialog>
     );
 }

@@ -11,8 +11,11 @@ import { Notification_issue } from "@/components/type";
 import { isDevelopment } from "@/lib/api";
 
 // 상대 시간 변환 함수
-function getRelativeTime(isoString: string) {
+function getRelativeTime(isoString: string | undefined | null) {
+    if (!isoString) return "";
     const date = new Date(isoString);
+    if (isNaN(date.getTime())) return "";
+
     const now = new Date();
     const diff = (now.getTime() - date.getTime()) / 1000; // 초 단위
 

@@ -46,6 +46,13 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import CommitListInline from "./CommitListInline";
+import {
+    Dialog as ConfirmDialog,
+    DialogContent as ConfirmDialogContent,
+    DialogHeader as ConfirmDialogHeader,
+    DialogTitle as ConfirmDialogTitle,
+    DialogFooter as ConfirmDialogFooter,
+} from "@/components/ui/dialog";
 
 {
     /* 이슈에 대한 카드 모달 */
@@ -119,6 +126,10 @@ export default function TaskDrawer({
     const [labelModalOpen, setLabelModalOpen] = useState(false);
     const [labelName, setLabelName] = useState("");
     const [selectedColor, setSelectedColor] = useState("#3b82f6");
+    const [deleteTargetLabelId, setDeleteTargetLabelId] = useState<
+        string | null
+    >(null);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     // 드롭다운 외부 클릭 시 닫기
     useEffect(() => {
@@ -247,7 +258,6 @@ export default function TaskDrawer({
 
         if (!formData.title || formData.title.trim() === "") {
             missingFields.push("제목");
-
         }
         if (!formData.description || formData.description.trim() === "") {
             missingFields.push("설명");
@@ -375,6 +385,32 @@ export default function TaskDrawer({
             }
         } catch (error) {
             // 레이블 저장 실패 처리
+        }
+    };
+
+    const deleteLabel = async (labelId: string) => {
+        try {
+            const response = await fetch(
+                `${getApiUrl()}/projects/${task.project_id}/labels/${labelId}`,
+                {
+                    method: "DELETE",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                }
+            );
+            if (response.ok) {
+                // 레이블 목록 새로고침
+                const updated = await fetch(
+                    `${getApiUrl()}/projects/${task.project_id}/labels`,
+                    { credentials: "include" }
+                );
+                if (updated.ok) {
+                    const data = await updated.json();
+                    setLabel(data);
+                }
+            }
+        } catch (error) {
+            // 삭제 실패 처리
         }
     };
 
@@ -593,11 +629,36 @@ export default function TaskDrawer({
                                                                 <SelectValue />
                                                             </SelectTrigger>
                                                             <SelectContent className="text-black">
-                                                                <SelectItem value="BACKLOG" className="text-black">백로그</SelectItem>
-                                                                <SelectItem value="TODO" className="text-black">해야 할 일</SelectItem>
-                                                                <SelectItem value="IN_PROGRESS" className="text-black">진행 중</SelectItem>
-                                                                <SelectItem value="IN_REVIEW" className="text-black">리뷰 중</SelectItem>
-                                                                <SelectItem value="DONE" className="text-black">완료</SelectItem>
+                                                                <SelectItem
+                                                                    value="BACKLOG"
+                                                                    className="text-black"
+                                                                >
+                                                                    백로그
+                                                                </SelectItem>
+                                                                <SelectItem
+                                                                    value="TODO"
+                                                                    className="text-black"
+                                                                >
+                                                                    해야 할 일
+                                                                </SelectItem>
+                                                                <SelectItem
+                                                                    value="IN_PROGRESS"
+                                                                    className="text-black"
+                                                                >
+                                                                    진행 중
+                                                                </SelectItem>
+                                                                <SelectItem
+                                                                    value="IN_REVIEW"
+                                                                    className="text-black"
+                                                                >
+                                                                    리뷰 중
+                                                                </SelectItem>
+                                                                <SelectItem
+                                                                    value="DONE"
+                                                                    className="text-black"
+                                                                >
+                                                                    완료
+                                                                </SelectItem>
                                                             </SelectContent>
                                                         </Select>
                                                     </div>
@@ -703,6 +764,25 @@ export default function TaskDrawer({
                                                                                         .data
                                                                                         .label
                                                                                 }
+                                                                                <button
+                                                                                    type="button"
+                                                                                    className="ml-2 text-xs text-gray-400 hover:text-red-500"
+                                                                                    onClick={(
+                                                                                        e
+                                                                                    ) => {
+                                                                                        e.stopPropagation();
+                                                                                        setDeleteTargetLabelId(
+                                                                                            props
+                                                                                                .data
+                                                                                                .id
+                                                                                        );
+                                                                                        setShowDeleteConfirm(
+                                                                                            true
+                                                                                        );
+                                                                                    }}
+                                                                                >
+                                                                                    ×
+                                                                                </button>
                                                                             </div>
                                                                         ),
                                                                         MultiValueLabel:
@@ -729,6 +809,25 @@ export default function TaskDrawer({
                                                                                             .data
                                                                                             .label
                                                                                     }
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        className="ml-1 text-xs text-gray-400 hover:text-red-500"
+                                                                                        onClick={(
+                                                                                            e
+                                                                                        ) => {
+                                                                                            e.stopPropagation();
+                                                                                            setDeleteTargetLabelId(
+                                                                                                props
+                                                                                                    .data
+                                                                                                    .id
+                                                                                            );
+                                                                                            setShowDeleteConfirm(
+                                                                                                true
+                                                                                            );
+                                                                                        }}
+                                                                                    >
+                                                                                        ×
+                                                                                    </button>
                                                                                 </div>
                                                                             ),
                                                                     }}
@@ -1161,6 +1260,41 @@ export default function TaskDrawer({
                 projectId={String(task.project_id)}
                 taskId={String(task.id)}
             />
+            {showDeleteConfirm && (
+                <ConfirmDialog
+                    open={showDeleteConfirm}
+                    onOpenChange={setShowDeleteConfirm}
+                >
+                    <ConfirmDialogContent>
+                        <ConfirmDialogHeader>
+                            <ConfirmDialogTitle>레이블 삭제</ConfirmDialogTitle>
+                        </ConfirmDialogHeader>
+                        <div className="py-4">
+                            정말 이 레이블을 삭제하시겠습니까?
+                        </div>
+                        <ConfirmDialogFooter>
+                            <Button
+                                variant="outline"
+                                onClick={() => setShowDeleteConfirm(false)}
+                            >
+                                취소
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                onClick={async () => {
+                                    if (deleteTargetLabelId) {
+                                        await deleteLabel(deleteTargetLabelId);
+                                    }
+                                    setShowDeleteConfirm(false);
+                                    setDeleteTargetLabelId(null);
+                                }}
+                            >
+                                삭제
+                            </Button>
+                        </ConfirmDialogFooter>
+                    </ConfirmDialogContent>
+                </ConfirmDialog>
+            )}
         </>
     );
 }
