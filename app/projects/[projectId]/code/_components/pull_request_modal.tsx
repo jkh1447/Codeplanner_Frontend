@@ -354,9 +354,43 @@ export default function PullRequestModal({
                               <div className="text-sm font-medium text-gray-700">
                                 변경된 내용:
                               </div>
-                              <div className="bg-gray-50 rounded p-3 text-xs font-mono overflow-x-auto whitespace-pre-wrap border">
-                                {fileChanges[file.filename].content}
-                              </div>
+                                {
+                                  (() => {
+                                    const codeLines = (fileChanges[file.filename]?.content || '').split('\n');
+                                    // cppcheck, clang-format 에러 라인 추출
+                                    let errorLines = new Set<number>();
+                                    // cppcheck
+                                    const cppIssues = fileAnalysis[file.filename]?.cppcheck?.issues ?? [];
+                                    cppIssues.forEach((issue: any) => {
+                                      if (typeof issue.line === 'number') errorLines.add(issue.line);
+                                    });
+                                    // clang-format
+                                    const formatIssues = fileAnalysis[file.filename]?.clangFormat?.issues ?? [];
+                                    formatIssues.forEach((issue: any) => {
+                                      if (typeof issue.line === 'number') errorLines.add(issue.line);
+                                    });
+                                    return (
+                                      <pre className="bg-gray-50 rounded p-3 text-xs font-mono overflow-x-auto whitespace-pre-wrap border">
+                                        {codeLines.map((line: string, idx: number) => {
+                                          const lineNumber = idx + 1;
+                                          const isError = errorLines.has(lineNumber);
+                                          return (
+                                            <div
+                                              key={idx}
+                                              className={
+                                                'flex' +
+                                                (isError ? ' underline decoration-red-500 decoration-2' : '')
+                                              }
+                                            >
+                                              <span className="w-8 text-right pr-2 select-none text-gray-400">{lineNumber}</span>
+                                              <span className="whitespace-pre flex-1">{line}</span>
+                                            </div>
+                                          );
+                                        })}
+                                      </pre>
+                                    );
+                                  })()
+                                }
                             </div>
                           ) : (
                             <div className="text-sm text-gray-500">
@@ -410,13 +444,11 @@ export default function PullRequestModal({
                                 <ul className="list-disc pl-5 space-y-1">
                                   {result.issues.map(
                                     (issue: any, i: number) => (
-                                      <li key={i}>
-                                        <span className="font-medium text-gray-700">
-                                          타입: {issue.type}
-                                        </span>{' '}
-                                        [{issue.line}, {issue.column}]:{' '}
-                                        {issue.message}
-                                      </li>
+                                      toolKey === 'clangFormat' && issue.type === 'style' ? null : (
+                                        <li key={i}>
+                                          타입: {issue.type} [{issue.line}, {issue.column}]: {issue.message}
+                                        </li>
+                                      )
                                     ),
                                   )}
                                 </ul>

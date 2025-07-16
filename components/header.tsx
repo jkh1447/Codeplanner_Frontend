@@ -11,8 +11,11 @@ import { Notification_issue } from "./type";
 import { isDevelopment } from "@/lib/api";
 
 // 상대 시간 변환 함수
-function getRelativeTime(isoString: string) {
+function getRelativeTime(isoString: string | undefined | null) {
+    if (!isoString) return "";
     const date = new Date(isoString);
+    if (isNaN(date.getTime())) return "";
+
     const now = new Date();
     const diff = (now.getTime() - date.getTime()) / 1000; // 초 단위
 
@@ -251,6 +254,9 @@ export default function Header() {
                                                                 {item.type ===
                                                                     "issue_created_backlog" &&
                                                                     "backlog에 추가되었습니다. "}
+                                                                {item.type ===
+                                                                    "issue_created_mention" &&
+                                                                    "회원님이 언급되었습니다. "}
                                                                 {getRelativeTime(
                                                                     item.createdAt
                                                                 )}
