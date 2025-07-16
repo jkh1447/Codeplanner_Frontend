@@ -71,6 +71,7 @@ interface AddIssueModalProps {
     issueType: string;
     status: string;
     onSuccess?: () => void;
+    newLabel: Label_issue;
 }
 
 export default function AddIssueModal({
@@ -86,6 +87,7 @@ export default function AddIssueModal({
     issueType,
     status,
     onSuccess,
+    newLabel,
 }: AddIssueModalProps) {
     console.log("reporterId", current_user.id);
     const [formData, setFormData] = useState<IssueFormData>({
@@ -101,7 +103,7 @@ export default function AddIssueModal({
         position: 0,
         tag: "",
         createBranch: false, // 기본값으로 브랜치 생성 활성화
-        labels: [],
+        labels: [newLabel],
     });
 
     const [projectMembers, setProjectMembers] = useState<User[]>([]);
@@ -111,7 +113,7 @@ export default function AddIssueModal({
     const [labelName, setLabelName] = useState("");
     const [selectedColor, setSelectedColor] = useState("#3b82f6");
 
-    const [label, setLabel] = useState<Label_issue[]>([]);
+    const [label, setLabel] = useState<Label_issue[]>([newLabel]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
