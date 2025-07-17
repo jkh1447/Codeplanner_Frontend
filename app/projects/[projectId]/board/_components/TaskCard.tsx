@@ -143,6 +143,30 @@ function TaskCard({ task, deleteTask, projectId, onSave }: Props) {
                     )}
                     {/* 담당자 표시 (오른쪽 하단, 담당자 있을 때만) */}
                     <div className="flex-1" />
+                    
+                    {/* IN_REVIEW 상태일 때 리뷰어 표시 */}
+                    {task.status === "IN_REVIEW" && task.reviewers && task.reviewers.length > 0 && (
+                        <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
+                            <div className="text-xs font-semibold text-yellow-800 mb-1">리뷰어</div>
+                            <div className="flex flex-wrap gap-1">
+                                {task.reviewers.map((reviewer) => (
+                                    <span
+                                        key={reviewer.id}
+                                        className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium"
+                                        title={reviewer.displayName}
+                                    >
+                                        <span className="w-4 h-4 rounded-full bg-yellow-300 flex items-center justify-center text-xs font-bold">
+                                            {(reviewer.displayName || 'U').charAt(0).toUpperCase()}
+                                        </span>
+                                        <span className="truncate max-w-[60px]">
+                                            {reviewer.displayName || 'Unknown'}
+                                        </span>
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     <div className="flex items-end justify-between mt-2">
                         <span className="flex items-center gap-1 py-1 rounded-full text-xs font-semibold">
                             {task.issue_type === "task" && (

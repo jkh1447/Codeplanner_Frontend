@@ -227,8 +227,8 @@ export default function SideBar() {
     };
     
     return (
-        <div className="w-64 border-r bg-background text-foreground h-screen overflow-y-auto">
-            <div className="p-4 space-y-4">
+        <div className="w-64 border-r bg-background text-foreground min-h-screen max-h-screen overflow-y-auto flex flex-col">
+            <div className="p-4 space-y-4 flex-1 overflow-y-auto">
                 {/* 현재 프로젝트와 역할 정보 */}
                 {userRole && userRole.role !== 'NONE' && (
                     <div className="bg-muted/50 rounded-lg p-3 border">

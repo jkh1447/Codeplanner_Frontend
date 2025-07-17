@@ -24,6 +24,8 @@ import { useDebouncedCallback } from "use-debounce";
 import { getApiUrl } from "@/lib/api";
 import { Book, Bug, SquareCheckBig } from "lucide-react";
 import dynamic from "next/dynamic";
+import CreateBranchModal from "./CreateBranchModal";
+import AssignReviewerModal from "./AssignReviewerModal";
 const ReactSelect = dynamic(() => import("react-select"), { ssr: false });
 
 function KanbanBoard({ projectId }: { projectId: string }) {
@@ -69,6 +71,11 @@ function KanbanBoard({ projectId }: { projectId: string }) {
         })
     );
 
+    const [showMoveModal, setShowMoveModal] = useState(false);
+    const [showReviewerModal, setShowReviewerModal] = useState(false);
+    const [pendingTask, setPendingTask] = useState<Task | null>(null);
+    const [pendingReviewTask, setPendingReviewTask] = useState<Task | null>(null);
+
     // 클라이언트에서만 렌더링되도록 설정
     useEffect(() => {
         setIsClient(true);
@@ -91,9 +98,11 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                 const latestTasks = await response.json();
                 allTasks.current = latestTasks;
                 console.log("latestTasks", latestTasks);
+                
                 setTasks(
                     latestTasks.map((issue: any) => ({
                         ...issue,
+                        prev_status: issue.status,
                         project_id: issue.projectId,
                         assignee_id: issue.assigneeId,
                         reporter_id: issue.reporterId,
@@ -102,6 +111,7 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                         due_date: issue.dueDate,
                         tag: issue.tag,
                         labels: issue.labels,
+                        reviewers: issue.reviewers || [], // 백엔드에서 제공하는 reviewers 정보 사용
                     }))
                 );
             }
@@ -152,7 +162,10 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                 // status만 변경, 위치는 그대로
                 const updatedTasks = tasks.map((task, idx) =>
                     idx === activeIndex
-                        ? { ...task, status: overId as string }
+                        ? {
+                              ...task,
+                              status: overId as string,
+                          }
                         : task
                 );
                 return arrayMove(updatedTasks, activeIndex, activeIndex);
@@ -190,6 +203,56 @@ function KanbanBoard({ projectId }: { projectId: string }) {
         }
         fetchLabels();
     }, [projectId]);
+
+    // 브랜치 생성 모달 핸들러
+    const handleBranchConfirm = async () => {
+        // 브랜치 생성 로직을 여기에 추가할 수 있습니다
+        alert('브랜치 생성이 요청되었습니다!');
+        setShowMoveModal(false);
+        setPendingTask(null);
+    };
+
+    const handleBranchCancel = async () => {
+        setShowMoveModal(false);
+        setPendingTask(null);
+    };
+
+    // 리뷰어 지정 모달 핸들러
+    const handleReviewerConfirm = async (reviewers: string[]) => {
+        try {
+            // 새로운 리뷰어 지정 API 사용
+            const response = await fetch(
+                `${getApiUrl()}/projects/${projectId}/issues/${pendingReviewTask?.id}/assign-reviewers`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    credentials: "include",
+                    body: JSON.stringify({
+                        reviewerIds: reviewers,
+                    }),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("Failed to assign reviewers");
+            }
+
+            alert('리뷰어가 성공적으로 지정되었습니다!');
+            setShowReviewerModal(false);
+            setPendingReviewTask(null);
+            fetchLatestTasks(); // 최신 데이터 갱신
+        } catch (error) {
+            console.error("Error assigning reviewers:", error);
+            alert('리뷰어 지정에 실패했습니다.');
+        }
+    };
+
+    const handleReviewerCancel = async () => {
+        setShowReviewerModal(false);
+        setPendingReviewTask(null);
+    };
 
     // 필터링된 tasks
     const filteredTasks = useMemo(() => {
@@ -621,6 +684,21 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                     />
                 </div>
             </div>
+            <CreateBranchModal
+                open={showMoveModal}
+                onOpenChange={setShowMoveModal}
+                issueTitle={pendingTask?.title || ""}
+                onConfirm={handleBranchConfirm}
+                onCancel={handleBranchCancel}
+            />
+
+            <AssignReviewerModal
+                open={showReviewerModal}
+                onOpenChange={setShowReviewerModal}
+                issueTitle={pendingReviewTask?.title || ""}
+                onConfirm={handleReviewerConfirm}
+                onCancel={handleReviewerCancel}
+            />
         </>
     );
 
@@ -635,32 +713,8 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                 if (!res.ok) throw new Error("Failed to add issue");
                 const result = await res.json();
                 console.log("이슈 생성 응답:", result);
-                console.log("taskData.createBranch:", taskData.createBranch);
                 fetchLatestTasks();
-
-                // 브랜치 생성 결과 알림 (createBranch 옵션이 활성화된 경우에만)
-                if (taskData.createBranch !== false) {
-                    console.log("브랜치 생성 옵션 활성화됨");
-                    console.log("result.branchName:", result.branchName);
-                    console.log("result.branchError:", result.branchError);
-
-                    if (result.branchName) {
-                        alert(
-                            `이슈가 성공적으로 등록되었습니다!\n\n이슈 제목을 기반으로 GitHub 브랜치가 자동으로 생성되었습니다.\n브랜치 이름: ${result.branchName}`
-                        );
-                    } else if (result.branchError) {
-                        alert(
-                            `이슈가 성공적으로 등록되었습니다!\n\n브랜치 생성에 실패했습니다:\n${result.branchError}`
-                        );
-                    } else {
-                        alert(
-                            `이슈가 성공적으로 등록되었습니다!\n\n브랜치 생성에 실패했습니다. (저장소 URL이 설정되지 않았거나 GitHub 연결에 문제가 있을 수 있습니다.)`
-                        );
-                    }
-                } else {
-                    console.log("브랜치 생성 옵션 비활성화됨");
                     alert("이슈가 성공적으로 등록되었습니다!");
-                }
             })
             .catch((err) => {
                 console.error("Error adding issue:", err);
@@ -712,10 +766,13 @@ function KanbanBoard({ projectId }: { projectId: string }) {
     function onDragStart(event: DragStartEvent) {
         console.log("drag start", event);
         if (event.active.data.current?.type === "Column") {
+            
             setActiveColumn(event.active.data.current.column);
             return;
         }
         if (event.active.data.current?.type === "Task") {
+            event.active.data.current.task.prev_status =
+                event.active.data.current.task.status;
             setActiveTask(event.active.data.current.task);
             return;
         }
@@ -772,11 +829,36 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                         );
                         newTasks.splice(lastIndex + 1, 0, movedTask);
                     }
+                    console.log("drag end");
+                    console.log("active status: ", active.data.current?.task.prev_status);
+                    console.log(
+                        "over status: ",
+                        over.data.current?.task.status
+                    );
 
-                    // 서버에 업데이트
-                    const issueIds = newTasks
-                        .filter((task) => task.status === targetColumnId)
-                        .map((task) => task.id.toString());
+
+                    // 모달 오픈
+                    if (
+                        active.data.current?.task.prev_status === "TODO" &&
+                        over.data.current?.task.status === "IN_PROGRESS"
+                    ) {
+                        setPendingTask(active.data.current.task);
+                        setShowMoveModal(true);
+                    }
+                    else if (
+                        active.data.current?.task.prev_status === "IN_PROGRESS" &&
+                        over.data.current?.task.status === "IN_REVIEW"
+                    ) {
+                        setPendingReviewTask(active.data.current.task);
+                        setShowReviewerModal(true);
+                    }
+
+
+                    
+                        // 서버에 업데이트
+                        const issueIds = newTasks
+                            .filter((task) => task.status === targetColumnId)
+                            .map((task) => task.id.toString());
                     updateTaskOrderAndStatus(issueIds, targetColumnId);
                 } else if (isOverAColumn) {
                     const targetColumnId = overId as string;

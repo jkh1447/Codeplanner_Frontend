@@ -19,6 +19,7 @@ export type Task = {
     position: number;
     tag: string;
     labels: Label_issue[];
+    reviewers?: User_detail[];
 };
 
 export type ColumnWithTasks = Column & {
