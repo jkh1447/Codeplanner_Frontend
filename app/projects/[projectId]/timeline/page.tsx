@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useCallback, use } from "react";
+import { useEffect, useRef, useCallback, use, useState } from "react";
 import dynamic from "next/dynamic";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, Users, Target, AlertCircle } from "lucide-react";
 import { useTimelineData } from "./hooks/useTimelineData";
+import { getApiUrl } from "@/lib/api";
 
 // Frappe Gantt CSS를 동적으로 로드
 // Gantt 차트 컴포넌트를 동적으로 로드
@@ -25,6 +26,36 @@ const GanttChart = dynamic(() => import("./components/GanttChart"), {
 export default function Page({ params }: { params: Promise<{ projectId: string }> }) {
     const { projectId } = use(params);
     const { summary, statistics, ganttData, overview, loading, error } = useTimelineData(projectId);
+    const [userRole, setUserRole] = useState<{ role: string; isLeader: boolean } | null>(null);
+
+    // 사용자 권한 정보 가져오기
+    useEffect(() => {
+        const fetchUserRole = async () => {
+            try {
+                const response = await fetch(
+                    `${getApiUrl()}/projects/${projectId}/my-role`,
+                    {
+                        credentials: "include",
+                        headers: { "Content-Type": "application/json" },
+                    }
+                );
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    setUserRole({
+                        role: data.role,
+                        isLeader: data.isLeader || false
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to fetch user role:', error);
+            }
+        };
+
+        if (projectId) {
+            fetchUserRole();
+        }
+    }, [projectId]);
 
     // 로딩 상태
     if (loading) {
@@ -130,7 +161,7 @@ export default function Page({ params }: { params: Promise<{ projectId: string }
 
             {/* Gantt 차트 */}
             <div className="flex flex-col gap-4">
-                <GanttChart tasks={ganttData} />
+                <GanttChart tasks={ganttData} userRole={userRole} />
             </div>
             
         </div>
