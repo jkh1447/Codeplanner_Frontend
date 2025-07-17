@@ -4,6 +4,7 @@ import { getApiUrl } from "@/lib/api";
 import { useState, useEffect } from "react";
 import GitCommitIcon from "@/components/icons/GitCommitIcon";
 import CommitListModal from "./CommitListModal";
+import ReviewCommentModal from "./ReviewCommentModal";
 import {
     ArrowBigLeftDash,
     GitCommitHorizontal,
@@ -46,6 +47,13 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import CommitListInline from "./CommitListInline";
+import {
+    Dialog as ConfirmDialog,
+    DialogContent as ConfirmDialogContent,
+    DialogHeader as ConfirmDialogHeader,
+    DialogTitle as ConfirmDialogTitle,
+    DialogFooter as ConfirmDialogFooter,
+} from "@/components/ui/dialog";
 
 {
     /* 이슈에 대한 카드 모달 */
@@ -117,12 +125,18 @@ export default function TaskDrawer({
     // 리뷰 관련 상태
     const [currentUser, setCurrentUser] = useState<any>(null);
     const [isReviewer, setIsReviewer] = useState(false);
+    const [showReviewCommentModal, setShowReviewCommentModal] = useState(false);
+    const [reviewCommentType, setReviewCommentType] = useState<"assign" | "approve" | "reject">("approve");
 
     // 레이블 관련 상태
     const [label, setLabel] = useState<any[]>([]);
     const [labelModalOpen, setLabelModalOpen] = useState(false);
     const [labelName, setLabelName] = useState("");
     const [selectedColor, setSelectedColor] = useState("#3b82f6");
+    const [deleteTargetLabelId, setDeleteTargetLabelId] = useState<
+        string | null
+    >(null);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     // 드롭다운 외부 클릭 시 닫기
     useEffect(() => {
@@ -291,9 +305,7 @@ export default function TaskDrawer({
         if (!formData.status || formData.status.trim() === "") {
             missingFields.push("상태");
         }
-        if (!formData.assigneeId) {
-            missingFields.push("담당자");
-        }
+
         if (!formData.reporterId) {
             missingFields.push("보고자");
         }
@@ -333,36 +345,45 @@ export default function TaskDrawer({
                 throw new Error(`저장 실패: ${res.status} ${errorText}`);
             }
 
-            // 부모 컴포넌트에게 데이터 새로고침 요청
-            if (onSave) {
-                onSave();
-            }
-
-            // 저장 성공 메시지 표시 후 잠시 대기
             setError(""); // 에러 메시지 초기화
             setSuccessMessage("저장이 완료되었습니다!"); // 성공 메시지 표시
-            setTimeout(() => {
-                onClose(); // -> 저장 완료하면, 모달 닫는다.
-            }, 1000); // 1초 대기
+            // onSave가 Promise를 반환할 수 있으므로 await 처리
+            if (onSave) {
+                await onSave();
+            }
+            onClose(); // 저장 후 바로 닫기
         } catch (err: any) {
             setError(err.message || "저장 중 오류 발생"); // 저장 실패시 오류
         } finally {
-            // UI 로딩 실행 종료 -> setLoading
             setLoading(false);
         }
     };
 
-    // 리뷰 승인 처리
-    const handleApproveReview = async () => {
+    // 리뷰 승인 버튼 클릭 시 댓글 모달 열기
+    const handleApproveReview = () => {
         if (!currentUser || !isReviewer) {
             setError("리뷰 권한이 없습니다.");
             return;
         }
+        setReviewCommentType("approve");
+        setShowReviewCommentModal(true);
+    };
 
+    // 리뷰 거부 버튼 클릭 시 댓글 모달 열기
+    const handleRejectReview = () => {
+        if (!currentUser || !isReviewer) {
+            setError("리뷰 권한이 없습니다.");
+            return;
+        }
+        setReviewCommentType("reject");
+        setShowReviewCommentModal(true);
+    };
+
+    // 실제 리뷰 승인 처리
+    const processApproveReview = async (comment: string) => {
         setLoading(true);
         setError("");
         try {
-            // 새로운 리뷰 승인 API 사용
             const response = await fetch(
                 `${getApiUrl()}/projects/${task.project_id}/issues/${task.id}/review/approve`,
                 {
@@ -372,7 +393,7 @@ export default function TaskDrawer({
                     },
                     credentials: "include",
                     body: JSON.stringify({
-                        comment: "", // 승인 코멘트 (선택사항)
+                        comment: comment || "", // 댓글 내용
                     }),
                 }
             );
@@ -397,23 +418,11 @@ export default function TaskDrawer({
         }
     };
 
-    // 리뷰 거부 처리
-    const handleRejectReview = async () => {
-        if (!currentUser || !isReviewer) {
-            setError("리뷰 권한이 없습니다.");
-            return;
-        }
-
-        const reason = prompt("거부 사유를 입력해주세요:");
-        if (!reason || reason.trim() === "") {
-            setError("거부 사유를 입력해주세요.");
-            return;
-        }
-
+    // 실제 리뷰 거부 처리
+    const processRejectReview = async (reason: string) => {
         setLoading(true);
         setError("");
         try {
-            // 새로운 리뷰 거부 API 사용
             const response = await fetch(
                 `${getApiUrl()}/projects/${task.project_id}/issues/${task.id}/review/reject`,
                 {
@@ -446,6 +455,20 @@ export default function TaskDrawer({
         } finally {
             setLoading(false);
         }
+    };
+
+    // 댓글 모달 확인 핸들러
+    const handleReviewCommentConfirm = async (comment: string) => {
+        if (reviewCommentType === "approve") {
+            await processApproveReview(comment);
+        } else if (reviewCommentType === "reject") {
+            await processRejectReview(comment);
+        }
+    };
+
+    // 댓글 모달 취소 핸들러
+    const handleReviewCommentCancel = () => {
+        setShowReviewCommentModal(false);
     };
 
     // 삭제 버튼 클릭시 DELETE 요청
@@ -514,19 +537,41 @@ export default function TaskDrawer({
         }
     };
 
+    const deleteLabel = async (labelId: string) => {
+        try {
+            const response = await fetch(
+                `${getApiUrl()}/projects/${task.project_id}/labels/${labelId}`,
+                {
+                    method: "DELETE",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                }
+            );
+            if (response.ok) {
+                // 레이블 목록 새로고침
+                const updated = await fetch(
+                    `${getApiUrl()}/projects/${task.project_id}/labels`,
+                    { credentials: "include" }
+                );
+                if (updated.ok) {
+                    const data = await updated.json();
+                    setLabel(data);
+                }
+            }
+        } catch (error) {
+            // 삭제 실패 처리
+        }
+    };
+
     return (
         <>
             {/* Backdrop */}
             <div
                 className="fixed inset-0 bg-black bg-opacity-50 z-40 animate-in fade-in duration-300"
-                onClick={onClose}
                 style={{ zIndex: 40, position: "fixed" }}
             />
             {/* 모달 컨테이너 */}
-            <div
-                className="fixed inset-0 z-50 flex items-center justify-center p-2 overflow-y-auto"
-                style={{ pointerEvents: "none" }}
-            >
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-2 overflow-y-auto">
                 <div
                     className="bg-white rounded-lg shadow-2xl w-full max-w-xl flex flex-col animate-in zoom-in-95 duration-300"
                     onClick={(e) => e.stopPropagation()}
@@ -872,10 +917,19 @@ export default function TaskDrawer({
                                                                             <div
                                                                                 {...props.innerProps}
                                                                                 className={
-                                                                                    props.isFocused
-                                                                                        ? "bg-gray-100 px-3 py-2 flex items-center gap-2"
-                                                                                        : "px-3 py-2 flex items-center gap-2"
+                                                                                    (props.isFocused
+                                                                                        ? "bg-gray-100 "
+                                                                                        : "") +
+                                                                                    "px-3 py-2 flex items-center justify-between gap-2 w-full"
                                                                                 }
+                                                                                style={{
+                                                                                    display:
+                                                                                        "flex",
+                                                                                    alignItems:
+                                                                                        "center",
+                                                                                    justifyContent:
+                                                                                        "space-between",
+                                                                                }}
                                                                             >
                                                                                 <span
                                                                                     style={{
@@ -889,20 +943,81 @@ export default function TaskDrawer({
                                                                                         height: 12,
                                                                                         borderRadius:
                                                                                             "50%",
+                                                                                        marginRight: 8,
                                                                                     }}
                                                                                 />
-                                                                                {
-                                                                                    props
-                                                                                        .data
-                                                                                        .label
-                                                                                }
+                                                                                <span
+                                                                                    style={{
+                                                                                        flex: 1,
+                                                                                        minWidth: 0,
+                                                                                        overflow:
+                                                                                            "hidden",
+                                                                                        textOverflow:
+                                                                                            "ellipsis",
+                                                                                        whiteSpace:
+                                                                                            "nowrap",
+                                                                                    }}
+                                                                                >
+                                                                                    {
+                                                                                        props
+                                                                                            .data
+                                                                                            .label
+                                                                                    }
+                                                                                </span>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    className="ml-2"
+                                                                                    style={{
+                                                                                        fontSize:
+                                                                                            "18px",
+                                                                                        color: "#aaa",
+                                                                                        cursor: "pointer",
+                                                                                    }}
+                                                                                    onClick={(
+                                                                                        e
+                                                                                    ) => {
+                                                                                        e.stopPropagation();
+                                                                                        setDeleteTargetLabelId(
+                                                                                            props
+                                                                                                .data
+                                                                                                .id
+                                                                                        );
+                                                                                        setShowDeleteConfirm(
+                                                                                            true
+                                                                                        );
+                                                                                    }}
+                                                                                    onMouseOver={(
+                                                                                        e
+                                                                                    ) =>
+                                                                                        (e.currentTarget.style.color =
+                                                                                            "#ef4444")
+                                                                                    }
+                                                                                    onMouseOut={(
+                                                                                        e
+                                                                                    ) =>
+                                                                                        (e.currentTarget.style.color =
+                                                                                            "#aaa")
+                                                                                    }
+                                                                                >
+                                                                                    ×
+                                                                                </button>
                                                                             </div>
                                                                         ),
                                                                         MultiValueLabel:
                                                                             (
                                                                                 props
                                                                             ) => (
-                                                                                <div className="flex items-center gap-1">
+                                                                                <div
+                                                                                    className="flex items-center justify-between gap-1 w-full"
+                                                                                    style={{
+                                                                                        display:
+                                                                                            "flex",
+                                                                                        alignItems:
+                                                                                            "center",
+                                                                                        justifyContent:
+                                                                                            "space-between",
+                                                                                    }}
+                                                                                >
                                                                                     <span
                                                                                         style={{
                                                                                             backgroundColor:
@@ -915,13 +1030,27 @@ export default function TaskDrawer({
                                                                                             height: 10,
                                                                                             borderRadius:
                                                                                                 "50%",
+                                                                                            marginRight: 4,
                                                                                         }}
                                                                                     />
-                                                                                    {
-                                                                                        props
-                                                                                            .data
-                                                                                            .label
-                                                                                    }
+                                                                                    <span
+                                                                                        style={{
+                                                                                            flex: 1,
+                                                                                            minWidth: 0,
+                                                                                            overflow:
+                                                                                                "hidden",
+                                                                                            textOverflow:
+                                                                                                "ellipsis",
+                                                                                            whiteSpace:
+                                                                                                "nowrap",
+                                                                                        }}
+                                                                                    >
+                                                                                        {
+                                                                                            props
+                                                                                                .data
+                                                                                                .label
+                                                                                        }
+                                                                                    </span>
                                                                                 </div>
                                                                             ),
                                                                     }}
@@ -1380,6 +1509,54 @@ export default function TaskDrawer({
                 projectId={String(task.project_id)}
                 taskId={String(task.id)}
             />
+
+            {/* 리뷰 댓글 모달 */}
+            <ReviewCommentModal
+                open={showReviewCommentModal}
+                onOpenChange={setShowReviewCommentModal}
+                reviewType={reviewCommentType}
+                projectId={String(task.project_id)}
+                issueId={String(task.id)}
+                reviewers={task.reviewers || []}
+                onConfirm={handleReviewCommentConfirm}
+                onCancel={handleReviewCommentCancel}
+            />
+
+            {showDeleteConfirm && (
+                <ConfirmDialog
+                    open={showDeleteConfirm}
+                    onOpenChange={setShowDeleteConfirm}
+                >
+                    <ConfirmDialogContent>
+                        <ConfirmDialogHeader>
+                            <ConfirmDialogTitle>레이블 삭제</ConfirmDialogTitle>
+                        </ConfirmDialogHeader>
+                        <div className="py-4">
+                            정말 이 레이블을 삭제하시겠습니까?
+                        </div>
+                        <ConfirmDialogFooter>
+                            <Button
+                                variant="outline"
+                                onClick={() => setShowDeleteConfirm(false)}
+                            >
+                                취소
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                onClick={async () => {
+                                    if (deleteTargetLabelId) {
+                                        await deleteLabel(deleteTargetLabelId);
+                                    }
+                                    setShowDeleteConfirm(false);
+                                    setDeleteTargetLabelId(null);
+                                }}
+                            >
+                                삭제
+                            </Button>
+                        </ConfirmDialogFooter>
+                    </ConfirmDialogContent>
+                </ConfirmDialog>
+            )}
         </>
     );
 }

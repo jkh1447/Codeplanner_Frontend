@@ -11,8 +11,11 @@ import { Notification_issue } from "./type";
 import { isDevelopment } from "@/lib/api";
 
 // 상대 시간 변환 함수
-function getRelativeTime(isoString: string) {
+function getRelativeTime(isoString: string | undefined | null) {
+    if (!isoString) return "";
     const date = new Date(isoString);
+    if (isNaN(date.getTime())) return "";
+
     const now = new Date();
     const diff = (now.getTime() - date.getTime()) / 1000; // 초 단위
 
@@ -214,9 +217,12 @@ export default function Header() {
                                     {Array.isArray(notification) &&
                                     notification.length > 0 ? (
                                         notification.map((item, idx) => (
-                                            <div className="relative group/item">
-                                                <Link
-                                                    key={`${item.issueId}-${item.createdAt}-${idx}`}
+                                            <div 
+                                            key={`${item.issueId}-${item.createdAt}-${idx}`}
+                                            className="relative group/item"
+                                            >
+                                                <Link       
+                                                    //key={`${item.issueId}-${item.createdAt}-${idx}`}
                                                     href={`/projects/${item.projectId}/issue/${item.issueId}`}
                                                     className="block p-3 hover:bg-slate-50 border-b border-slate-100 cursor-pointer"
                                                     onClick={() =>
@@ -251,6 +257,9 @@ export default function Header() {
                                                                 {item.type ===
                                                                     "issue_created_backlog" &&
                                                                     "backlog에 추가되었습니다. "}
+                                                                {item.type ===
+                                                                    "issue_created_mention" &&
+                                                                    "회원님이 언급되었습니다. "}
                                                                 {getRelativeTime(
                                                                     item.createdAt
                                                                 )}

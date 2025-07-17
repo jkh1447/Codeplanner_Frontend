@@ -46,3 +46,9 @@ logs/
 # sonar
 sonar-project.properties
 .scannerwork
+
+# 깃허브 배포 설정 파일
+.github
+*.github
+.deploy.yml
+*deploy.yml

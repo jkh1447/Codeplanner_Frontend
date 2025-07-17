@@ -69,7 +69,7 @@ function TaskCard({ task, deleteTask, projectId, onSave }: Props) {
 
     useEffect(() => {
         getAssigneeDisplayName();
-    }, []);
+    }, [task.assignee_id]);
 
     const style = {
         transition,
@@ -149,20 +149,46 @@ function TaskCard({ task, deleteTask, projectId, onSave }: Props) {
                         <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
                             <div className="text-xs font-semibold text-yellow-800 mb-1">리뷰어</div>
                             <div className="flex flex-wrap gap-1">
-                                {task.reviewers.map((reviewer) => (
-                                    <span
-                                        key={reviewer.id}
-                                        className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium"
-                                        title={reviewer.displayName}
-                                    >
-                                        <span className="w-4 h-4 rounded-full bg-yellow-300 flex items-center justify-center text-xs font-bold">
-                                            {(reviewer.displayName || 'U').charAt(0).toUpperCase()}
+                                {task.reviewers.map((reviewer) => {
+                                    // 리뷰어 상태에 따른 색상 결정
+                                    const isApproved = reviewer.status === 'approved';
+                                    const isRejected = reviewer.status === 'rejected';
+                                    
+                                    let bgColor = 'bg-yellow-100';
+                                    let textColor = 'text-yellow-800';
+                                    let avatarBgColor = 'bg-yellow-300';
+                                    
+                                    if (isApproved) {
+                                        bgColor = 'bg-green-100';
+                                        textColor = 'text-green-800';
+                                        avatarBgColor = 'bg-green-300';
+                                    } else if (isRejected) {
+                                        bgColor = 'bg-red-100';
+                                        textColor = 'text-red-800';
+                                        avatarBgColor = 'bg-red-300';
+                                    }
+                                    
+                                    return (
+                                        <span
+                                            key={reviewer.id}
+                                            className={`inline-flex items-center gap-1 px-2 py-1 ${bgColor} ${textColor} rounded-full text-xs font-medium`}
+                                            title={`${reviewer.displayName} - ${isApproved ? '승인' : isRejected ? '거부' : '대기중'}`}
+                                        >
+                                            <span className={`w-4 h-4 rounded-full ${avatarBgColor} flex items-center justify-center text-xs font-bold`}>
+                                                {(reviewer.displayName || 'U').charAt(0).toUpperCase()}
+                                            </span>
+                                            <span className="truncate max-w-[60px]">
+                                                {reviewer.displayName || 'Unknown'}
+                                            </span>
+                                            {isApproved && (
+                                                <span className="text-green-600">✓</span>
+                                            )}
+                                            {isRejected && (
+                                                <span className="text-red-600">✗</span>
+                                            )}
                                         </span>
-                                        <span className="truncate max-w-[60px]">
-                                            {reviewer.displayName || 'Unknown'}
-                                        </span>
-                                    </span>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </div>
                     )}

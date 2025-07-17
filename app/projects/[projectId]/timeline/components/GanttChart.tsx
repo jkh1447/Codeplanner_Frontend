@@ -3,6 +3,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import { GanttTask } from "../types";
 import { getApiUrl } from "@/lib/api";
+import { useDebouncedCallback } from "use-debounce";
 
 declare global {
   interface Window {
@@ -14,17 +15,20 @@ interface GanttChartProps {
   tasks: GanttTask[];
   loading?: boolean;
   error?: string | null;
+  userRole?: { role: string; isLeader: boolean } | null;
 }
 
 export default function GanttChart({
   tasks,
   loading = false,
   error = null,
+  userRole = null,
 }: GanttChartProps) {
   const ganttRef = useRef<HTMLDivElement>(null);
   const ganttInstance = useRef<any>(null);
   const isScriptLoaded = useRef(false);
   const hasInitialized = useRef(false);
+  const viewerWarningShown = useRef(false);
 
   const handleDateChange = useCallback(
     async (task: GanttTask, start: Date, end: Date) => {
@@ -47,6 +51,9 @@ export default function GanttChart({
     },
     []
   );
+
+  // 디바운싱된 날짜 변경 핸들러 (500ms)
+  const debouncedHandleDateChange = useDebouncedCallback(handleDateChange, 500);
 
   // Load CSS & JS once
   useEffect(() => {
@@ -96,11 +103,11 @@ export default function GanttChart({
     };
   }, []);
 
-  // Re-draw on tasks change
+  // Re-draw on tasks change only
   useEffect(() => {
     if (!isScriptLoaded.current || typeof window === "undefined") return;
     drawChart();
-  }, [tasks, handleDateChange]);
+  }, [tasks]);
 
   // 휠 스크롤 핸들러를 drawChart 함수에서 직접 추가하도록 변경
 
@@ -112,8 +119,13 @@ export default function GanttChart({
       ganttInstance.current = null;
     }
     
-    if (hasInitialized.current) {
-      ganttRef.current.innerHTML = "";
+    // tasks가 변경되었을 때만 초기화 (스크롤 중이 아닐 때)
+    if (hasInitialized.current && tasks.length > 0) {
+      // 스크롤 중인지 확인
+      const isScrolling = ganttRef.current.querySelector('.gantt-container')?.classList.contains('scrolling');
+      if (!isScrolling) {
+        ganttRef.current.innerHTML = "";
+      }
     }
     hasInitialized.current = true;
     
@@ -129,12 +141,25 @@ export default function GanttChart({
         // 초기 로딩 시 today로 스크롤
         scroll_to: "today",
         
-        // 날짜 변경 이벤트
+        // 날짜 변경 이벤트 (VIEWER 권한일 때 비활성화, 디바운싱 적용)
         on_date_change: (task: GanttTask, start: Date, end: Date) => {
+          // VIEWER 권한이면 날짜 변경 불가 (경고 메시지는 한 번만 표시)
+          if (userRole?.role === 'VIEWER') {
+            if (!viewerWarningShown.current) {
+              alert('뷰어 권한으로는 날짜를 변경할 수 없습니다.');
+              viewerWarningShown.current = true;
+              // 3초 후에 경고 메시지 플래그 초기화
+              setTimeout(() => {
+                viewerWarningShown.current = false;
+              }, 3000);
+            }
+            return;
+          }
+          
           // KST 시간대 보정
           const correctedStart = new Date(start.getTime() + 9 * 60 * 60 * 1000);
           const correctedEnd = new Date(end.getTime() + 9 * 60 * 60 * 1000);
-          handleDateChange(task, correctedStart, correctedEnd);
+          debouncedHandleDateChange(task, correctedStart, correctedEnd);
         },
       });
       
@@ -172,6 +197,7 @@ export default function GanttChart({
       // 수직 스크롤을 수평 스크롤로 변환
       if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
         e.preventDefault();
+        e.stopPropagation(); // 이벤트 전파 중단
         
         // 실제로 생성된 Gantt 스크롤 컨테이너 찾기
         const ganttContainer = ganttRef.current?.querySelector('.gantt-container') || 
@@ -179,8 +205,17 @@ export default function GanttChart({
                               document.querySelector('.gantt .gantt-container');
         
         if (ganttContainer) {
+          // 스크롤 중 상태 표시
+          ganttContainer.classList.add('scrolling');
+          
           const scrollAmount = e.deltaY * 1.5;
           ganttContainer.scrollLeft += scrollAmount;
+          
+          // 스크롤 완료 후 상태 제거
+          clearTimeout((window as any).scrollTimeout);
+          (window as any).scrollTimeout = setTimeout(() => {
+            ganttContainer.classList.remove('scrolling');
+          }, 150);
         }
       }
     };
@@ -188,8 +223,8 @@ export default function GanttChart({
     // 전역 참조 저장 (cleanup을 위해)
     (window as any).ganttScrollHandler = handleWheel;
     
-    // 이벤트 리스너 추가
-    ganttRef.current.addEventListener('wheel', handleWheel, { passive: false });
+    // 이벤트 리스너 추가 (capture: true로 변경하여 이벤트 캡처)
+    ganttRef.current.addEventListener('wheel', handleWheel, { passive: false, capture: true });
     ganttRef.current.dataset.scrollHandler = 'true';
   }
 

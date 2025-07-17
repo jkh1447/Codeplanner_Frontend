@@ -10,7 +10,8 @@ export type Task = {
     project_id: Id;
     title: string;
     description: string;
-    issue_type: string;
+  issue_type: string;
+  prev_status: string;
     status: string;
     assignee_id: Id;
     reporter_id: Id;
@@ -106,7 +107,10 @@ export type Issue_detail = {
 export type User_detail = {
     id: string;
     displayName: string;
-    
+    status?: string;
+    reviewComment?: string;
+    reviewedAt?: string;
+    assignedAt?: string;
 };
 
 export type Label_project = {

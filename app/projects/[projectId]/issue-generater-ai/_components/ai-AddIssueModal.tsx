@@ -41,7 +41,6 @@ import ReactSelect from "react-select";
 import AddLabelModal from "../../board/_components/AddLabelModal";
 import PlusIcon from "@/components/icons/PlusIcon";
 
-
 interface IssueFormData {
     project_id: string;
     title: string;
@@ -71,6 +70,7 @@ interface AddIssueModalProps {
     issueType: string;
     status: string;
     onSuccess?: () => void;
+    newLabel: Label_issue;
 }
 
 export default function AddIssueModal({
@@ -86,6 +86,7 @@ export default function AddIssueModal({
     issueType,
     status,
     onSuccess,
+    newLabel,
 }: AddIssueModalProps) {
     console.log("reporterId", current_user.id);
     const [formData, setFormData] = useState<IssueFormData>({
@@ -101,7 +102,7 @@ export default function AddIssueModal({
         position: 0,
         tag: "",
         createBranch: false, // 기본값으로 브랜치 생성 활성화
-        labels: [],
+        labels: [newLabel],
     });
 
     const [projectMembers, setProjectMembers] = useState<User[]>([]);
@@ -111,7 +112,7 @@ export default function AddIssueModal({
     const [labelName, setLabelName] = useState("");
     const [selectedColor, setSelectedColor] = useState("#3b82f6");
 
-    const [label, setLabel] = useState<Label_issue[]>([]);
+    const [label, setLabel] = useState<Label_issue[]>([newLabel]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -133,7 +134,7 @@ export default function AddIssueModal({
         }
 
         formData.tag = projectTag;
-        
+
         if (formData.assigneeId === "none") formData.assigneeId = "";
         // createTask에 formData 전체를 넘김 (KanbanBoard에서 서버에 POST 후 fetchLatestTasks 실행)
         createTask(formData);

@@ -26,6 +26,8 @@ import { Book, Bug, SquareCheckBig } from "lucide-react";
 import dynamic from "next/dynamic";
 import CreateBranchModal from "./CreateBranchModal";
 import AssignReviewerModal from "./AssignReviewerModal";
+import ReviewCommentModal from "../../list/common/ReviewCommentModal";
+import Modal from "@/components/ui/modal";
 const ReactSelect = dynamic(() => import("react-select"), { ssr: false });
 
 function KanbanBoard({ projectId }: { projectId: string }) {
@@ -63,6 +65,9 @@ function KanbanBoard({ projectId }: { projectId: string }) {
     // 드래그 상태 관리 변수
     const [activeColumn, setActiveColumn] = useState<Column | null>(null);
     const [activeTask, setActiveTask] = useState<Task | null>(null);
+
+    const [overCount, setOverCount] = useState(0);
+
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
@@ -73,8 +78,15 @@ function KanbanBoard({ projectId }: { projectId: string }) {
 
     const [showMoveModal, setShowMoveModal] = useState(false);
     const [showReviewerModal, setShowReviewerModal] = useState(false);
+    const [showReviewCommentModal, setShowReviewCommentModal] = useState(false);
+    const [reviewCommentType, setReviewCommentType] = useState<"assign" | "approve" | "reject">("assign");
     const [pendingTask, setPendingTask] = useState<Task | null>(null);
     const [pendingReviewTask, setPendingReviewTask] = useState<Task | null>(null);
+    const [pendingReviewers, setPendingReviewers] = useState<Array<{
+        id: string;
+        displayName: string;
+        email?: string;
+    }>>([]);
 
     // 클라이언트에서만 렌더링되도록 설정
     useEffect(() => {
@@ -137,6 +149,7 @@ function KanbanBoard({ projectId }: { projectId: string }) {
     // overType: 드롭될 위치의 타입 (Task 또는 Column)
     const moveTask = (activeId: Id, overId: Id, overType: string) => {
         setTasks((tasks) => {
+            
             // 현재 드래그 중인 task의 id가 tasks 배열에 있는지 확인하고 저장.
             const activeIndex = tasks.findIndex((t) => t.id === activeId);
             // 없으면 task배열 그대로 반환
@@ -205,9 +218,14 @@ function KanbanBoard({ projectId }: { projectId: string }) {
     }, [projectId]);
 
     // 브랜치 생성 모달 핸들러
-    const handleBranchConfirm = async () => {
-        // 브랜치 생성 로직을 여기에 추가할 수 있습니다
-        alert('브랜치 생성이 요청되었습니다!');
+    const handleBranchConfirm = async (branchName?: string, branchError?: string) => {
+        if (branchName) {
+            alert(`브랜치가 성공적으로 생성되었습니다!\n브랜치명: ${branchName}`);
+        } else if (branchError) {
+            alert(`브랜치 생성에 실패했습니다.\n${branchError}`);
+        } else {
+            alert('브랜치 없이 진행합니다.');
+        }
         setShowMoveModal(false);
         setPendingTask(null);
     };
@@ -217,10 +235,43 @@ function KanbanBoard({ projectId }: { projectId: string }) {
         setPendingTask(null);
     };
 
-    // 리뷰어 지정 모달 핸들러
+    // 리뷰어 지정 모달 핸들러 - 댓글 모달로 연결
     const handleReviewerConfirm = async (reviewers: string[]) => {
+        // 리뷰어 정보를 가져와서 댓글 모달에 전달하기 위해 저장
         try {
-            // 새로운 리뷰어 지정 API 사용
+            // 프로젝트 멤버 목록에서 선택된 리뷰어들의 정보 가져오기
+            const response = await fetch(
+                `${getApiUrl()}/projects/${projectId}/members`,
+                {
+                    credentials: "include",
+                }
+            );
+            
+            if (response.ok) {
+                const members = await response.json();
+                const selectedReviewers = members
+                    .filter((member: any) => reviewers.includes(member.id))
+                    .map((member: any) => ({
+                        id: member.id,
+                        displayName: member.display_name,
+                        email: member.email,
+                    }));
+
+                // 선택된 리뷰어들을 저장하고 댓글 모달 띄우기
+                setPendingReviewers(selectedReviewers);
+                setShowReviewerModal(false);
+                setShowReviewCommentModal(true);
+                setReviewCommentType("assign");
+            }
+        } catch (error) {
+            console.error("Error fetching members:", error);
+            alert('멤버 정보를 가져오는데 실패했습니다.');
+        }
+    };
+
+    // 실제 리뷰어 지정 처리
+    const processAssignReviewers = async (reviewerIds: string[], comment: string) => {
+        try {
             const response = await fetch(
                 `${getApiUrl()}/projects/${projectId}/issues/${pendingReviewTask?.id}/assign-reviewers`,
                 {
@@ -230,7 +281,7 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                     },
                     credentials: "include",
                     body: JSON.stringify({
-                        reviewerIds: reviewers,
+                        reviewerIds: reviewerIds,
                     }),
                 }
             );
@@ -240,18 +291,39 @@ function KanbanBoard({ projectId }: { projectId: string }) {
             }
 
             alert('리뷰어가 성공적으로 지정되었습니다!');
-            setShowReviewerModal(false);
-            setPendingReviewTask(null);
             fetchLatestTasks(); // 최신 데이터 갱신
         } catch (error) {
             console.error("Error assigning reviewers:", error);
             alert('리뷰어 지정에 실패했습니다.');
+            throw error;
         }
     };
 
     const handleReviewerCancel = async () => {
         setShowReviewerModal(false);
         setPendingReviewTask(null);
+        setPendingReviewers([]); // 리뷰어 데이터 초기화
+    };
+
+    // 리뷰 댓글 모달 핸들러들
+    const handleReviewCommentConfirm = async (comment: string) => {
+        if (reviewCommentType === "assign" && pendingReviewers.length > 0) {
+            const reviewerIds = pendingReviewers.map(r => r.id);
+            await processAssignReviewers(reviewerIds, comment);
+        }
+        // 모든 상태 초기화
+        setShowReviewCommentModal(false);
+        setPendingReviewTask(null);
+        setPendingReviewers([]);
+        setReviewCommentType("assign");
+    };
+
+    const handleReviewCommentCancel = () => {
+        // 모든 리뷰 관련 상태 초기화
+        setShowReviewCommentModal(false);
+        setPendingReviewTask(null);
+        setPendingReviewers([]);
+        setReviewCommentType("assign");
     };
 
     // 필터링된 tasks
@@ -575,14 +647,14 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                                 </SortableContext>
                             </div>
                             {/* <button
-                            onClick={() => {
-                                createNewColumn();
-                            }}
-                            className="h-[60px] w-[350px] min-w-[350px] cursor-pointer rounded-lg bg-[#f8f8f8] border-2 border-gray-300 p-4 ring-rose-500 hover:ring-2 flex gap-2 flex-shrink-0"
-                        >
-                            <PlusIcon />
-                            Add Column
-                        </button> */}
+                                onClick={() => {
+                                    createNewColumn();
+                                }}
+                                className="h-[60px] w-[350px] min-w-[350px] cursor-pointer rounded-lg bg-[#f8f8f8] border-2 border-gray-300 p-4 ring-rose-500 hover:ring-2 flex gap-2 flex-shrink-0"
+                            >
+                                <PlusIcon />
+                                Add Column
+                            </button> */}
                         </div>
 
                         {createPortal(
@@ -601,6 +673,7 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                                         deleteTask={deleteTask}
                                         updateTask={updateTask}
                                         current_user={current_user}
+                                        
                                     />
                                 )}
                                 {activeTask && (
@@ -643,9 +716,9 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                             ))}
                         </div>
                         {/* <button className="h-[60px] w-[350px] min-w-[350px] cursor-pointer rounded-lg bg-[#f8f8f8] border-2 border-gray-300 p-4 ring-rose-500 hover:ring-2 flex gap-2 flex-shrink-0">
-                            <PlusIcon />
-                            Add Column
-                        </button> */}
+                                <PlusIcon />
+                                Add Column
+                            </button> */}
                     </div>
                 )}
             </div>
@@ -684,10 +757,13 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                     />
                 </div>
             </div>
+            {/* 중복 모달 방지를 위해 기존 MoveModal 제거 */}
             <CreateBranchModal
                 open={showMoveModal}
                 onOpenChange={setShowMoveModal}
                 issueTitle={pendingTask?.title || ""}
+                projectId={projectId}
+                issueId={pendingTask?.id?.toString() || ""}
                 onConfirm={handleBranchConfirm}
                 onCancel={handleBranchCancel}
             />
@@ -698,6 +774,17 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                 issueTitle={pendingReviewTask?.title || ""}
                 onConfirm={handleReviewerConfirm}
                 onCancel={handleReviewerCancel}
+            />
+
+            <ReviewCommentModal
+                open={showReviewCommentModal}
+                onOpenChange={setShowReviewCommentModal}
+                reviewType={reviewCommentType}
+                projectId={projectId}
+                issueId={pendingReviewTask?.id?.toString() || ""}
+                reviewers={pendingReviewers}
+                onConfirm={handleReviewCommentConfirm}
+                onCancel={handleReviewCommentCancel}
             />
         </>
     );
@@ -713,6 +800,8 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                 if (!res.ok) throw new Error("Failed to add issue");
                 const result = await res.json();
                 console.log("이슈 생성 응답:", result);
+                console.log("taskData.createBranch:", taskData.createBranch);
+                
                 fetchLatestTasks();
                     alert("이슈가 성공적으로 등록되었습니다!");
             })
@@ -771,6 +860,8 @@ function KanbanBoard({ projectId }: { projectId: string }) {
             return;
         }
         if (event.active.data.current?.type === "Task") {
+            event.active.data.current.task.prev_status =
+                event.active.data.current.task.status;
             event.active.data.current.task.prev_status =
                 event.active.data.current.task.status;
             setActiveTask(event.active.data.current.task);
@@ -849,6 +940,9 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                         active.data.current?.task.prev_status === "IN_PROGRESS" &&
                         over.data.current?.task.status === "IN_REVIEW"
                     ) {
+                        // 이전 상태 초기화
+                        setPendingReviewers([]);
+                        setReviewCommentType("assign");
                         setPendingReviewTask(active.data.current.task);
                         setShowReviewerModal(true);
                     }
@@ -935,6 +1029,48 @@ function KanbanBoard({ projectId }: { projectId: string }) {
             debouncedMoveTask(activeId, overId, "Column");
         }
     }
+    // function onDragOver(event: DragOverEvent) {
+        
+    //     console.log("onDragOver called");
+    //     const { active, over } = event;
+    //     if (!over) return;
+    //     const activeId = active.id;
+    //     const overId = over.id;
+
+    //     if (activeId === overId) return;
+
+    //     const isActiveATask = active.data.current?.type === "Task";
+    //     const isOverTask = over.data.current?.type === "Task";
+
+    //     if (!isActiveATask) return;
+
+    //     if (isActiveATask && isOverTask) {
+    //         setTasks((tasks) => {
+    //             const activeIndex = tasks.findIndex(
+    //                 (t) => t.id === activeId
+    //             );
+    //             const overIndex = tasks.findIndex((t) => t.id === overId);
+
+    //             tasks[activeIndex].status = tasks[overIndex].status;
+    //             console.log("moveTask called (no debounced) ", Date.now());
+    //             return arrayMove(tasks, activeIndex, overIndex);
+    //         });
+    //     }
+
+    //     const isOverAColumn = over.data.current?.type === "Column";
+
+    //     if (isActiveATask && isOverAColumn) {
+    //         setTasks((tasks) => {
+    //             const activeIndex = tasks.findIndex(
+    //                 (t) => t.id === activeId
+    //             );
+
+    //             tasks[activeIndex].status = overId as string;
+    //             console.log("moveTask called (no debounced) ", Date.now());
+    //             return arrayMove(tasks, activeIndex, activeIndex);
+    //         });
+    //     }
+    // }
 
     function searchTasks(searchTerm: string) {
         const filteredTasks = allTasks.current.filter((task) =>

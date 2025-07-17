@@ -80,6 +80,8 @@ const getNotificationMessage = (type: string) => {
             return "나에게 할당되었습니다";
         case "issue_created_backlog":
             return "backlog에 추가되었습니다";
+        case "issue_created_mention":
+            return "회원님이 언급되었습니다";
         default:
             return "";
     }

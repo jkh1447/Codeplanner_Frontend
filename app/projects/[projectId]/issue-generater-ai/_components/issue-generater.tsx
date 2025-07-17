@@ -12,12 +12,24 @@ import { useParams } from "next/navigation";
 import AddIssueModal from "./ai-AddIssueModal";
 import { Task } from "@/components/type";
 
+// 백엔드에서 전달되는 이슈 정보를 기반으로 GeneratedIssue 타입 정의
 interface GeneratedIssue {
     id: string;
     title: string;
     description: string;
-    estimated_hours?: number;
+    labelid: string;
+    project_id: string;
+    reporter_id: string;
+    issue_type: string;
     status: string;
+    estimated_hours?: number;
+    label: {
+        id: string;
+        projectId: string;
+        name: string;
+        color: string;
+        createdAt: string; // ISO 문자열
+    };
 }
 
 export default function IssueGenerater() {
@@ -235,6 +247,26 @@ export default function IssueGenerater() {
                                             </CardTitle>
                                         </CardHeader>
                                         <CardContent className="space-y-3">
+                                                <div className="flex flex-wrap gap-2 mt-2">
+                                                    {issue.label && issue.label.color ? (
+                                                        <span
+                                                            key={issue.label.id?.toString() ?? issue.id}
+                                                            className="px-2 py-0.5 rounded text-xs font-semibold"
+                                                            style={{
+                                                                backgroundColor: issue.label.color,
+                                                                color: "#fff",
+                                                                minWidth: "2rem",
+                                                                display: "inline-block",
+                                                            }}
+                                                        >
+                                                            {issue.label.name}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="px-2 py-0.5 rounded text-xs font-semibold bg-gray-400 text-white">
+                                                            레이블 없음
+                                                        </span>
+                                                    )}
+                                                </div>
                                             <p className="text-sm text-muted-foreground line-clamp-3">
                                                 {issue.description}
                                             </p>
@@ -264,6 +296,7 @@ export default function IssueGenerater() {
                     description={selectedIssue.description}
                     issueType="task"
                     status={selectedIssue.status}
+                    newLabel={selectedIssue.label}
                     onSuccess={() => {
                         handleIssueCreated(selectedIssue.id);
                         setIsModalOpen(false);

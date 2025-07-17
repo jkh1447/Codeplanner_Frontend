@@ -40,6 +40,13 @@ import { Label_issue, User } from "@/components/type";
 import { getApiUrl } from "@/lib/api";
 import AddLabelModal from "./AddLabelModal";
 import ReactSelect from "react-select";
+import {
+    Dialog as ConfirmDialog,
+    DialogContent as ConfirmDialogContent,
+    DialogHeader as ConfirmDialogHeader,
+    DialogTitle as ConfirmDialogTitle,
+    DialogFooter as ConfirmDialogFooter,
+} from "@/components/ui/dialog";
 
 // 더미 데이터 - 실제로는 서버에서 가져올 예정
 
@@ -102,6 +109,10 @@ export default function AddIssueModal({
     const [selectedColor, setSelectedColor] = useState("#3b82f6");
 
     const [label, setLabel] = useState<Label_issue[]>([]);
+    const [deleteTargetLabelId, setDeleteTargetLabelId] = useState<
+        string | null
+    >(null);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -260,7 +271,10 @@ export default function AddIssueModal({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent
+                className="max-w-2xl max-h-[90vh] overflow-y-auto"
+                onInteractOutside={(e) => e.preventDefault()}
+            >
                 <DialogHeader>
                     <div className="flex items-center justify-between">
                         <DialogTitle>새 이슈 추가</DialogTitle>
@@ -413,14 +427,22 @@ export default function AddIssueModal({
                                             closeMenuOnSelect={false}
                                             placeholder="레이블 선택"
                                             components={{
-                                                Option: (props) => (
+                                                Option: (props: any) => (
                                                     <div
                                                         {...props.innerProps}
                                                         className={
-                                                            props.isFocused
-                                                                ? "bg-gray-100 px-3 py-2 flex items-center gap-2"
-                                                                : "px-3 py-2 flex items-center gap-2"
+                                                            (props.isFocused
+                                                                ? "bg-gray-100 "
+                                                                : "") +
+                                                            "px-3 py-2 flex items-center justify-between gap-2 w-full"
                                                         }
+                                                        style={{
+                                                            display: "flex",
+                                                            alignItems:
+                                                                "center",
+                                                            justifyContent:
+                                                                "space-between",
+                                                        }}
                                                     >
                                                         <span
                                                             style={{
@@ -433,13 +455,66 @@ export default function AddIssueModal({
                                                                 height: 12,
                                                                 borderRadius:
                                                                     "50%",
+                                                                marginRight: 8,
                                                             }}
                                                         />
-                                                        {props.data.label}
+                                                        <span
+                                                            style={{
+                                                                flex: 1,
+                                                                minWidth: 0,
+                                                                overflow:
+                                                                    "hidden",
+                                                                textOverflow:
+                                                                    "ellipsis",
+                                                                whiteSpace:
+                                                                    "nowrap",
+                                                            }}
+                                                        >
+                                                            {props.data.label}
+                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            className="ml-2"
+                                                            style={{
+                                                                fontSize:
+                                                                    "18px",
+                                                                color: "#aaa",
+                                                                cursor: "pointer",
+                                                            }}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setDeleteTargetLabelId(
+                                                                    props.data
+                                                                        .id
+                                                                );
+                                                                setShowDeleteConfirm(
+                                                                    true
+                                                                );
+                                                            }}
+                                                            onMouseOver={(e) =>
+                                                                (e.currentTarget.style.color =
+                                                                    "#ef4444")
+                                                            }
+                                                            onMouseOut={(e) =>
+                                                                (e.currentTarget.style.color =
+                                                                    "#aaa")
+                                                            }
+                                                        >
+                                                            ×
+                                                        </button>
                                                     </div>
                                                 ),
-                                                MultiValueLabel: (props) => (
-                                                    <div className="flex items-center gap-1">
+                                                MultiValueLabel: (
+                                                    props: any
+                                                ) => (
+                                                    <div
+                                                        className="flex items-center gap-1 w-full"
+                                                        style={{
+                                                            display: "flex",
+                                                            alignItems:
+                                                                "center",
+                                                        }}
+                                                    >
                                                         <span
                                                             style={{
                                                                 backgroundColor:
@@ -451,9 +526,23 @@ export default function AddIssueModal({
                                                                 height: 10,
                                                                 borderRadius:
                                                                     "50%",
+                                                                marginRight: 4,
                                                             }}
                                                         />
-                                                        {props.data.label}
+                                                        <span
+                                                            style={{
+                                                                flex: 1,
+                                                                minWidth: 0,
+                                                                overflow:
+                                                                    "hidden",
+                                                                textOverflow:
+                                                                    "ellipsis",
+                                                                whiteSpace:
+                                                                    "nowrap",
+                                                            }}
+                                                        >
+                                                            {props.data.label}
+                                                        </span>
                                                     </div>
                                                 ),
                                             }}
@@ -683,6 +772,41 @@ export default function AddIssueModal({
                     </DialogFooter>
                 </form>
             </DialogContent>
+            {showDeleteConfirm && (
+                <ConfirmDialog
+                    open={showDeleteConfirm}
+                    onOpenChange={setShowDeleteConfirm}
+                >
+                    <ConfirmDialogContent>
+                        <ConfirmDialogHeader>
+                            <ConfirmDialogTitle>레이블 삭제</ConfirmDialogTitle>
+                        </ConfirmDialogHeader>
+                        <div className="py-4">
+                            정말 이 레이블을 삭제하시겠습니까?
+                        </div>
+                        <ConfirmDialogFooter>
+                            <Button
+                                variant="outline"
+                                onClick={() => setShowDeleteConfirm(false)}
+                            >
+                                취소
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                onClick={async () => {
+                                    if (deleteTargetLabelId) {
+                                        await deleteLabel(deleteTargetLabelId);
+                                    }
+                                    setShowDeleteConfirm(false);
+                                    setDeleteTargetLabelId(null);
+                                }}
+                            >
+                                삭제
+                            </Button>
+                        </ConfirmDialogFooter>
+                    </ConfirmDialogContent>
+                </ConfirmDialog>
+            )}
         </Dialog>
     );
 }
