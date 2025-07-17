@@ -42,7 +42,7 @@ export default function SideBar() {
     const [projects, setProjects] = React.useState<Project[]>([]);
     const [loading, setLoading] = React.useState<boolean>(true);
     const [error, setError] = React.useState<string | null>(null);
-    const [isProjectsOpen, setIsProjectsOpen] = React.useState(true);
+    const [isProjectsOpen, setIsProjectsOpen] = React.useState(false);
     const pathname = usePathname();
     const match = pathname.match(/\/projects\/([^/]+)/);
     const projectId = match ? match[1] : null;
@@ -234,8 +234,8 @@ export default function SideBar() {
     };
     
     return (
-        <div className="w-64 border-r bg-background text-foreground h-screen overflow-y-auto">
-            <div className="p-4 space-y-4">
+        <div className="w-64 border-r bg-background text-foreground min-h-screen max-h-screen overflow-y-auto flex flex-col">
+            <div className="p-4 space-y-4 flex-1 overflow-y-auto">
                 {/* 현재 프로젝트와 역할 정보 */}
                 {userRole && userRole.role !== 'NONE' && (
                     <div className="bg-muted/50 rounded-lg p-3 border">
@@ -253,6 +253,36 @@ export default function SideBar() {
                         </div>                
                     </div>
                 )}
+                {/* 접속 중인 프로젝트 (항상 표시) */}
+                {projectId && projects.length > 0 && (() => {
+                    const currentProject = projects.find(p => String(p.id) === String(projectId));
+                    if (!currentProject) return null;
+                    
+                    return (
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-2 p-2 text-sm bg-accent/50 rounded-md border">
+                                <FolderOpen className="h-4 w-4" />
+                                <span className="truncate font-medium flex-1">
+                                    {currentProject.name}
+                                </span>
+                                <span
+                                    className={`h-2 w-2 rounded-full flex-shrink-0 ${
+                                        currentProject.status === "대기중"
+                                            ? "bg-yellow-500"
+                                            : currentProject.status === "진행중"
+                                            ? "bg-blue-500"
+                                            : currentProject.status === "완료"
+                                            ? "bg-green-500"
+                                            : currentProject.status === "보류"
+                                            ? "bg-red-500"
+                                            : "bg-gray-500"
+                                    }`}
+                                />
+                            </div>
+                        </div>
+                    );
+                })()}
+
                 {/* 프로젝트 섹션 */}
                 <Collapsible
                     open={isProjectsOpen}
@@ -265,8 +295,11 @@ export default function SideBar() {
                                 <span className="font-medium">프로젝트</span>
                             </div>
                             <div className="flex items-center gap-1">
-                                {/* 새 프로젝트 플러스 버튼 삭제됨 */}
-                                <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
+                                {isProjectsOpen ? (
+                                    <ChevronDown className="h-4 w-4 transition-transform rotate-180" />
+                                ) : (
+                                    <ChevronDown className="h-4 w-4 transition-transform" />
+                                )}
                             </div>
                         </CollapsibleTrigger>
                         <CollapsibleContent>
@@ -285,31 +318,9 @@ export default function SideBar() {
                                             프로젝트가 없습니다.
                                         </div>
                                     ) : (
-                                        projects.map((project) => {
-                                            const isCurrentProject = String(project.id) === String(projectId);
-                                            return isCurrentProject ? (
-                                                <div
-                                                    key={project.id}
-                                                    className="flex items-center justify-between p-2 text-sm bg-accent/50 rounded-md border"
-                                                >
-                                                    <span className="truncate font-medium">
-                                                        {project.name}
-                                                    </span>
-                                                    <span
-                                                        className={`h-2 w-2 rounded-full ${
-                                                            project.status === "대기중"
-                                                                ? "bg-yellow-500"
-                                                                : project.status === "진행중"
-                                                                ? "bg-blue-500"
-                                                                : project.status === "완료"
-                                                                ? "bg-green-500"
-                                                                : project.status === "보류"
-                                                                ? "bg-red-500"
-                                                                : "bg-gray-500"
-                                                        }`}
-                                                    />
-                                                </div>
-                                            ) : (
+                                        projects
+                                            .filter((project) => String(project.id) !== String(projectId)) // 접속 중인 프로젝트 제외
+                                            .map((project) => (
                                                 <Link
                                                     key={project.id}
                                                     href={`/projects/${project.id}/summary`}
@@ -332,8 +343,7 @@ export default function SideBar() {
                                                         }`}
                                                     />
                                                 </Link>
-                                            );
-                                        })
+                                            ))
                                     )
                                 )}
                             </div>
@@ -346,6 +356,12 @@ export default function SideBar() {
                     {menuItems
                         .filter((item) => {
                             if (!userRole || userRole.role === 'NONE') return false;
+                            
+                            // VIEWER 권한은 제한된 메뉴만 볼 수 있음
+                            if (userRole.role === 'VIEWER') {
+                                // VIEWER는 요약, 타임라인, 보드, 목록, 코드만 볼 수 있음
+                                return ['summary', 'timeline', 'board', 'list', 'code'].includes(item.url);
+                            }
                             
                             // 설정 메뉴는 프로젝트 리더 또는 관리자만 볼 수 있음
                             if (item.url === 'settings') {

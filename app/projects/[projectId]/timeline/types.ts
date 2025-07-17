@@ -32,4 +32,5 @@ export interface GanttTask {
     start: string | null;
     end: string | null;
     progress: number;
+    dependencies?: string[];
 } 
