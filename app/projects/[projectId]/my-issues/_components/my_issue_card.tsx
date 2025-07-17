@@ -16,6 +16,7 @@ import {
 import { useEffect, useState } from "react";
 import { getApiUrl } from "@/lib/api";
 import TaskDrawer from "../../list/common/TaskDrawer";
+import React from "react";
 
 interface Props {
     issue: Task;
@@ -144,7 +145,37 @@ export default function MyIssueCard({ issue, onSave }: Props) {
       return dateString
     }
   }
-  
+
+  function renderLimitedCommentWithMentions(content: string, maxLines = 2) {
+  const lines = content.split('\n');
+  const limitedLines = lines.slice(0, maxLines);
+
+  // 줄 개수 초과되면 마지막 줄에 "..." 붙이기
+  if (lines.length > maxLines) {
+    limitedLines[maxLines - 1] += '...';
+  }
+
+    return limitedLines.map((line, lineIdx) => (
+      <div key={lineIdx}>
+        {line.split(/(@\[[^\]]+\]\([^\)]+\))/g).map((part, i) => {
+          const match = part.match(/^@\[(.+?)\]\([^\)]+\)$/);
+          if (match) {
+            const display = match[1];
+            return (
+              <span
+                key={i}
+                className="bg-blue-100 text-blue-800 rounded px-1"
+              >
+                @{display}
+              </span>
+            );
+          }
+          return <React.Fragment key={i}>{part}</React.Fragment>;
+        })}
+      </div>
+    ));
+  }
+
   // 멘션 처리 함수
 function renderCommentWithMentions(content: string) {
   return content.split(/(@\[[^\]]+\]\([^\)]+\))/g).map((part, i) => {
@@ -263,17 +294,18 @@ function renderCommentWithMentions(content: string) {
                                     아무 코멘트도 없습니다.
                                 </div>
                             ) : (
-                                comments.slice(-3).map((comment) => (
+                                comments.slice(0, 3).map((comment) => (
                                     <div key={comment.id} className="w-full">
                                         <p>
-                                            <span className="font-bold">
-                                                {comment.displayName} :{" "}
-                                            </span>
-                                            <span>
-                                                {renderCommentWithMentions(
-                                                    comment.content
-                                                )}
-                                            </span>
+                                            <div className="py-2 border-b">
+                                              <span className="font-bold">
+                                                {comment.displayName}
+                                              </span>
+                                              <span className="block whitespace-pre-line line-clamp-2 text-sm text-gray-700">
+                                                {renderLimitedCommentWithMentions(comment.content)}
+                                                
+                                              </span>
+                                            </div>
                                         </p>
                                     </div>
                                 ))
