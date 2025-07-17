@@ -254,67 +254,82 @@ export default function Header() {
                                     {/* notification이 배열이 아닐 경우 에러 발생 가능, notification이 undefined/null일 때도 대비 필요 */}
                                     {Array.isArray(notification) &&
                                     notification.length > 0 ? (
-                                        notification.map((item, idx) => (
-                                            <div
-                                                className="relative group/item"
-                                                key={item.notificationId || idx}
-                                            >
-                                                <Link
-                                                    key={`${item.issueId}-${item.createdAt}-${idx}`}
-                                                    href={`/projects/${item.projectId}/issue/${item.issueId}`}
-                                                    className="block p-3 hover:bg-slate-50 border-b border-slate-100 cursor-pointer"
-                                                    onClick={() =>
-                                                        handleNotificationClick(
-                                                            item
-                                                        )
+                                        notification.map((item, idx) => {
+                                            // 링크 경로 결정
+                                            let linkHref = `/projects/${item.projectId}/issue/${item.issueId}`;
+                                            if (
+                                                item.type ===
+                                                    "issue_created_assignee" ||
+                                                item.type ===
+                                                    "issue_created_backlog"
+                                            ) {
+                                                linkHref = `/projects/${item.projectId}/board`;
+                                            }
+                                            return (
+                                                <div
+                                                    className="relative group/item"
+                                                    key={
+                                                        item.notificationId ||
+                                                        idx
                                                     }
                                                 >
-                                                    <div className="flex items-start gap-3">
-                                                        <div
-                                                            className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${getNotificationColor(
-                                                                item.type
-                                                            )}`}
-                                                        ></div>
-                                                        <div className="flex-1">
-                                                            <p className="text-sm text-slate-800">
-                                                                {
-                                                                    item.issueTitle
-                                                                }
-                                                            </p>
-                                                            <p className="text-xs text-slate-500 mt-1">
-                                                                {
-                                                                    item.projectName
-                                                                }{" "}
-                                                                -{" "}
-                                                                {item.type ===
-                                                                    "issue_created_assignee" &&
-                                                                    "나에게 할당되었습니다. "}
-                                                                {item.type ===
-                                                                    "issue_created_backlog" &&
-                                                                    "backlog에 추가되었습니다. "}
-                                                                {item.type ===
-                                                                    "issue_created_mention" &&
-                                                                    "회원님이 언급되었습니다. "}
-                                                                {getRelativeTime(
-                                                                    item.createdAt
-                                                                )}
-                                                            </p>
+                                                    <Link
+                                                        key={`${item.issueId}-${item.createdAt}-${idx}`}
+                                                        href={linkHref}
+                                                        className="block p-3 hover:bg-slate-50 border-b border-slate-100 cursor-pointer"
+                                                        onClick={() =>
+                                                            handleNotificationClick(
+                                                                item
+                                                            )
+                                                        }
+                                                    >
+                                                        <div className="flex items-start gap-3">
+                                                            <div
+                                                                className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${getNotificationColor(
+                                                                    item.type
+                                                                )}`}
+                                                            ></div>
+                                                            <div className="flex-1">
+                                                                <p className="text-sm text-slate-800">
+                                                                    {
+                                                                        item.issueTitle
+                                                                    }
+                                                                </p>
+                                                                <p className="text-xs text-slate-500 mt-1">
+                                                                    {
+                                                                        item.projectName
+                                                                    }{" "}
+                                                                    {" - "}
+                                                                    {item.type ===
+                                                                        "issue_created_assignee" &&
+                                                                        "나에게 할당되었습니다. "}
+                                                                    {item.type ===
+                                                                        "issue_created_backlog" &&
+                                                                        "backlog에 추가되었습니다. "}
+                                                                    {item.type ===
+                                                                        "issue_created_mention" &&
+                                                                        "회원님이 언급되었습니다. "}
+                                                                    {getRelativeTime(
+                                                                        item.createdAt
+                                                                    )}
+                                                                </p>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                </Link>
-                                                <button
-                                                    onClick={(e) =>
-                                                        handleDeleteNotification(
-                                                            e,
-                                                            item
-                                                        )
-                                                    }
-                                                    className="absolute top-2 right-2 p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full opacity-0 group-hover/item:opacity-100 transition-all duration-200"
-                                                >
-                                                    <X className="w-3 h-3" />
-                                                </button>
-                                            </div>
-                                        ))
+                                                    </Link>
+                                                    <button
+                                                        onClick={(e) =>
+                                                            handleDeleteNotification(
+                                                                e,
+                                                                item
+                                                            )
+                                                        }
+                                                        className="absolute top-2 right-2 p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full opacity-0 group-hover/item:opacity-100 transition-all duration-200"
+                                                    >
+                                                        <X className="w-3 h-3" />
+                                                    </button>
+                                                </div>
+                                            );
+                                        })
                                     ) : (
                                         <div className="p-3 text-sm text-slate-500 text-center">
                                             새로운 알림이 없습니다.

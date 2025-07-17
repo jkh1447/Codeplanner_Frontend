@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, MoreHorizontal, Trash2, User, Calendar, MessageSquare, Loader2, SquareCheckBig, BookOpen, ClipboardList, Book, Bug } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Trash2, User, Calendar, MessageSquare, Loader2, SquareCheckBig, BookOpen, ClipboardList, Book, Bug, Flame } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useParams } from "next/navigation";
 import TaskDrawer from "../common/TaskDrawer";
@@ -36,7 +36,7 @@ const statusMap: Record<string, string> = {
 };
 const typeMap: Record<string, string> = {
   bug: "버그",
-  story: "스토리",
+  story: "핫픽스",
   task: "작업",
 };
 
@@ -59,10 +59,22 @@ export default function IssueManagement() {
   // [typeFilter/statusFilter 값 통일]
   // typeFilter/statusFilter는 실제 데이터와 대소문자 일치 필요
   const typeOptions: { value: string; label: string; icon: ReactNode }[] = [
-    { value: "전체", label: "유형 전체", icon: <></> },
-    { value: "bug", label: "버그", icon: <Bug className="w-5 h-5 mr-1" color="#ff0000" /> },
-    { value: "story", label: "스토리", icon: <Book className="w-5 h-5 mr-1" color="#ff9500" /> },
-    { value: "task", label: "작업", icon: <SquareCheckBig className="w-5 h-5 mr-1" color="#3729ff" /> },
+      { value: "전체", label: "유형 전체", icon: <></> },
+      {
+          value: "bug",
+          label: "버그",
+          icon: <Bug className="w-5 h-5 mr-1" color="#008000" />,
+      },
+      {
+          value: "story",
+          label: "핫픽스",
+          icon: <Flame className="w-5 h-5 mr-1" color="#ff0000" />,
+      },
+      {
+          value: "task",
+          label: "작업",
+          icon: <SquareCheckBig className="w-5 h-5 mr-1" color="#3729ff" />,
+      },
   ];
   const statusOptions: { value: string; label: string }[] = [
     { value: "전체", label: "상태 전체" },
@@ -275,9 +287,9 @@ export default function IssueManagement() {
   };
 
   const typeIcon: Record<string, ReactNode> = {
-    bug: <Bug className="w-4 h-4 mr-1 inline" color="#ff0000" />,
-    story: <Book className="w-4 h-4 mr-1 inline" color="#ff9500" />,
-    task: <SquareCheckBig className="w-4 h-4 mr-1 inline" color="#3729ff" />,
+      bug: <Bug className="w-4 h-4 mr-1 inline" color="#008000" />,
+      story: <Flame className="w-4 h-4 mr-1 inline" color="#ff0000" />,
+      task: <SquareCheckBig className="w-4 h-4 mr-1 inline" color="#3729ff" />,
   };
 
   const statusOrder: Record<string, number> = {
