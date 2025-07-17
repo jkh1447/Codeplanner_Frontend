@@ -22,7 +22,7 @@ import PlusIcon from "@/components/icons/PlusIcon";
 import { Column, Id, Task } from "@/components/type";
 import { useDebouncedCallback } from "use-debounce";
 import { getApiUrl } from "@/lib/api";
-import { Book, Bug, SquareCheckBig } from "lucide-react";
+import { Book, Bug, Flame, SquareCheckBig } from "lucide-react";
 import dynamic from "next/dynamic";
 import Modal from "@/components/ui/modal";
 const ReactSelect = dynamic(() => import("react-select"), { ssr: false });
@@ -350,13 +350,24 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                     </button>
                     <button
                         className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold border ${
+                            typeFilter === "task"
+                                ? "bg-indigo-100 border-indigo-400 text-indigo-700"
+                                : "bg-white border-gray-300 text-gray-600"
+                        }`}
+                        onClick={() => setTypeFilter("task")}
+                    >
+                        <SquareCheckBig className="w-4 h-4" color="#3729ff" />{" "}
+                        작업
+                    </button>
+                    <button
+                        className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold border ${
                             typeFilter === "bug"
                                 ? "bg-red-100 border-red-400 text-red-700"
                                 : "bg-white border-gray-300 text-gray-600"
                         }`}
                         onClick={() => setTypeFilter("bug")}
                     >
-                        <Bug className="w-4 h-4" color="#ff0000" /> 버그
+                        <Bug className="w-4 h-4" color="#008000" /> 버그
                     </button>
                     <button
                         className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold border ${
@@ -366,18 +377,7 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                         }`}
                         onClick={() => setTypeFilter("story")}
                     >
-                        <Book className="w-4 h-4" color="#ff9500" /> 스토리
-                    </button>
-                    <button
-                        className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold border ${
-                            typeFilter === "task"
-                                ? "bg-indigo-100 border-indigo-400 text-indigo-700"
-                                : "bg-white border-gray-300 text-gray-600"
-                        }`}
-                        onClick={() => setTypeFilter("task")}
-                    >
-                        <SquareCheckBig className="w-4 h-4" color="#3729ff" />{" "}
-                        작업
+                        <Flame className="w-4 h-4" color="#ff0000" /> 핫픽스
                     </button>
                 </div>
                 <div className="flex items-center gap-2 ml-4 min-w-[200px]">
@@ -549,7 +549,6 @@ function KanbanBoard({ projectId }: { projectId: string }) {
                                         deleteTask={deleteTask}
                                         updateTask={updateTask}
                                         current_user={current_user}
-                                        
                                     />
                                 )}
                                 {activeTask && (
