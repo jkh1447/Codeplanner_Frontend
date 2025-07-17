@@ -278,7 +278,7 @@ export default function TaskDrawer({
             setError(`다음 항목을 입력해주세요: ${missingFieldNames}`);
             return;
         }
-
+        if (formData.assigneeId === "none") formData.assigneeId = "";
         setLoading(true);
         setError("");
         try {
@@ -590,7 +590,7 @@ export default function TaskDrawer({
                                                                     value="story"
                                                                     className="text-black"
                                                                 >
-                                                                    스토리
+                                                                    핫픽스
                                                                 </SelectItem>
                                                                 <SelectItem
                                                                     value="task"
@@ -870,43 +870,6 @@ export default function TaskDrawer({
                                                                                                 .label
                                                                                         }
                                                                                     </span>
-                                                                                    <button
-                                                                                        type="button"
-                                                                                        className="ml-1"
-                                                                                        style={{
-                                                                                            fontSize:
-                                                                                                "18px",
-                                                                                            color: "#aaa",
-                                                                                            cursor: "pointer",
-                                                                                        }}
-                                                                                        onClick={(
-                                                                                            e
-                                                                                        ) => {
-                                                                                            e.stopPropagation();
-                                                                                            setDeleteTargetLabelId(
-                                                                                                props
-                                                                                                    .data
-                                                                                                    .id
-                                                                                            );
-                                                                                            setShowDeleteConfirm(
-                                                                                                true
-                                                                                            );
-                                                                                        }}
-                                                                                        onMouseOver={(
-                                                                                            e
-                                                                                        ) =>
-                                                                                            (e.currentTarget.style.color =
-                                                                                                "#ef4444")
-                                                                                        }
-                                                                                        onMouseOut={(
-                                                                                            e
-                                                                                        ) =>
-                                                                                            (e.currentTarget.style.color =
-                                                                                                "#aaa")
-                                                                                        }
-                                                                                    >
-                                                                                        ×
-                                                                                    </button>
                                                                                 </div>
                                                                             ),
                                                                     }}
@@ -1035,7 +998,11 @@ export default function TaskDrawer({
                                                         <SelectTrigger>
                                                             <SelectValue placeholder="담당자 선택" />
                                                         </SelectTrigger>
+
                                                         <SelectContent>
+                                                            <SelectItem value="none">
+                                                                선택 안함
+                                                            </SelectItem>
                                                             {memberList.map(
                                                                 (user) => (
                                                                     <SelectItem

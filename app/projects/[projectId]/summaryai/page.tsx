@@ -74,6 +74,22 @@ interface ContributionAnalysisResponse {
   peerFeedbackSummary?: string
 }
 
+// 댓글 내용에서 @[이름](id) 패턴을 @이름만 보이게 가공
+function renderCommentWithMentions(content: string) {
+  return content.split(/(@\[[^\]]+\]\([^\)]+\))/g).map((part, i) => {
+    const match = part.match(/^@\[(.+?)\]\([^\)]+\)$/);
+    if (match) {
+      const display = match[1];
+      return (
+        <span key={i} className="bg-blue-100 text-blue-800 rounded px-1">
+          @{display}
+        </span>
+      );
+    }
+    return part;
+  });
+}
+
 export default function SummaryAIPage() {
   const params = useParams()
   const projectId = params?.projectId as string
@@ -472,10 +488,10 @@ export default function SummaryAIPage() {
                         </span>
                       </div>
                       <h4 className="font-medium text-gray-800 mb-1 line-clamp-2">
-                        {activity.title || activity.content?.substring(0, 100)}
+                        {activity.title || (activity.content ? renderCommentWithMentions(activity.content.substring(0, 100)) : null)}
                       </h4>
                       {activity.content && activity.content.length > 100 && (
-                        <p className="text-sm text-gray-600 line-clamp-2">{activity.content.substring(0, 100)}...</p>
+                        <p className="text-sm text-gray-600 line-clamp-2">{renderCommentWithMentions(activity.content.substring(0, 100))}...</p>
                       )}
                     </div>
                   </div>
@@ -509,11 +525,11 @@ export default function SummaryAIPage() {
                             </span>
                           </div>
                           <h4 className="font-medium text-gray-800 mb-1 line-clamp-2">
-                            {activity.title || activity.content?.substring(0, 100)}
+                            {activity.title || (activity.content ? renderCommentWithMentions(activity.content.substring(0, 100)) : null)}
                           </h4>
                           {activity.content && activity.content.length > 100 && (
                             <p className="text-sm text-gray-600 line-clamp-2">
-                              {activity.content.substring(0, 100)}...
+                              {renderCommentWithMentions(activity.content.substring(0, 100))}...
                             </p>
                           )}
                         </div>

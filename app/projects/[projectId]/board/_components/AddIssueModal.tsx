@@ -341,7 +341,7 @@ export default function AddIssueModal({
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="story">
-                                            스토리
+                                            핫픽스
                                         </SelectItem>
                                         <SelectItem value="task">
                                             작업
@@ -511,13 +511,11 @@ export default function AddIssueModal({
                                                     props: any
                                                 ) => (
                                                     <div
-                                                        className="flex items-center justify-between gap-1 w-full"
+                                                        className="flex items-center gap-1 w-full"
                                                         style={{
                                                             display: "flex",
                                                             alignItems:
                                                                 "center",
-                                                            justifyContent:
-                                                                "space-between",
                                                         }}
                                                     >
                                                         <span
@@ -548,36 +546,6 @@ export default function AddIssueModal({
                                                         >
                                                             {props.data.label}
                                                         </span>
-                                                        <button
-                                                            type="button"
-                                                            className="ml-1"
-                                                            style={{
-                                                                fontSize:
-                                                                    "18px",
-                                                                color: "#aaa",
-                                                                cursor: "pointer",
-                                                            }}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setDeleteTargetLabelId(
-                                                                    props.data
-                                                                        .id
-                                                                );
-                                                                setShowDeleteConfirm(
-                                                                    true
-                                                                );
-                                                            }}
-                                                            onMouseOver={(e) =>
-                                                                (e.currentTarget.style.color =
-                                                                    "#ef4444")
-                                                            }
-                                                            onMouseOut={(e) =>
-                                                                (e.currentTarget.style.color =
-                                                                    "#aaa")
-                                                            }
-                                                        >
-                                                            ×
-                                                        </button>
                                                     </div>
                                                 ),
                                             }}
