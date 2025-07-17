@@ -287,8 +287,8 @@ export default function IssueManagement() {
   };
 
   const typeIcon: Record<string, ReactNode> = {
-      bug: <Bug className="w-4 h-4 mr-1 inline" color="#ff0000" />,
-      story: <Flame className="w-4 h-4 mr-1 inline" color="#008000" />,
+      bug: <Bug className="w-4 h-4 mr-1 inline" color="#008000" />,
+      story: <Flame className="w-4 h-4 mr-1 inline" color="#ff0000" />,
       task: <SquareCheckBig className="w-4 h-4 mr-1 inline" color="#3729ff" />,
   };
 
