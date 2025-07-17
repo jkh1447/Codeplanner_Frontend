@@ -102,8 +102,8 @@ export default function AddIssueModal({
         dueDate: undefined,
         position: 0,
         tag: "",
-        createBranch: false, // 기본값으로 브랜치 생성 활성화
-        labels: [newLabel],
+        createBranch: false,
+        labels: newLabel ? [newLabel] : [], // newLabel이 null이면 빈 배열
     });
 
     const [projectMembers, setProjectMembers] = useState<User[]>([]);
@@ -113,7 +113,7 @@ export default function AddIssueModal({
     const [labelName, setLabelName] = useState("");
     const [selectedColor, setSelectedColor] = useState("#3b82f6");
 
-    const [label, setLabel] = useState<Label_issue[]>([newLabel]);
+    const [label, setLabel] = useState<Label_issue[]>(newLabel ? [newLabel] : []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

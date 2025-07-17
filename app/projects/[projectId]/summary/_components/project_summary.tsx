@@ -28,6 +28,7 @@ export default function SummaryPage() {
   const [allIssue, setAllIssue] = useState(0);
   const [completedIssue, setCompletedIssue] = useState(0);
   const [inProgressIssue, setInProgressIssue] = useState(0);
+  const [inReviewIssue, setInReviewIssue] = useState(0);
   const [issueTypeData, setIssueTypeData] = useState<any[]>([]);
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [progressData, setProgressData] = useState<any[]>([]);
@@ -68,7 +69,9 @@ export default function SummaryPage() {
       setInProgressIssue(
         data.filter((issue: any) => issue.status === "IN_PROGRESS").length
       );
-
+      setInReviewIssue(
+        data.filter((issue: any) => issue.status === "IN_REVIEW").length
+      );
       const progressCount = data.reduce((acc: any, cur:any) => {
         const progress = cur.status;
         acc[progress] = (acc[progress] || 0) + 1;
@@ -168,6 +171,23 @@ export default function SummaryPage() {
     }
   };
 
+  const setStatusBadge = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "todo":
+        return "해야 할 일"
+      case "in_progress":
+        return "진행 중"
+      case "done":
+        return "완료"
+      case "in_review":
+        return "리뷰 중"
+      case "backlog":
+        return "백로그"
+      default:
+        return status
+    }
+  }
+
   // 시간 포맷팅 함수
   const formatTimeAgo = (dateString: string) => {
     const now = new Date();
@@ -204,7 +224,6 @@ export default function SummaryPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{allIssue}</div>
-            <p className="text-xs text-muted-foreground">+3 from last week</p>
           </CardContent>
         </Card>
 
@@ -215,7 +234,9 @@ export default function SummaryPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{completedIssue}</div>
-            <p className="text-xs text-muted-foreground">75% 완료율</p>
+            <p className="text-xs text-muted-foreground">
+              {Math.round((completedIssue / allIssue) * 100)}% 완료율
+            </p>
           </CardContent>
         </Card>
 
@@ -225,8 +246,13 @@ export default function SummaryPage() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{inProgressIssue}</div>
-            <p className="text-xs text-muted-foreground">2개 지연 예정</p>
+            <div className="text-2xl font-bold">{inProgressIssue + inReviewIssue}</div>
+            <p className="text-xs text-muted-foreground">
+              진행 상태 : {inProgressIssue}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              리뷰 상태 : {inReviewIssue}
+            </p>
           </CardContent>
         </Card>
 
@@ -236,8 +262,7 @@ export default function SummaryPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{memberCount}</div>
-            <p className="text-xs text-muted-foreground">활성 팀원</p>
+            <div className="text-2xl font-bold">{memberCount} 명</div>
           </CardContent>
         </Card>
       </div>
@@ -258,8 +283,8 @@ export default function SummaryPage() {
                 <ResponsivePie
                   data={progressData.map((item) => ({
                   ...item,
-                  id: String(item.id),
-                  label: item.id,
+                  id: setStatusBadge(item.id),
+                  label: setStatusBadge(item.id),
                 }))}
                   margin={{ top: 40, right: 80, bottom: 80, left: 80 }}
                   innerRadius={0.5}

@@ -96,12 +96,14 @@ export default function MyIssueCard({ issue, onSave }: Props) {
       case "todo":
       case "할 일":
         return "bg-gray-100 text-gray-800 border-gray-200"
-      case "in progress":
+      case "in_progress":
       case "진행중":
         return "bg-blue-100 text-blue-800 border-blue-200"
       case "done":
       case "완료":
         return "bg-green-100 text-green-800 border-green-200"
+      case "in_review":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200"
       case "backlog":
         return "bg-purple-100 text-purple-800 border-purple-200"
       default:
@@ -109,6 +111,22 @@ export default function MyIssueCard({ issue, onSave }: Props) {
     }
   }
 
+  const setStatusBadge = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "todo":
+        return "해야 할 일"
+      case "in_progress":
+        return "진행 중"
+      case "done":
+        return "완료"
+      case "in_review":
+        return "리뷰 중"
+      case "backlog":
+        return "백로그"
+      default:
+        return "할일"
+    }
+  }
   const formatDate = (dateString: string) => {
     if (!dateString) return "-"
     try {
@@ -137,7 +155,7 @@ export default function MyIssueCard({ issue, onSave }: Props) {
             </CardTitle>
 
             <Badge variant="outline" className={`ml-2 font-medium ${getStatusBadgeColor(issue.status)}`}>
-              {issue.status}
+              {setStatusBadge(issue.status)}
             </Badge>
           </div>
 
