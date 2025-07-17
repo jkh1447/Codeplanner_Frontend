@@ -104,7 +104,7 @@ function TaskCard({ task, deleteTask, projectId, onSave }: Props) {
                     마감
                 </div>
             );
-        } else if (daysLeft <= 2) {
+        } else if (daysLeft <= 3) {
             return (
                 <div className="flex items-center gap-1 px-2 py-1 bg-yellow-500 text-white rounded-full text-xs font-semibold">
                     <Calendar className="w-3 h-3" />
