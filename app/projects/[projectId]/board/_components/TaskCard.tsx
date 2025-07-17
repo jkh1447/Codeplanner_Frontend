@@ -7,7 +7,7 @@ import React, { useEffect, useState } from "react";
 import { CSS } from "@dnd-kit/utilities";
 import TaskDrawer from "../../list/common/TaskDrawer";
 import { getApiUrl } from "@/lib/api";
-import { Book, Bug, SquareCheckBig } from "lucide-react";
+import { Book, Bug, Flame, SquareCheckBig } from "lucide-react";
 import { differenceInDays, parseISO } from "date-fns";
 
 interface Props {
@@ -69,7 +69,7 @@ function TaskCard({ task, deleteTask, projectId, onSave }: Props) {
 
     useEffect(() => {
         getAssigneeDisplayName();
-    }, []);
+    }, [task.assignee_id]);
 
     const style = {
         transition,
@@ -152,13 +152,13 @@ function TaskCard({ task, deleteTask, projectId, onSave }: Props) {
                                 />
                             )}
                             {task.issue_type === "story" && (
-                                <Book
+                                <Flame
                                     className="w-5 h-5 mr-1"
-                                    color="#ff9500"
+                                    color="#ff0000"
                                 />
                             )}
                             {task.issue_type === "bug" && (
-                                <Bug className="w-5 h-5 mr-1" color="#ff0000" />
+                                <Bug className="w-5 h-5 mr-1" color="#008000" />
                             )}
                             {task.tag}
                         </span>

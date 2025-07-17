@@ -1,16 +1,25 @@
-"use client"
+"use client";
 
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import type { Task } from "@/components/type"
-import { Book, Bug, SquareCheckBig, User, Calendar, Flag, MessageSquare } from "lucide-react"
-import { useEffect, useState } from "react"
-import { getApiUrl } from "@/lib/api"
-import TaskDrawer from "../../list/common/TaskDrawer"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import type { Task } from "@/components/type";
+import {
+    Book,
+    Bug,
+    SquareCheckBig,
+    User,
+    Calendar,
+    Flag,
+    MessageSquare,
+    Flame,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { getApiUrl } from "@/lib/api";
+import TaskDrawer from "../../list/common/TaskDrawer";
 
 interface Props {
-  issue: Task
-  onSave?: () => void
+    issue: Task;
+    onSave?: () => void;
 }
 
 interface Comment {
@@ -135,6 +144,26 @@ export default function MyIssueCard({ issue, onSave }: Props) {
       return dateString
     }
   }
+  
+  // 멘션 처리 함수
+function renderCommentWithMentions(content: string) {
+  return content.split(/(@\[[^\]]+\]\([^\)]+\))/g).map((part, i) => {
+      const match = part.match(/^@\[(.+?)\]\([^\)]+\)$/);
+      if (match) {
+          const display = match[1];
+          return (
+              <span
+                  key={i}
+                  className="bg-blue-100 text-blue-800 rounded px-1"
+              >
+                  @{display}
+              </span>
+          );
+      }
+      return part;
+  });
+}
+
 
   const typeConfig = getIssueTypeConfig(issue.issue_type)
   const IconComponent = typeConfig.icon
@@ -163,84 +192,104 @@ export default function MyIssueCard({ issue, onSave }: Props) {
           {Array.isArray(issue.labels) && issue.labels.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-3">
               {issue.labels.map((label: any) => (
-                <span
-                  key={label.id.toString()}
-                  className="px-3 py-1 rounded-full text-xs font-medium text-white shadow-sm"
-                  style={{
-                    backgroundColor: label.color,
-                    opacity: 0.9,
-                  }}
-                >
-                  {label.name}
-                </span>
-              ))}
-            </div>
-          )}
-        </CardHeader>
+                                <span
+                                    key={label.id.toString()}
+                                    className="px-3 py-1 rounded-full text-xs font-medium text-white shadow-sm"
+                                    style={{
+                                        backgroundColor: label.color,
+                                        opacity: 0.9,
+                                    }}
+                                >
+                                    {label.name}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+                </CardHeader>
 
-        <CardContent className="pt-0">
-          {/* Description */}
-          {issue.description && (
-            <p
-              className="text-sm text-gray-600 mb-4 line-clamp-2"
-              style={{ minHeight: "4em" }} // 2줄 높이 확보 (line-height 1.25rem * 2)
-            >
-              {issue.description}
-            </p>
-          )}
+                <CardContent className="pt-0">
+                    {/* Description */}
+                    {issue.description && (
+                        <p
+                            className="text-sm text-gray-600 mb-4 line-clamp-2"
+                            style={{ minHeight: "4em" }} // 2줄 높이 확보 (line-height 1.25rem * 2)
+                        >
+                            {issue.description}
+                        </p>
+                    )}
 
-          {/* Meta Information */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-            <div className="flex items-center gap-2 text-gray-500">
-              <User className="w-4 h-4" />
-              <div>
-                <span className="text-gray-400">보고자</span>
-                <p className="font-medium text-gray-700">{isLoading ? "로딩중..." : reporter || "-"}</p>
-              </div>
-            </div>
+                    {/* Meta Information */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                        <div className="flex items-center gap-2 text-gray-500">
+                            <User className="w-4 h-4" />
+                            <div>
+                                <span className="text-gray-400">보고자</span>
+                                <p className="font-medium text-gray-700">
+                                    {isLoading ? "로딩중..." : reporter || "-"}
+                                </p>
+                            </div>
+                        </div>
 
-            <div className="flex items-center gap-2 text-gray-500">
-              <Calendar className="w-4 h-4" />
-              <div>
-                <span className="text-gray-400">마감일</span>
-                <p className="font-medium text-gray-700">{formatDate(issue.due_date)}</p>
-              </div>
-            </div>
+                        <div className="flex items-center gap-2 text-gray-500">
+                            <Calendar className="w-4 h-4" />
+                            <div>
+                                <span className="text-gray-400">마감일</span>
+                                <p className="font-medium text-gray-700">
+                                    {formatDate(issue.due_date)}
+                                </p>
+                            </div>
+                        </div>
 
-            <div className="flex items-center gap-2 text-gray-500">
-              <Flag className="w-4 h-4" />
-              <div>
-                <span className="text-gray-400">유형</span>
-                <p className="font-medium text-gray-700 capitalize">{issue.issue_type}</p>
-              </div>
-            </div>
-          </div>
-          <br />
-          <div>
-            <p className= "font-bold flex items-center gap-2">
-                <MessageSquare className="w-5 h-5 text-blue-500" />
-                <span>최근 댓글</span>
-            </p>
-            <hr className="my-2" />
-            <div className="min-h-[4.5rem] flex flex-col justify-center items-center">
-              {comments.length === 0 ? (
-                <div className="text-gray-400 text-sm py-2 text-center w-full">아무 코멘트도 없습니다.</div>
-              ) : (
-                comments.slice(-3).map((comment) => (
-                  <div key={comment.id} className="w-full">
-                    <p>
-                      <span className="font-bold">{comment.displayName} : </span>
-                      <span>{comment.content}</span>
-                    </p>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+                        <div className="flex items-center gap-2 text-gray-500">
+                            <Flag className="w-4 h-4" />
+                            <div>
+                                <span className="text-gray-400">유형</span>
+                                <p className="font-medium text-gray-700 capitalize">
+                                    {issue.issue_type}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <br />
+                    <div>
+                        <p className="font-bold flex items-center gap-2">
+                            <MessageSquare className="w-5 h-5 text-blue-500" />
+                            <span>최근 댓글</span>
+                        </p>
+                        <hr className="my-2" />
+                        <div className="min-h-[4.5rem] flex flex-col justify-center items-center">
+                            {comments.length === 0 ? (
+                                <div className="text-gray-400 text-sm py-2 text-center w-full">
+                                    아무 코멘트도 없습니다.
+                                </div>
+                            ) : (
+                                comments.slice(-3).map((comment) => (
+                                    <div key={comment.id} className="w-full">
+                                        <p>
+                                            <span className="font-bold">
+                                                {comment.displayName} :{" "}
+                                            </span>
+                                            <span>
+                                                {renderCommentWithMentions(
+                                                    comment.content
+                                                )}
+                                            </span>
+                                        </p>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
 
-      {showDrawer && <TaskDrawer task={issue} onClose={() => setShowDrawer(false)} onSave={onSave} />}
-    </>
-  )
+            {showDrawer && (
+                <TaskDrawer
+                    task={issue}
+                    onClose={() => setShowDrawer(false)}
+                    onSave={onSave}
+                />
+            )}
+        </>
+    );
 }

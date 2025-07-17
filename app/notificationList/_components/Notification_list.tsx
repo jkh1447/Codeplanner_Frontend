@@ -80,6 +80,8 @@ const getNotificationMessage = (type: string) => {
             return "나에게 할당되었습니다";
         case "issue_created_backlog":
             return "backlog에 추가되었습니다";
+        case "issue_created_mention":
+            return "회원님이 언급되었습니다";
         default:
             return "";
     }
@@ -324,133 +326,146 @@ export default function NotificationsPage() {
                                         </div>
                                     ) : (
                                         filteredNotifications.map(
-                                            (notification) => (
-                                                <Link
-                                                    key={
-                                                        notification.notificationId
-                                                    }
-                                                    href={`/projects/${notification.projectId}/issue/${notification.issueId}`}
-                                                    onClick={async (e) => {
-                                                        // 읽음 처리 후 이동
-                                                        if (
-                                                            !notification.isRead
-                                                        ) {
-                                                            e.preventDefault();
-                                                            await markAsRead(
-                                                                notification.notificationId
-                                                            );
-                                                            window.location.href = `/projects/${notification.projectId}/issue/${notification.issueId}`;
+                                            (notification) => {
+                                                // 링크 경로 결정
+                                                let linkHref = `/projects/${notification.projectId}/issue/${notification.issueId}`;
+                                                if (
+                                                    notification.type ===
+                                                        "issue_created_assignee" ||
+                                                    notification.type ===
+                                                        "issue_created_backlog"
+                                                ) {
+                                                    linkHref = `/projects/${notification.projectId}/board`;
+                                                }
+                                                return (
+                                                    <Link
+                                                        key={
+                                                            notification.notificationId
                                                         }
-                                                    }}
-                                                    className="block"
-                                                >
-                                                    <div
-                                                        className={`flex items-start gap-4 p-6 hover:bg-gray-50 transition-colors ${
-                                                            !notification.isRead
-                                                                ? "bg-blue-50/50"
-                                                                : ""
-                                                        }`}
+                                                        href={linkHref}
+                                                        onClick={async (e) => {
+                                                            // 읽음 처리 후 이동
+                                                            if (
+                                                                !notification.isRead
+                                                            ) {
+                                                                e.preventDefault();
+                                                                await markAsRead(
+                                                                    notification.notificationId
+                                                                );
+                                                                window.location.href =
+                                                                    linkHref;
+                                                            }
+                                                        }}
+                                                        className="block"
                                                     >
                                                         <div
-                                                            className={`flex h-10 w-10 items-center justify-center rounded-full ${getNotificationColor(
-                                                                notification.type
-                                                            )} text-white`}
+                                                            className={`flex items-start gap-4 p-6 hover:bg-gray-50 transition-colors ${
+                                                                !notification.isRead
+                                                                    ? "bg-blue-50/50"
+                                                                    : ""
+                                                            }`}
                                                         >
-                                                            {getNotificationIcon(
-                                                                notification.type
-                                                            )}
-                                                        </div>
+                                                            <div
+                                                                className={`flex h-10 w-10 items-center justify-center rounded-full ${getNotificationColor(
+                                                                    notification.type
+                                                                )} text-white`}
+                                                            >
+                                                                {getNotificationIcon(
+                                                                    notification.type
+                                                                )}
+                                                            </div>
 
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="flex items-start justify-between gap-2">
-                                                                <div className="flex-1">
-                                                                    <div className="flex items-center gap-2 mb-1">
-                                                                        <h4
-                                                                            className={`text-sm font-medium ${
-                                                                                !notification.isRead
-                                                                                    ? "text-gray-900"
-                                                                                    : "text-gray-700"
-                                                                            }`}
-                                                                        >
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="flex items-start justify-between gap-2">
+                                                                    <div className="flex-1">
+                                                                        <div className="flex items-center gap-2 mb-1">
+                                                                            <h4
+                                                                                className={`text-sm font-medium ${
+                                                                                    !notification.isRead
+                                                                                        ? "text-gray-900"
+                                                                                        : "text-gray-700"
+                                                                                }`}
+                                                                            >
+                                                                                {
+                                                                                    notification.issueTitle
+                                                                                }
+                                                                            </h4>
+                                                                            {!notification.isRead && (
+                                                                                <div className="h-2 w-2 rounded-full bg-blue-500" />
+                                                                            )}
+                                                                        </div>
+                                                                        <p className="text-sm text-muted-foreground mb-2">
                                                                             {
-                                                                                notification.issueTitle
-                                                                            }
-                                                                        </h4>
-                                                                        {!notification.isRead && (
-                                                                            <div className="h-2 w-2 rounded-full bg-blue-500" />
-                                                                        )}
+                                                                                notification.projectName
+                                                                            }{" "}
+                                                                            -{" "}
+                                                                            {getNotificationMessage(
+                                                                                notification.type
+                                                                            )}
+                                                                        </p>
+                                                                        <p className="text-xs text-muted-foreground">
+                                                                            {getRelativeTime(
+                                                                                notification.createdAt
+                                                                            )}
+                                                                        </p>
                                                                     </div>
-                                                                    <p className="text-sm text-muted-foreground mb-2">
-                                                                        {
-                                                                            notification.projectName
-                                                                        }{" "}
-                                                                        -{" "}
-                                                                        {getNotificationMessage(
-                                                                            notification.type
-                                                                        )}
-                                                                    </p>
-                                                                    <p className="text-xs text-muted-foreground">
-                                                                        {getRelativeTime(
-                                                                            notification.createdAt
-                                                                        )}
-                                                                    </p>
-                                                                </div>
 
-                                                                <DropdownMenu>
-                                                                    <DropdownMenuTrigger
-                                                                        asChild
-                                                                    >
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="sm"
-                                                                            className="h-8 w-8 p-0"
-                                                                            onClick={(
-                                                                                e
-                                                                            ) =>
-                                                                                e.stopPropagation()
-                                                                            }
+                                                                    <DropdownMenu>
+                                                                        <DropdownMenuTrigger
+                                                                            asChild
                                                                         >
-                                                                            <MoreVertical className="h-4 w-4" />
-                                                                        </Button>
-                                                                    </DropdownMenuTrigger>
-                                                                    <DropdownMenuContent align="end">
-                                                                        {!notification.isRead && (
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="sm"
+                                                                                className="h-8 w-8 p-0"
+                                                                                onClick={(
+                                                                                    e
+                                                                                ) =>
+                                                                                    e.stopPropagation()
+                                                                                }
+                                                                            >
+                                                                                <MoreVertical className="h-4 w-4" />
+                                                                            </Button>
+                                                                        </DropdownMenuTrigger>
+                                                                        <DropdownMenuContent align="end">
+                                                                            {!notification.isRead && (
+                                                                                <DropdownMenuItem
+                                                                                    onClick={(
+                                                                                        e
+                                                                                    ) => {
+                                                                                        e.preventDefault();
+                                                                                        markAsRead(
+                                                                                            notification.notificationId
+                                                                                        );
+                                                                                    }}
+                                                                                >
+                                                                                    <Check className="h-4 w-4 mr-2" />
+                                                                                    읽음으로
+                                                                                    표시
+                                                                                </DropdownMenuItem>
+                                                                            )}
                                                                             <DropdownMenuItem
                                                                                 onClick={(
                                                                                     e
                                                                                 ) => {
                                                                                     e.preventDefault();
-                                                                                    markAsRead(
+                                                                                    deleteNotification(
                                                                                         notification.notificationId
                                                                                     );
                                                                                 }}
+                                                                                className="text-red-600"
                                                                             >
-                                                                                <Check className="h-4 w-4 mr-2" />
-                                                                                읽음으로
-                                                                                표시
+                                                                                <Trash2 className="h-4 w-4 mr-2" />
+                                                                                삭제
                                                                             </DropdownMenuItem>
-                                                                        )}
-                                                                        <DropdownMenuItem
-                                                                            onClick={(
-                                                                                e
-                                                                            ) => {
-                                                                                e.preventDefault();
-                                                                                deleteNotification(
-                                                                                    notification.notificationId
-                                                                                );
-                                                                            }}
-                                                                            className="text-red-600"
-                                                                        >
-                                                                            <Trash2 className="h-4 w-4 mr-2" />
-                                                                            삭제
-                                                                        </DropdownMenuItem>
-                                                                    </DropdownMenuContent>
-                                                                </DropdownMenu>
+                                                                        </DropdownMenuContent>
+                                                                    </DropdownMenu>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                </Link>
-                                            )
+                                                    </Link>
+                                                );
+                                            }
                                         )
                                     )}
                                 </div>

@@ -41,7 +41,6 @@ import ReactSelect from "react-select";
 import AddLabelModal from "../../board/_components/AddLabelModal";
 import PlusIcon from "@/components/icons/PlusIcon";
 
-
 interface IssueFormData {
     project_id: string;
     title: string;
@@ -104,6 +103,7 @@ export default function AddIssueModal({
         tag: "",
         createBranch: false,
         labels: newLabel ? [newLabel] : [], // newLabel이 null이면 빈 배열
+
     });
 
     const [projectMembers, setProjectMembers] = useState<User[]>([]);
@@ -114,6 +114,10 @@ export default function AddIssueModal({
     const [selectedColor, setSelectedColor] = useState("#3b82f6");
 
     const [label, setLabel] = useState<Label_issue[]>(newLabel ? [newLabel] : []);
+    const [deleteTargetLabelId, setDeleteTargetLabelId] = useState<
+        string | null
+    >(null);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -135,7 +139,7 @@ export default function AddIssueModal({
         }
 
         formData.tag = projectTag;
-        
+
         if (formData.assigneeId === "none") formData.assigneeId = "";
         // createTask에 formData 전체를 넘김 (KanbanBoard에서 서버에 POST 후 fetchLatestTasks 실행)
         createTask(formData);
@@ -339,7 +343,7 @@ export default function AddIssueModal({
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="story">
-                                            스토리
+                                            핫픽스
                                         </SelectItem>
                                         <SelectItem value="task">
                                             작업
@@ -429,10 +433,18 @@ export default function AddIssueModal({
                                                     <div
                                                         {...props.innerProps}
                                                         className={
-                                                            props.isFocused
-                                                                ? "bg-gray-100 px-3 py-2 flex items-center gap-2"
-                                                                : "px-3 py-2 flex items-center gap-2"
+                                                            (props.isFocused
+                                                                ? "bg-gray-100 "
+                                                                : "") +
+                                                            "px-3 py-2 flex items-center justify-between gap-2 w-full"
                                                         }
+                                                        style={{
+                                                            display: "flex",
+                                                            alignItems:
+                                                                "center",
+                                                            justifyContent:
+                                                                "space-between",
+                                                        }}
                                                     >
                                                         <span
                                                             style={{
@@ -445,9 +457,53 @@ export default function AddIssueModal({
                                                                 height: 12,
                                                                 borderRadius:
                                                                     "50%",
+                                                                marginRight: 8,
                                                             }}
                                                         />
-                                                        {props.data.label}
+                                                        <span
+                                                            style={{
+                                                                flex: 1,
+                                                                minWidth: 0,
+                                                                overflow:
+                                                                    "hidden",
+                                                                textOverflow:
+                                                                    "ellipsis",
+                                                                whiteSpace:
+                                                                    "nowrap",
+                                                            }}
+                                                        >
+                                                            {props.data.label}
+                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            className="ml-2"
+                                                            style={{
+                                                                fontSize:
+                                                                    "18px",
+                                                                color: "#aaa",
+                                                                cursor: "pointer",
+                                                            }}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setDeleteTargetLabelId(
+                                                                    props.data
+                                                                        .id
+                                                                );
+                                                                setShowDeleteConfirm(
+                                                                    true
+                                                                );
+                                                            }}
+                                                            onMouseOver={(e) =>
+                                                                (e.currentTarget.style.color =
+                                                                    "#ef4444")
+                                                            }
+                                                            onMouseOut={(e) =>
+                                                                (e.currentTarget.style.color =
+                                                                    "#aaa")
+                                                            }
+                                                        >
+                                                            ×
+                                                        </button>
                                                     </div>
                                                 ),
                                                 MultiValueLabel: (props) => (
@@ -731,6 +787,41 @@ export default function AddIssueModal({
                     </DialogFooter>
                 </form>
             </DialogContent>
+            {showDeleteConfirm && (
+                <Dialog
+                    open={showDeleteConfirm}
+                    onOpenChange={setShowDeleteConfirm}
+                >
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>레이블 삭제</DialogTitle>
+                        </DialogHeader>
+                        <div className="py-4">
+                            정말 이 레이블을 삭제하시겠습니까?
+                        </div>
+                        <DialogFooter>
+                            <Button
+                                variant="outline"
+                                onClick={() => setShowDeleteConfirm(false)}
+                            >
+                                취소
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                onClick={async () => {
+                                    if (deleteTargetLabelId) {
+                                        await deleteLabel(deleteTargetLabelId);
+                                    }
+                                    setShowDeleteConfirm(false);
+                                    setDeleteTargetLabelId(null);
+                                }}
+                            >
+                                삭제
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            )}
         </Dialog>
     );
 }
