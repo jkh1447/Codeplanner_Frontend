@@ -265,11 +265,11 @@ export default function IssueDetail() {
 
                 // displayName은 현재 사용자 이름으로 추가
                 setComments([
-                    ...comments,
                     {
                         ...newCommentData,
                         displayName: currentUser.display_name, // 필드명 수정
                     },
+                    ...comments,
                 ]);
                 setNewComment("");
             } else {
@@ -855,7 +855,7 @@ export default function IssueDetail() {
                                                             </div>
                                                         </div>
                                                     ) : (
-                                                        <div className="text-sm bg-gray-50 p-4 rounded-lg border border-gray-200 leading-relaxed">
+                                                        <div className="text-sm bg-gray-50 p-4 rounded-lg border border-gray-200 leading-relaxed whitespace-pre-line">
                                                             {renderCommentWithMentions(
                                                                 comment.content
                                                             )}

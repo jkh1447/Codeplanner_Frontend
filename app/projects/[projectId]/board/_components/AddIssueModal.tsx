@@ -338,7 +338,7 @@ export default function AddIssueModal({
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="story">
-                                            스토리
+                                            핫픽스
                                         </SelectItem>
                                         <SelectItem value="task">
                                             작업

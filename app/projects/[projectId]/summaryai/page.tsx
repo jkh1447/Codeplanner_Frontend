@@ -26,6 +26,7 @@ import {
 import { getApiUrl } from "@/lib/api"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
+import Spinner from '@/components/ui/spinner'
 
 interface ActivityData {
   id: string
@@ -73,6 +74,22 @@ interface ContributionAnalysisResponse {
   peerFeedbackSummary?: string
 }
 
+// 댓글 내용에서 @[이름](id) 패턴을 @이름만 보이게 가공
+function renderCommentWithMentions(content: string) {
+  return content.split(/(@\[[^\]]+\]\([^\)]+\))/g).map((part, i) => {
+    const match = part.match(/^@\[(.+?)\]\([^\)]+\)$/);
+    if (match) {
+      const display = match[1];
+      return (
+        <span key={i} className="bg-blue-100 text-blue-800 rounded px-1">
+          @{display}
+        </span>
+      );
+    }
+    return part;
+  });
+}
+
 export default function SummaryAIPage() {
   const params = useParams()
   const projectId = params?.projectId as string
@@ -85,6 +102,8 @@ export default function SummaryAIPage() {
   const [showPeerFeedback, setShowPeerFeedback] = useState(false)
   const [peerFeedbackLoading, setPeerFeedbackLoading] = useState(false)
   const [peerFeedback, setPeerFeedback] = useState<string | null>(null)
+  const [loadingStep, setLoadingStep] = useState<string>('')
+  const [customLoadingMessage, setCustomLoadingMessage] = useState<string | null>(null)
 
   const [owner, setOwner] = useState<string>("")
   const [repo, setRepo] = useState<string>("")
@@ -93,6 +112,102 @@ export default function SummaryAIPage() {
   const [userStats, setUserStats] = useState<ContributionStats | null>(null)
   const [collaborationFeedback, setCollaborationFeedback] = useState<CollaborationFeedback | null>(null)
   const [userActivities, setUserActivities] = useState<ActivityData[] | null>(null)
+
+  // 기존: analyzeContribution이 AI 요약+기여도 분석을 모두 담당
+  // 분리: analyzeContribution은 기여도 분석(통계/협업 스타일)만 담당, AI 요약은 별도 함수로
+
+  // 1. 기여도 분석(통계/협업 스타일) 자동 실행
+  useEffect(() => {
+    if (!projectId) return;
+    analyzeContribution();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]);
+
+  // 2. AI 요약(프로젝트 전체 요약)은 버튼 클릭 시만 실행
+  const analyzeProjectSummary = async () => {
+    if (!projectId) {
+      setError('프로젝트 ID가 필요합니다.');
+      return;
+    }
+    setLoading(true);
+    setLoadingStep('ai_summary');
+    setCustomLoadingMessage('Summary AI가 프로젝트 분석중...');
+    try {
+      const response = await fetch(`${getApiUrl()}/summaryai/analyze-contribution`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          projectId,
+          ...(owner && { owner }),
+          ...(repo && { repo }),
+          includeMergeCommits,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error('분석 요청에 실패했습니다.');
+      }
+      const data = await response.json();
+      setAnalysis(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+      setLoadingStep('');
+      setCustomLoadingMessage(null);
+    }
+  };
+
+  // 기존 analyzeContribution은 기여도 분석(통계/협업 스타일)만 담당하도록 수정
+  const analyzeContribution = async () => {
+    if (!projectId) {
+      setError('프로젝트 ID가 필요합니다.');
+      return;
+    }
+    setLoading(true);
+    setLoadingStep('github_pr');
+    setError(null);
+    try {
+      // 단계별 로딩 시뮬레이션 (실제 API 분리 시 각 단계별 setLoadingStep 호출)
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      setLoadingStep('github_commit');
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      setLoadingStep('timeline');
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      setLoadingStep('ai_collab');
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      // 실제 기여도 분석 API 호출 (base-stats)
+      const response = await fetch(`${getApiUrl()}/summaryai/base-stats`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ projectId }),
+      });
+      if (!response.ok) {
+        throw new Error('기여도 분석 요청에 실패했습니다.');
+      }
+      const data = await response.json();
+      setUserStats(data.userStats);
+      setCollaborationFeedback(data.collaborationFeedback);
+      setUserActivities(data.userActivities);
+      setLoadingStep('done'); // 반드시 데이터 세팅 후에만 'done'
+      setLoading(false);      // 반드시 데이터 세팅 후에만 false
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.');
+      setLoadingStep('done');
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const ownerFromUrl = urlParams.get("owner")
+    const repoFromUrl = urlParams.get("repo")
+    if (ownerFromUrl) setOwner(ownerFromUrl)
+    if (repoFromUrl) setRepo(repoFromUrl)
+  }, [])
 
   useEffect(() => {
     if (!projectId) return
@@ -114,66 +229,14 @@ export default function SummaryAIPage() {
     fetchProjectTitle()
   }, [projectId])
 
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search)
-    const ownerFromUrl = urlParams.get("owner")
-    const repoFromUrl = urlParams.get("repo")
-    if (ownerFromUrl) setOwner(ownerFromUrl)
-    if (repoFromUrl) setRepo(repoFromUrl)
-  }, [])
-
-  useEffect(() => {
-    if (!projectId) return
-    const fetchBaseStats = async () => {
-      try {
-        const response = await fetch(`${getApiUrl()}/summaryai/base-stats`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ projectId }),
-        })
-        if (response.ok) {
-          const data = await response.json()
-          setUserStats(data.userStats)
-          setCollaborationFeedback(data.collaborationFeedback)
-          setUserActivities(data.userActivities)
-        }
-      } catch (e) {}
-    }
-    fetchBaseStats()
-  }, [projectId])
-
-  const analyzeContribution = async () => {
-    if (!projectId) {
-      setError("프로젝트 ID가 필요합니다.")
-      return
-    }
-    setLoading(true)
-    setError(null)
-    try {
-      const response = await fetch(`${getApiUrl()}/summaryai/analyze-contribution`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          projectId,
-          ...(owner && { owner }),
-          ...(repo && { repo }),
-          includeMergeCommits,
-        }),
-      })
-      if (!response.ok) {
-        throw new Error("분석 요청에 실패했습니다.")
-      }
-      const data = await response.json()
-      setAnalysis(data)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.")
-    } finally {
-      setLoading(false)
-    }
+  const loadingMessages: Record<string, string> = {
+    github_pr: 'Github에서 PR 가져오는 중...',
+    github_commit: '커밋 내역 받아오는 중...',
+    ai_collab: '협업 스타일 분석 중...',
+    timeline: '타임라인 작성하는 중...',
+    ai_summary: 'Summary AI가 프로젝트 분석중...',
+    peer_feedback: 'Summary AI가 팀원 피드백 분석중...',
+    done: '',
   }
 
   const handleCopyMarkdown = () => {
@@ -425,10 +488,10 @@ export default function SummaryAIPage() {
                         </span>
                       </div>
                       <h4 className="font-medium text-gray-800 mb-1 line-clamp-2">
-                        {activity.title || activity.content?.substring(0, 100)}
+                        {activity.title || (activity.content ? renderCommentWithMentions(activity.content.substring(0, 100)) : null)}
                       </h4>
                       {activity.content && activity.content.length > 100 && (
-                        <p className="text-sm text-gray-600 line-clamp-2">{activity.content.substring(0, 100)}...</p>
+                        <p className="text-sm text-gray-600 line-clamp-2">{renderCommentWithMentions(activity.content.substring(0, 100))}...</p>
                       )}
                     </div>
                   </div>
@@ -462,11 +525,11 @@ export default function SummaryAIPage() {
                             </span>
                           </div>
                           <h4 className="font-medium text-gray-800 mb-1 line-clamp-2">
-                            {activity.title || activity.content?.substring(0, 100)}
+                            {activity.title || (activity.content ? renderCommentWithMentions(activity.content.substring(0, 100)) : null)}
                           </h4>
                           {activity.content && activity.content.length > 100 && (
                             <p className="text-sm text-gray-600 line-clamp-2">
-                              {activity.content.substring(0, 100)}...
+                              {renderCommentWithMentions(activity.content.substring(0, 100))}...
                             </p>
                           )}
                         </div>
@@ -482,9 +545,11 @@ export default function SummaryAIPage() {
 
   const handlePeerFeedbackAnalyze = async () => {
     if (!projectId) return
-    console.log("팀원 피드백 분석 요청")
     setPeerFeedbackLoading(true)
     setPeerFeedback(null)
+    setLoading(true)
+    setLoadingStep('peer_feedback')
+    setCustomLoadingMessage('Summary AI가 팀원 피드백 분석중...')
     try {
       const response = await fetch("/api/summaryai/analyze-contribution", {
         method: "POST",
@@ -495,18 +560,16 @@ export default function SummaryAIPage() {
       if (response.ok) {
         const data = await response.json()
         setPeerFeedback(data.peerFeedbackSummary)
-        console.log("[팀원 피드백 요약]", data.peerFeedbackSummary)
-        if (!data.peerFeedbackSummary) {
-          console.log("팀원 피드백 요약이 비어 있음")
-        }
       } else {
-        console.error("팀원 피드백 분석 API 응답 실패")
+        setPeerFeedback("피드백 분석 중 오류 발생")
       }
     } catch (e) {
       setPeerFeedback("피드백 분석 중 오류 발생")
-      console.error("팀원 피드백 분석 중 오류", e)
     } finally {
       setPeerFeedbackLoading(false)
+      setLoading(false)
+      setLoadingStep('')
+      setCustomLoadingMessage(null)
     }
   }
 
@@ -519,15 +582,15 @@ export default function SummaryAIPage() {
             <div className="space-y-3">
               <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
                 <div className="p-2 bg-blue-100 rounded-lg">
-                  <BarChart3 className="h-6 w-6 text-blue-600" />
+                  <BarChart3 className="h-6 w-6 text-slate-600" />
                 </div>
-                프로젝트 회고 및 기여도 분석
+                Summary AI 
               </h1>
               <div className="space-y-2">
                 <div className="text-gray-600 flex items-center gap-2">
                   <span className="font-medium">프로젝트:</span>
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                    {projectTitle || projectId}
+                  <Badge variant="outline" className="bg-slate-50 text-slate-700 border-blue-200">
+                    {projectTitle}
                   </Badge>
                   {owner && repo && (
                     <>
@@ -539,45 +602,44 @@ export default function SummaryAIPage() {
                   )}
                 </div>
                 <p className="text-sm text-gray-500">
-                  프로젝트 내부 데이터를 기반으로 분석합니다. GitHub 정보가 있으면 커밋과 PR 정보도 포함됩니다.
+                  프로젝트 내부, PR, 커밋 데이터 기반으로 전체 요약을 제공합니다. 이슈에 달린 댓글을 분석한 피드백도 받을 수 있습니다.
                 </p>
               </div>
             </div>
 
             <div className="flex flex-col gap-3">
-              <label className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
-                <input
-                  type="checkbox"
-                  checked={includeMergeCommits}
-                  onChange={(e) => setIncludeMergeCommits(e.target.checked)}
-                  className="rounded border-gray-300"
-                />
-                머지 커밋 포함
-              </label>
-
-              <div className="flex gap-2">
-                <Button
-                  onClick={analyzeContribution}
-                  disabled={loading || !projectId}
-                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
-                >
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <TrendingUp className="h-4 w-4" />}
-                  AI 분석 시작
-                </Button>
-
-                <Button
-                  onClick={handlePeerFeedbackAnalyze}
-                  disabled={peerFeedbackLoading || !projectId}
-                  variant="outline"
-                  className="flex items-center gap-2 border-gray-300 hover:bg-gray-50 bg-transparent"
-                >
-                  {peerFeedbackLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Users className="h-4 w-4" />}
-                  팀원 피드백 분석
-                </Button>
-              </div>
+              <Button
+                onClick={analyzeProjectSummary}
+                disabled={loading || !projectId}
+                className="flex items-center gap-2 bg-slate-600 hover:bg-slate-700 text-white shadow-lg px-7 py-3 text-lg"
+              >
+                <TrendingUp className="h-4 w-4" />
+                AI 분석 시작
+              </Button>
+              <Button
+                onClick={handlePeerFeedbackAnalyze}
+                disabled={peerFeedbackLoading || !projectId}
+                variant="outline"
+                className="flex items-center gap-2 border-gray-300 hover:bg-gray-50 bg-transparent px-7 py-3 text-lg"
+              >
+                {peerFeedbackLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Users className="h-4 w-4" />}
+                팀원 피드백 분석
+              </Button>
             </div>
           </div>
         </div>
+
+        {/* 단계별 로딩 메시지 */}
+        {loading && loadingStep && loadingStep !== 'done' && (
+          <div className="fixed inset-0 flex items-center justify-center z-50 bg-white/20 pointer-events-none">
+            <div className="flex flex-col items-center gap-3 p-6 bg-white rounded-xl shadow-lg border">
+              <Spinner size={32} color="#64748b" />
+              <span className="text-slate-700 font-semibold text-lg">
+                {customLoadingMessage || loadingMessages[loadingStep]}
+              </span>
+            </div>
+          </div>
+        )}
 
         {error && (
           <Alert className="border-red-200 bg-red-50 shadow-lg rounded-xl">

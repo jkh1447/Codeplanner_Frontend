@@ -7,7 +7,7 @@ import React, { useEffect, useState } from "react";
 import { CSS } from "@dnd-kit/utilities";
 import TaskDrawer from "../../list/common/TaskDrawer";
 import { getApiUrl } from "@/lib/api";
-import { Book, Bug, SquareCheckBig } from "lucide-react";
+import { Book, Bug, Flame, SquareCheckBig, Calendar, AlertTriangle } from 'lucide-react';
 import { differenceInDays, parseISO } from "date-fns";
 
 interface Props {
@@ -21,6 +21,7 @@ function TaskCard({ task, deleteTask, projectId, onSave }: Props) {
     const [mouseIsOver, setMouseIsOver] = useState(false);
     const [showDrawer, setShowDrawer] = useState(false);
     const [currentUserName, setCurrentUserName] = useState("");
+
     const {
         setNodeRef,
         attributes,
@@ -37,8 +38,7 @@ function TaskCard({ task, deleteTask, projectId, onSave }: Props) {
         disabled: false,
     });
 
-    const [assignee_display_name, setAssigneeDisplayName] =
-        useState<string>("");
+    const [assignee_display_name, setAssigneeDisplayName] = useState<string>("");
 
     const getAssigneeDisplayName = async () => {
         const res = await fetch(`${getApiUrl()}/user/${task.assignee_id}`, {
@@ -47,23 +47,18 @@ function TaskCard({ task, deleteTask, projectId, onSave }: Props) {
                 "Content-Type": "application/json",
             },
         });
-        // 응답 body를 먼저 text로 읽음
+        
         const text = await res.text();
-
         if (text) {
-            // body가 비어있지 않으면 JSON 파싱
             try {
                 const data = JSON.parse(text);
                 setAssigneeDisplayName(data.displayName || "N/A");
-                // console.log("assignee_display_name", data);
             } catch (e) {
                 setAssigneeDisplayName("N/A");
                 console.error("JSON 파싱 에러:", e);
             }
         } else {
-            // body가 비어있으면 N/A로 처리
             setAssigneeDisplayName("N/A");
-            // console.log("assignee_display_name: N/A (body empty)");
         }
     };
 
@@ -76,29 +71,62 @@ function TaskCard({ task, deleteTask, projectId, onSave }: Props) {
         transform: CSS.Transform.toString(transform),
     };
 
-    // 마감일에 따른 테두리 색상 결정 (색상 단계별)
-    let borderClass = "border-gray-200 border"; // 기본: 여유 있음
-    if (task.due_date) {
+    // 마감일에 따른 스타일 결정 (왼쪽 테두리 + 배경색)
+    const getUrgencyStyle = () => {
+        if (task.status === "DONE") return "bg-white hover:bg-gray-50";
+        if (!task.due_date) return "bg-white hover:bg-gray-50";
+
         const dueDate = parseISO(task.due_date);
         const today = new Date();
         const daysLeft = differenceInDays(dueDate, today);
-        if (daysLeft <= 0) {
-            borderClass = "border-red-600 border"; // 이미 연체/오늘
+
+        if (daysLeft <= 1) {
+            return "border-l-4 border-l-red-500 bg-red-50 hover:bg-red-100";
         } else if (daysLeft <= 3) {
-            borderClass = "border-orange-400 border"; // 1~3일 임박
-        } else if (daysLeft <= 7) {
-            borderClass = "border-yellow-400 border"; // 4~7일 다가옴
-        } else {
-            borderClass = "border-gray-200 border"; // 8일 이상
+            return "border-l-4 border-l-yellow-500 bg-yellow-50 hover:bg-yellow-100";
         }
-    }
+        
+        return "bg-white hover:bg-gray-50";
+    };
+
+    // 마감일 뱃지 생성
+    const getUrgencyBadge = () => {
+        if (!task.due_date || task.status === "DONE") return null;
+
+        const dueDate = parseISO(task.due_date);
+        const today = new Date();
+        const daysLeft = differenceInDays(dueDate, today);
+
+        if (daysLeft <= 1) {
+            return (
+                <div className="flex items-center gap-1 px-2 py-1 bg-red-500 text-white rounded-full text-xs font-semibold">
+                    <AlertTriangle className="w-3 h-3" />
+                    마감
+                </div>
+            );
+        } else if (daysLeft <= 2) {
+            return (
+                <div className="flex items-center gap-1 px-2 py-1 bg-yellow-500 text-white rounded-full text-xs font-semibold">
+                    <Calendar className="w-3 h-3" />
+                    {daysLeft}일 남음
+                </div>
+            );
+        }
+
+        return (
+            <div className="flex items-center gap-1 px-2 py-1 bg-gray-200 text-gray-700 rounded-full text-xs">
+                <Calendar className="w-3 h-3" />
+                {daysLeft}일 남음
+            </div>
+        );
+    };
 
     if (isDragging) {
         return (
             <div
                 ref={setNodeRef}
                 style={style}
-                className="bg-white p-2.5 h-[120px] min-h-[120px] items-center flex flex-col justify-center rounded-xl border-2 border-blue-500 cursor-grab relative opacity-30"
+                className={`${getUrgencyStyle()} p-2.5 h-[120px] min-h-[120px] items-center flex flex-col justify-center rounded-xl border-2 border-blue-500 cursor-grab relative opacity-30`}
             />
         );
     }
@@ -110,37 +138,50 @@ function TaskCard({ task, deleteTask, projectId, onSave }: Props) {
                 style={style}
                 {...attributes}
                 {...listeners}
-                className={`bg-white p-3 min-h-[100px] flex flex-col rounded-xl shadow-md ${borderClass} hover:ring-2 hover:ring-inset hover:ring-blue-300 cursor-pointer relative group transition-all`}
+                className={`${getUrgencyStyle()} p-3 min-h-[100px] flex flex-col rounded-xl shadow-md hover:ring-2 hover:ring-inset hover:ring-blue-300 cursor-pointer relative group transition-all`}
                 onMouseEnter={() => setMouseIsOver(true)}
                 onMouseLeave={() => setMouseIsOver(false)}
                 onClick={() => setShowDrawer(true)}
             >
                 <div className="flex flex-col h-full min-h-[80px] relative">
-                    <span
-                        className="font-medium text-base text-gray-800 break-words whitespace-pre-line block"
-                        style={{ wordBreak: "break-all" }}
-                    >
-                        {task.title}
-                    </span>
-                    {/* 레이블 뱃지 */}
-                    {Array.isArray(task.labels) && task.labels.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-2">
-                            {task.labels.map((label: any) => (
-                                <span
-                                    key={label.id.toString()}
-                                    className="px-2 py-0.5 rounded text-xs font-semibold"
-                                    style={{
-                                        backgroundColor: label.color,
-                                        color: "#fff",
-                                        minWidth: "2rem",
-                                        display: "inline-block",
-                                    }}
-                                >
-                                    {label.name}
-                                </span>
-                            ))}
+                    <div className="flex items-start justify-between mb-2">
+                        <span
+                            className="font-medium text-base text-gray-800 break-words whitespace-pre-line block flex-1"
+                            style={{ wordBreak: "break-all" }}
+                        >
+                            {task.title}
+                        </span>
+                        {/* getUrgencyBadge() 제거됨 */}
+                    </div>
+
+                    {/* 레이블 뱃지 + 마감일 뱃지 한 줄에 배치 (항상 같은 줄) */}
+                    {(Array.isArray(task.labels) && task.labels.length > 0) || task.due_date ? (
+                        <div className="flex flex-row items-center mt-2 w-full min-h-[1.5rem]">
+                            {/* 레이블 뱃지 (왼쪽) */}
+                            <div className="flex flex-wrap gap-2">
+                                {Array.isArray(task.labels) && task.labels.length > 0 &&
+                                    task.labels.map((label: any) => (
+                                        <span
+                                            key={label.id.toString()}
+                                            className="px-2 py-0.5 rounded text-xs font-semibold"
+                                            style={{
+                                                backgroundColor: label.color,
+                                                color: "#fff",
+                                                minWidth: "2rem",
+                                                display: "inline-block",
+                                            }}
+                                        >
+                                            {label.name}
+                                        </span>
+                                    ))}
+                            </div>
+                            {/* 마감일 뱃지 (오른쪽) */}
+                            {task.due_date && task.status !== "DONE" && (
+                                <span className="ml-auto">{getUrgencyBadge()}</span>
+                            )}
                         </div>
-                    )}
+                    ) : null}
+
                     {/* 담당자 표시 (오른쪽 하단, 담당자 있을 때만) */}
                     <div className="flex-1" />
                     
@@ -202,13 +243,13 @@ function TaskCard({ task, deleteTask, projectId, onSave }: Props) {
                                 />
                             )}
                             {task.issue_type === "story" && (
-                                <Book
+                                <Flame
                                     className="w-5 h-5 mr-1"
-                                    color="#ff9500"
+                                    color="#ff0000"
                                 />
                             )}
                             {task.issue_type === "bug" && (
-                                <Bug className="w-5 h-5 mr-1" color="#ff0000" />
+                                <Bug className="w-5 h-5 mr-1" color="#008000" />
                             )}
                             {task.tag}
                         </span>
@@ -227,23 +268,7 @@ function TaskCard({ task, deleteTask, projectId, onSave }: Props) {
                                 </div>
                             )}
                     </div>
-                    {/* {mouseIsOver && (
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                deleteTask(task.id, projectId);
-                            }}
-                            className="stroke-white absolute right-3 top-3 bg-gray-300 p-1.5 rounded hover:bg-red-400 hover:stroke-white opacity-80 hover:opacity-100 transition"
-                        >
-                            <TrashIcon />
-                        </button>
-                    )} */}
                 </div>
-                {/* <div className="absolute bottom-3 right-3">
-                    <div className="border-2 px-2 py-1 border-white shadow bg-gray-200 flex items-center justify-center">
-                        {assignee_display_name ? assignee_display_name : "N/A"}
-                    </div>
-                </div> */}
             </div>
             {showDrawer && (
                 <TaskDrawer
