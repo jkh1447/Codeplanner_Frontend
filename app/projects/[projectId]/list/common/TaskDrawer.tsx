@@ -870,43 +870,6 @@ export default function TaskDrawer({
                                                                                                 .label
                                                                                         }
                                                                                     </span>
-                                                                                    <button
-                                                                                        type="button"
-                                                                                        className="ml-1"
-                                                                                        style={{
-                                                                                            fontSize:
-                                                                                                "18px",
-                                                                                            color: "#aaa",
-                                                                                            cursor: "pointer",
-                                                                                        }}
-                                                                                        onClick={(
-                                                                                            e
-                                                                                        ) => {
-                                                                                            e.stopPropagation();
-                                                                                            setDeleteTargetLabelId(
-                                                                                                props
-                                                                                                    .data
-                                                                                                    .id
-                                                                                            );
-                                                                                            setShowDeleteConfirm(
-                                                                                                true
-                                                                                            );
-                                                                                        }}
-                                                                                        onMouseOver={(
-                                                                                            e
-                                                                                        ) =>
-                                                                                            (e.currentTarget.style.color =
-                                                                                                "#ef4444")
-                                                                                        }
-                                                                                        onMouseOut={(
-                                                                                            e
-                                                                                        ) =>
-                                                                                            (e.currentTarget.style.color =
-                                                                                                "#aaa")
-                                                                                        }
-                                                                                    >
-                                                                                        ×
-                                                                                    </button>
                                                                                 </div>
                                                                             ),
                                                                     }}
