@@ -20,6 +20,7 @@ export type Task = {
     position: number;
     tag: string;
     labels: Label_issue[];
+    reviewers?: User_detail[];
 };
 
 export type ColumnWithTasks = Column & {
@@ -106,7 +107,10 @@ export type Issue_detail = {
 export type User_detail = {
     id: string;
     displayName: string;
-    
+    status?: string;
+    reviewComment?: string;
+    reviewedAt?: string;
+    assignedAt?: string;
 };
 
 export type Label_project = {
