@@ -296,8 +296,12 @@ export default function TaskDrawer({
                         status: formData.status,
                         assigneeId: formData.assigneeId,
                         reporterId: formData.reporterId,
-                        startDate: formData.startDate,
-                        dueDate: formData.dueDate,
+                        startDate: formData.startDate
+                            ? formData.startDate.toISOString()
+                            : undefined,
+                        dueDate: formData.dueDate
+                            ? formData.dueDate.toISOString()
+                            : undefined,
                         labels: formData.labels,
                     }),
                 }
