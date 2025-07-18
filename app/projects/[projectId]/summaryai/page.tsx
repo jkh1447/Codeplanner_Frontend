@@ -739,7 +739,7 @@ export default function SummaryAIPage() {
                     setCopied(true)
                     setTimeout(() => setCopied(false), 1500)
                   }}
-                  className="flex items-center gap-2 hover:bg-white"
+                  className="flex items-center gap-2 hover:bg-gray-50 bg-transparent"
                 >
                   {copied ? (
                     <>
