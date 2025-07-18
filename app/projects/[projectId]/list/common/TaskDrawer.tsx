@@ -4,6 +4,7 @@ import { getApiUrl } from "@/lib/api";
 import { useState, useEffect } from "react";
 import GitCommitIcon from "@/components/icons/GitCommitIcon";
 import CommitListModal from "./CommitListModal";
+import ReviewCommentModal from "./ReviewCommentModal";
 import {
     ArrowBigLeftDash,
     GitCommitHorizontal,
@@ -120,6 +121,12 @@ export default function TaskDrawer({
     const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
     const [showReporterDropdown, setShowReporterDropdown] = useState(false);
     const [showCommitModal, setShowCommitModal] = useState(false);
+    
+    // 리뷰 관련 상태
+    const [currentUser, setCurrentUser] = useState<any>(null);
+    const [isReviewer, setIsReviewer] = useState(false);
+    const [showReviewCommentModal, setShowReviewCommentModal] = useState(false);
+    const [reviewCommentType, setReviewCommentType] = useState<"assign" | "approve" | "reject">("approve");
 
     // 레이블 관련 상태
     const [label, setLabel] = useState<any[]>([]);
@@ -152,6 +159,36 @@ export default function TaskDrawer({
             document.removeEventListener("mousedown", handleClickOutside);
         };
     }, [showAssigneeDropdown, showReporterDropdown]);
+
+    // 현재 사용자 정보 가져오기 및 리뷰어 여부 확인
+    useEffect(() => {
+        const fetchCurrentUser = async () => {
+            try {
+                const response = await fetch(`${getApiUrl()}/user/me`, {
+                    method: "GET",
+                    credentials: "include",
+                });
+                if (response.ok) {
+                    const userData = await response.json();
+                    setCurrentUser(userData);
+                    
+                    // 현재 사용자가 지정된 리뷰어인지 확인
+                    if (task.status === "IN_REVIEW" && task.reviewers && Array.isArray(task.reviewers)) {
+                        const isUserReviewer = task.reviewers.some(
+                            reviewer => reviewer.id === userData.id
+                        );
+                        setIsReviewer(isUserReviewer);
+                    } else {
+                        setIsReviewer(false);
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to fetch current user:", error);
+            }
+        };
+        
+        fetchCurrentUser();
+    }, [task.reviewers, task.status]);
 
     // 멤버 리스트 불러오기 및 현재 담당자/보고자 이름 설정
     useEffect(() => {
@@ -324,6 +361,118 @@ export default function TaskDrawer({
         } finally {
             setLoading(false);
         }
+    };
+
+    // 리뷰 승인 버튼 클릭 시 댓글 모달 열기
+    const handleApproveReview = () => {
+        if (!currentUser || !isReviewer) {
+            setError("리뷰 권한이 없습니다.");
+            return;
+        }
+        setReviewCommentType("approve");
+        setShowReviewCommentModal(true);
+    };
+
+    // 리뷰 거부 버튼 클릭 시 댓글 모달 열기
+    const handleRejectReview = () => {
+        if (!currentUser || !isReviewer) {
+            setError("리뷰 권한이 없습니다.");
+            return;
+        }
+        setReviewCommentType("reject");
+        setShowReviewCommentModal(true);
+    };
+
+    // 실제 리뷰 승인 처리
+    const processApproveReview = async (comment: string) => {
+        setLoading(true);
+        setError("");
+        try {
+            const response = await fetch(
+                `${getApiUrl()}/projects/${task.project_id}/issues/${task.id}/review/approve`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    credentials: "include",
+                    body: JSON.stringify({
+                        comment: comment || "", // 댓글 내용
+                    }),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("리뷰 승인에 실패했습니다.");
+            }
+
+            const result = await response.json();
+            setSuccessMessage("리뷰가 승인되었습니다!");
+            
+            if (onSave) {
+                onSave();
+            }
+            setTimeout(() => {
+                onClose();
+            }, 1000);
+        } catch (error: any) {
+            setError(error.message || "리뷰 승인 중 오류가 발생했습니다.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // 실제 리뷰 거부 처리
+    const processRejectReview = async (reason: string) => {
+        setLoading(true);
+        setError("");
+        try {
+            const response = await fetch(
+                `${getApiUrl()}/projects/${task.project_id}/issues/${task.id}/review/reject`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    credentials: "include",
+                    body: JSON.stringify({
+                        reason: reason.trim(),
+                    }),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("리뷰 거부에 실패했습니다.");
+            }
+
+            const result = await response.json();
+            setSuccessMessage("리뷰가 거부되었습니다!");
+            
+            if (onSave) {
+                onSave();
+            }
+            setTimeout(() => {
+                onClose();
+            }, 1000);
+        } catch (error: any) {
+            setError(error.message || "리뷰 거부 중 오류가 발생했습니다.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // 댓글 모달 확인 핸들러
+    const handleReviewCommentConfirm = async (comment: string) => {
+        if (reviewCommentType === "approve") {
+            await processApproveReview(comment);
+        } else if (reviewCommentType === "reject") {
+            await processRejectReview(comment);
+        }
+    };
+
+    // 댓글 모달 취소 핸들러
+    const handleReviewCommentCancel = () => {
+        setShowReviewCommentModal(false);
     };
 
     // 삭제 버튼 클릭시 DELETE 요청
@@ -663,6 +812,38 @@ export default function TaskDrawer({
                                                         </Select>
                                                     </div>
                                                 </div>
+
+                                                {/* 리뷰어 정보 (IN_REVIEW 상태일 때만 표시) */}
+                                                {task.status === "IN_REVIEW" && task.reviewers && task.reviewers.length > 0 && (
+                                                    <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                                        <Label className="font-medium text-yellow-800 mb-2 block">
+                                                            지정된 리뷰어
+                                                        </Label>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {task.reviewers.map((reviewer) => (
+                                                                <div
+                                                                    key={reviewer.id}
+                                                                    className="inline-flex items-center gap-2 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium"
+                                                                >
+                                                                    <span className="w-6 h-6 rounded-full bg-yellow-300 flex items-center justify-center text-xs font-bold">
+                                                                        {(reviewer.displayName || 'U').charAt(0).toUpperCase()}
+                                                                    </span>
+                                                                    <span>
+                                                                        {reviewer.displayName || 'Unknown'}
+                                                                    </span>
+                                                                    {currentUser && reviewer.id === currentUser.id && (
+                                                                        <span className="text-xs font-bold">(나)</span>
+                                                                    )}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                        {isReviewer && (
+                                                            <div className="mt-2 text-sm text-yellow-700 font-medium">
+                                                                💡 당신은 이 이슈의 리뷰어입니다. 하단에서 리뷰를 승인하거나 거부할 수 있습니다.
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
 
                                                 {/* 레이블 */}
                                                 <div className="grid grid-cols-2 gap-4">
@@ -1282,6 +1463,28 @@ export default function TaskDrawer({
                             삭제
                         </Button>
                         <div className="flex gap-2">
+                            {/* IN_REVIEW 상태이고 현재 사용자가 리뷰어인 경우 리뷰 버튼 표시 */}
+                            {task.status === "IN_REVIEW" && isReviewer && (
+                                <>
+                                    <Button
+                                        type="button"
+                                        className="bg-red-600 hover:bg-red-700 text-white"
+                                        disabled={loading}
+                                        onClick={handleRejectReview}
+                                    >
+                                        리뷰 거부
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        className="bg-green-600 hover:bg-green-700 text-white"
+                                        disabled={loading}
+                                        onClick={handleApproveReview}
+                                    >
+                                        리뷰 승인
+                                    </Button>
+                                </>
+                            )}
+                            
                             <Button
                                 type="button"
                                 variant="outline"
@@ -1290,14 +1493,18 @@ export default function TaskDrawer({
                             >
                                 취소
                             </Button>
-                            <Button
-                                type="button"
-                                className="bg-slate-600 hover:bg-slate-700 text-white"
-                                disabled={loading}
-                                onClick={handleSave}
-                            >
-                                {"저장"}
-                            </Button>
+                            
+                            {/* 리뷰어가 아니거나 IN_REVIEW 상태가 아닌 경우에만 저장 버튼 표시 */}
+                            {!(task.status === "IN_REVIEW" && isReviewer) && (
+                                <Button
+                                    type="button"
+                                    className="bg-slate-600 hover:bg-slate-700 text-white"
+                                    disabled={loading}
+                                    onClick={handleSave}
+                                >
+                                    저장
+                                </Button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -1310,6 +1517,19 @@ export default function TaskDrawer({
                 projectId={String(task.project_id)}
                 taskId={String(task.id)}
             />
+
+            {/* 리뷰 댓글 모달 */}
+            <ReviewCommentModal
+                open={showReviewCommentModal}
+                onOpenChange={setShowReviewCommentModal}
+                reviewType={reviewCommentType}
+                projectId={String(task.project_id)}
+                issueId={String(task.id)}
+                reviewers={task.reviewers || []}
+                onConfirm={handleReviewCommentConfirm}
+                onCancel={handleReviewCommentCancel}
+            />
+
             {showDeleteConfirm && (
                 <ConfirmDialog
                     open={showDeleteConfirm}
