@@ -50,7 +50,40 @@ export default function ReviewCommentModal({
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
-    ㅛ
+    const [projectMembers, setProjectMembers] = useState<data[]>([]);
+    const getProjectMembers = async () => {
+        const response = await fetch(
+            `${getApiUrl()}/projects/${projectId}/members`,
+            {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
+            }
+        );
+        const data = await response.json();
+        if (response.ok) {
+            const members: data[] = Array.isArray(data)
+                ? data
+                      .filter(
+                          (m) =>
+                              typeof m.id === "string" &&
+                              typeof m.display_name === "string" &&
+                              typeof m.email === "string"
+                      )
+                      .map((m) => ({
+                          id: String(m.id),
+                          display: String(m.display_name),
+                          email: String(m.email),
+                      }))
+                : [];
+
+            setProjectMembers(members);
+        } else {
+            console.error("Failed to fetch project members:", data);
+        }
+    };
 
     // 모달이 열릴 때마다 댓글 초기화
     useEffect(() => {
