@@ -27,7 +27,11 @@ export default function AddLabelModal({
     handleCancel,
 }: AddLabelModalProps) {
     return (
-        <DialogContent className="sm:max-w-md">
+        <DialogContent 
+            className="sm:max-w-md"
+            onPointerDownOutside={(e) => e.preventDefault()}
+            onEscapeKeyDown={(e) => e.preventDefault()}
+        >
             <DialogHeader>
                 <DialogTitle>새 레이블 추가</DialogTitle>
                 <DialogDescription>
