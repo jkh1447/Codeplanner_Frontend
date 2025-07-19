@@ -121,11 +121,11 @@ export default function AssignReviewerModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[80vh] flex flex-col">
+      <DialogContent className="max-w-lg max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>리뷰어 지정</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4 flex-1 overflow-hidden">
+        <div className="space-y-6 flex-1 overflow-hidden p-2">
           <div className="text-sm text-gray-600">
             <strong>이슈:</strong> {issueTitle}
           </div>
@@ -136,7 +136,7 @@ export default function AssignReviewerModal({
             </Label>
             
             {/* 검색 입력 */}
-            <div className="relative">
+            <div className="relative p-1">
               <input
                 type="text"
                 placeholder="구성원 이름 검색..."
@@ -147,7 +147,7 @@ export default function AssignReviewerModal({
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
                   ✕
                 </button>
@@ -155,7 +155,7 @@ export default function AssignReviewerModal({
             </div>
             
             {/* 멤버 목록 */}
-            <div className="space-y-2 max-h-64 overflow-y-auto border border-gray-200 rounded-md">
+            <div className="space-y-2 max-h-72 overflow-y-auto border border-gray-200 rounded-md p-1">
               {filteredMembers.length === 0 ? (
                 <div className="p-4 text-center text-gray-500 text-sm">
                   {searchQuery ? "검색 결과가 없습니다." : "구성원이 없습니다."}
