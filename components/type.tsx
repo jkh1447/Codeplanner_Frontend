@@ -10,7 +10,7 @@ export type Task = {
     project_id: Id;
     title: string;
     description: string;
-  issue_type: string;
+    issue_type: string;
   prev_status: string;
     status: string;
     assignee_id: Id;
