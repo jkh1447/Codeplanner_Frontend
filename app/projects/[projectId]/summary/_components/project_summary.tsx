@@ -206,6 +206,17 @@ export default function SummaryPage() {
     return activityDate.toLocaleDateString('ko-KR');
   };
 
+
+  const formatType = (type: string) => {
+    switch (type) {
+      case "bug":
+        return "버그";
+      case "story":
+        return "핫픽스";
+      case "task":
+        return "작업";
+    }
+  }
   return (
     <div className="space-y-6 p-6">
       <div>
@@ -235,7 +246,7 @@ export default function SummaryPage() {
           <CardContent>
             <div className="text-2xl font-bold">{completedIssue}</div>
             <p className="text-xs text-muted-foreground">
-              {Math.round((completedIssue / allIssue) * 100)}% 완료율
+              {allIssue === 0 ? 0 : Math.round((completedIssue / allIssue) * 100)}% 완료율
             </p>
           </CardContent>
         </Card>
@@ -373,7 +384,7 @@ export default function SummaryPage() {
                 data={issueTypeData.map((item) => ({
                   ...item,
                   id: String(item.id),
-                  label: item.id,
+                  label: formatType(item.id),
                 }))}
                 margin={{ top: 40, right: 80, bottom: 80, left: 120 }}
                 total={allIssue}
@@ -381,7 +392,7 @@ export default function SummaryPage() {
                 columns={20}
                 motionStagger={2}
                 fillDirection="right"
-                colors={{ scheme: "set3" }}
+                colors={{ scheme: "set2" }}
                 legends={[
                   {
                     anchor: "top-left",
