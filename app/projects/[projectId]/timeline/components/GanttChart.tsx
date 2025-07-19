@@ -124,7 +124,7 @@ export default function GanttChart({
       // 스크롤 중인지 확인
       const isScrolling = ganttRef.current.querySelector('.gantt-container')?.classList.contains('scrolling');
       if (!isScrolling) {
-        ganttRef.current.innerHTML = "";
+      ganttRef.current.innerHTML = "";
       }
     }
     hasInitialized.current = true;
