@@ -215,7 +215,18 @@ export default function Header() {
                         <div
                             className="w-full max-w-[60rem]"
                             suppressHydrationWarning
-                        ></div>
+                        >
+                            {currentUserEmail === "dordyd11@gmail.com" && (
+                                <div className="flex justify-center">
+                                    <span className="text-purple-700 font-bold text-3xl">개발자</span>
+                                </div>
+                            )}
+                            {currentUserEmail === "prkty0@gmail.com" && (
+                                <div className="flex justify-center">
+                                    <span className="text-green-700 font-bold text-3xl">개발 PM</span>
+                                </div>
+                            )}
+                        </div>
                     </div>
                     <div
                         className="flex items-center gap-3"
