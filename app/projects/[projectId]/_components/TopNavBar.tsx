@@ -56,7 +56,6 @@ export default function Header() {
     const [currentUserName, setCurrentUserName] = useState("");
     const [currentUserEmail, setCurrentUserEmail] = useState("");
     const [currentUserNameFirst, setCurrentUserNameFirst] = useState("");
-    const [currentUserId, setCurrentUserId] = useState("");
 
     const handleLogout = async () => {
         try {
@@ -86,10 +85,8 @@ export default function Header() {
                 const data = await response.json();
                 console.log("display name: ", data.display_name);
                 console.log("display email: ", data.email);
-                console.log("user id: ", data.id);
                 setCurrentUserName(data.display_name);
                 setCurrentUserEmail(data.email);
-                setCurrentUserId(data.id);
                 setCurrentUserNameFirst(
                     data.display_name ? data.display_name[0] : ""
                 );
@@ -219,12 +216,12 @@ export default function Header() {
                             className="w-full max-w-[60rem]"
                             suppressHydrationWarning
                         >
-                            {currentUserId === "9e3c4729-e714-4b9f-b716-87b207e9d020" && (
+                            {currentUserEmail === "dordyd11@gmail.com" && (
                                 <div className="flex justify-center">
                                     <span className="text-purple-700 font-bold text-3xl">개발자</span>
                                 </div>
                             )}
-                            {currentUserId === "9f2da821-e634-4cd1-b685-c92117e7d561" && (
+                            {currentUserEmail === "prkty0@gamail.com" && (
                                 <div className="flex justify-center">
                                     <span className="text-green-700 font-bold text-3xl">개발 PM</span>
                                 </div>
