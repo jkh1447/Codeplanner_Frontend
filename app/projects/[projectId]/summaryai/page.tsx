@@ -104,6 +104,7 @@ export default function SummaryAIPage() {
   const [peerFeedback, setPeerFeedback] = useState<string | null>(null)
   const [loadingStep, setLoadingStep] = useState<string>('')
   const [customLoadingMessage, setCustomLoadingMessage] = useState<string | null>(null)
+  const [summaryLoading, setSummaryLoading] = useState(false);
 
   const [owner, setOwner] = useState<string>("")
   const [repo, setRepo] = useState<string>("")
@@ -126,39 +127,40 @@ export default function SummaryAIPage() {
   // 2. AI 요약(프로젝트 전체 요약)은 버튼 클릭 시만 실행
   const analyzeProjectSummary = async () => {
     if (!projectId) {
-      setError('프로젝트 ID가 필요합니다.');
-      return;
+      setError("프로젝트 ID가 필요합니다.")
+      return
     }
-    setLoading(true);
-    setLoadingStep('ai_summary');
-    setCustomLoadingMessage('Summary AI가 프로젝트 분석중...');
+    setSummaryLoading(true)
+    setError(null)
+    //setLoadingStep('ai_summary');
+    // setCustomLoadingMessage('Summary AI가 프로젝트 분석중...');
     try {
       const response = await fetch(`${getApiUrl()}/summaryai/analyze-contribution`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        credentials: 'include',
+        credentials: "include",
         body: JSON.stringify({
           projectId,
           ...(owner && { owner }),
           ...(repo && { repo }),
           includeMergeCommits,
         }),
-      });
+      })
       if (!response.ok) {
-        throw new Error('분석 요청에 실패했습니다.');
+        throw new Error("분석 요청에 실패했습니다.")
       }
-      const data = await response.json();
-      setAnalysis(data);
+      const data = await response.json()
+      setAnalysis(data)
     } catch (err) {
-      setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.');
+      setError(err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.")
     } finally {
-      setLoading(false);
-      setLoadingStep('');
-      setCustomLoadingMessage(null);
+      setSummaryLoading(false)
+      // setLoadingStep('');
+      // setCustomLoadingMessage(null);
     }
-  };
+  }
 
   // 기존 analyzeContribution은 기여도 분석(통계/협업 스타일)만 담당하도록 수정
   const analyzeContribution = async () => {
@@ -168,6 +170,7 @@ export default function SummaryAIPage() {
     }
     setLoading(true);
     setLoadingStep('github_pr');
+    setCustomLoadingMessage(null);
     setError(null);
     try {
       // 단계별 로딩 시뮬레이션 (실제 API 분리 시 각 단계별 setLoadingStep 호출)
@@ -194,10 +197,12 @@ export default function SummaryAIPage() {
       setUserActivities(data.userActivities);
       setLoadingStep('done'); // 반드시 데이터 세팅 후에만 'done'
       setLoading(false);      // 반드시 데이터 세팅 후에만 false
+      setCustomLoadingMessage(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.');
       setLoadingStep('done');
       setLoading(false);
+      setCustomLoadingMessage(null);
     }
   };
 
@@ -234,8 +239,8 @@ export default function SummaryAIPage() {
     github_commit: '커밋 내역 받아오는 중...',
     ai_collab: '협업 스타일 분석 중...',
     timeline: '타임라인 작성하는 중...',
-    ai_summary: 'Summary AI가 프로젝트 분석중...',
-    peer_feedback: 'Summary AI가 팀원 피드백 분석중...',
+    // ai_summary: 'Summary AI가 프로젝트 분석중...',
+    // peer_feedback: 'Summary AI가 팀원 피드백 분석중...',
     done: '',
   }
 
@@ -547,9 +552,9 @@ export default function SummaryAIPage() {
     if (!projectId) return
     setPeerFeedbackLoading(true)
     setPeerFeedback(null)
-    setLoading(true)
-    setLoadingStep('peer_feedback')
-    setCustomLoadingMessage('Summary AI가 팀원 피드백 분석중...')
+    // setLoading(true)
+    // setLoadingStep('peer_feedback')
+    //setCustomLoadingMessage('Summary AI가 팀원 피드백 분석중...')
     try {
       const response = await fetch("/api/summaryai/analyze-contribution", {
         method: "POST",
@@ -567,9 +572,9 @@ export default function SummaryAIPage() {
       setPeerFeedback("피드백 분석 중 오류 발생")
     } finally {
       setPeerFeedbackLoading(false)
-      setLoading(false)
-      setLoadingStep('')
-      setCustomLoadingMessage(null)
+      // setLoading(false)
+      // setLoadingStep('')
+      // setCustomLoadingMessage(null)
     }
   }
 
@@ -610,15 +615,17 @@ export default function SummaryAIPage() {
             <div className="flex flex-col gap-3">
               <Button
                 onClick={analyzeProjectSummary}
-                disabled={loading || !projectId}
+                disabled={summaryLoading || !projectId}
+                // disabled={!projectId}
                 className="flex items-center gap-2 bg-slate-600 hover:bg-slate-700 text-white shadow-lg px-7 py-3 text-lg"
               >
-                <TrendingUp className="h-4 w-4" />
+                {summaryLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <TrendingUp className="h-4 w-4" />}
                 AI 분석 시작
               </Button>
               <Button
                 onClick={handlePeerFeedbackAnalyze}
                 disabled={peerFeedbackLoading || !projectId}
+                // disabled={!projectId}
                 variant="outline"
                 className="flex items-center gap-2 border-gray-300 hover:bg-gray-50 bg-transparent px-7 py-3 text-lg"
               >
@@ -646,6 +653,9 @@ export default function SummaryAIPage() {
             <AlertDescription className="text-red-800">{error}</AlertDescription>
           </Alert>
         )}
+
+        {/* Stats and Collaboration Analysis */}
+        {userStats && collaborationFeedback && renderStatsAndCollab()}
 
         {/* AI Analysis Results */}
         {analysis && (
@@ -764,9 +774,6 @@ export default function SummaryAIPage() {
             </CardContent>
           </Card>
         )}
-
-        {/* Stats and Collaboration Analysis */}
-        {userStats && collaborationFeedback && renderStatsAndCollab()}
 
         {/* Activity Timeline */}
         {(userActivities || analysis) && renderTimeline()}
