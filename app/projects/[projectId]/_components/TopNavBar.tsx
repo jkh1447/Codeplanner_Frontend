@@ -221,7 +221,7 @@ export default function Header() {
                                     <span className="text-purple-700 font-bold text-3xl">개발자</span>
                                 </div>
                             )}
-                            {currentUserEmail === "prkty0@gamail.com" && (
+                            {currentUserEmail === "prkty0@gmail.com" && (
                                 <div className="flex justify-center">
                                     <span className="text-green-700 font-bold text-3xl">개발 PM</span>
                                 </div>
