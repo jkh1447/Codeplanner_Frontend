@@ -473,48 +473,173 @@ export default function Welcome() {
 
             {/* Demo Section */}
             <div className="bg-white rounded-xl p-8 border border-slate-200 shadow-sm">
-              <h2 className="text-3xl font-bold mb-8 text-center text-slate-800">
-                Code Planner의 핵심 기능
-              </h2>
-              <div className="grid md:grid-cols-2 gap-8 items-center mb-8">
-                <div>
-                  <h3 className="text-xl font-semibold mb-4 text-blue-600">
-                    📋 이슈 트래킹
-                  </h3>
-                  <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 text-sm">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-medium">
-                        HIGH
-                      </span>
-                      <span className="text-slate-600">#1234</span>
-                    </div>
-                    <div className="font-medium text-slate-800 mb-1">
-                      로그인 페이지 버그 수정
-                    </div>
-                    <div className="text-slate-600 text-xs">
-                      담당자: 김개발 | 마감일: 2024-01-15
-                    </div>
+            <h2 className="text-3xl font-bold mb-8 text-center text-slate-800">Code Planner의 핵심 기능</h2>
+            <div className="grid md:grid-cols-2 gap-8 items-start mb-8">
+              <div>
+                <h3 className="text-xl font-semibold mb-4 text-blue-600">📋 이슈 트래킹</h3>
+
+                {/* 이슈 트래킹 기능 설명 */}
+                <div className="mb-4 space-y-3">
+                  <p className="text-slate-700 text-sm leading-relaxed">
+                    프로젝트의 모든 작업을 체계적으로 관리하고 추적할 수 있습니다. 작업, 버그, 핫픽스를 구분하여 관리하며, 각
+                    이슈의 진행 상태를 실시간으로 확인할 수 있습니다.
+                  </p>
+
+                  <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                    <h4 className="font-semibold text-blue-800 mb-2 text-sm">주요 기능:</h4>
+                    <ul className="text-xs text-blue-700 space-y-1">
+                      <li>
+                        • <strong>이슈 타입 분류:</strong> 작업, 버그, 핫픽스 구분 관리
+                      </li>
+                      <li>
+                        • <strong>상태 추적:</strong> 백로그 → 해야 할 일 → 진행 중 → 리뷰 → 완료
+                      </li>
+                      <li>
+                        • <strong>고유 키 시스템:</strong> CP-1, CP-2 등 체계적인 식별자
+                      </li>
+                    </ul>
                   </div>
                 </div>
-                <div>
-                  <h3 className="text-xl font-semibold mb-4 text-green-600">
-                    ✅ 코드 품질 검사
-                  </h3>
-                  <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 text-sm">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-slate-800">
-                        코드 품질 점수
-                      </span>
-                      <span className="text-green-600 font-bold">92/100</span>
-                    </div>
-                    <div className="text-slate-600 text-xs">
-                      ✓ 복잡도: 양호
-                      <br />✓ 테스트 커버리지: 85%
-                      <br />⚠ 중복 코드: 3개 발견
-                    </div>
-                  </div>
+
+                {/* 이슈 보드 이미지 */}
+                <div className="w-full flex justify-center mb-3">
+                  <img
+                    src="IssueBoard.PNG"
+                    alt="이슈 트래킹 테이블 - 작업, 버그, 핫픽스를 포함한 체계적인 이슈 관리"
+                    className="rounded-lg border border-slate-200 shadow-md max-w-full h-auto"
+                  />
+                </div>
+
+                {/* 이슈 목록 테이블 이미지 */}
+                <div className="w-full flex justify-center mb-3">
+                  <img
+                    src="IssueList.PNG"
+                    alt="이슈 트래킹 테이블 - 작업, 버그, 핫픽스를 포함한 체계적인 이슈 관리"
+                    className="rounded-lg border border-slate-200 shadow-md max-w-full h-auto"
+                  />
+                </div>
+
+                {/* 이미지 설명 */}
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                  <p className="text-xs text-slate-600 text-center">
+                    실제 이슈 트래킹 화면 - 다양한 이슈 타입과 상태를 색상으로 구분하여 직관적으로 관리
+                  </p>
                 </div>
               </div>
+
+              <div>
+                <h3 className="text-xl font-semibold mb-4 text-green-600">✅ 코드 품질 검사</h3>
+
+                {/* 코드 품질 검사 설명 */}
+                <div className="mb-4 space-y-3">
+                  <p className="text-slate-700 text-sm leading-relaxed">
+                    실시간 코드 분석을 통해 잠재적 오류와 코딩 스타일 문제를 자동으로 감지하고 개선 방안을 제시합니다. 다양한
+                    분석 도구를 통해 코드 품질을 향상시킵니다.
+                  </p>
+
+                  <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                    <h4 className="font-semibold text-green-800 mb-2 text-sm">지원 도구:</h4>
+                    <ul className="text-xs text-green-700 space-y-1">
+                      <li>
+                        • <strong>cppcheck:</strong> C/C++ 정적 분석 및 버그 탐지
+                      </li>
+                      <li>
+                        • <strong>clang-format:</strong> 코드 포맷팅 및 스타일 검사
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                {/* 코드 분석 인터페이스 */}
+                <div className="bg-white border border-slate-200 rounded-lg shadow-md overflow-hidden">
+                  {/* 파일 헤더 */}
+                  <div className="bg-slate-50 px-3 py-2 border-b border-slate-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                        <span className="text-xs font-medium text-slate-700">test_files/presentation/twofail.c</span>
+                      </div>
+                      <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-md font-medium">modified</span>
+                    </div>
+                    <div className="flex items-center space-x-3 mt-1 text-xs text-slate-500">
+                      <span>라인: c</span>
+                      <span>크기: 118 문자</span>
+                    </div>
+                  </div>
+
+                  {/* 버튼 영역 */}
+                  <div className="px-3 py-2 bg-slate-50 border-b border-slate-200">
+                    <div className="flex space-x-2">
+                      <button className="px-2 py-1 bg-blue-600 text-white text-xs rounded-md hover:bg-blue-700">분석</button>
+                      <button className="px-2 py-1 bg-slate-200 text-slate-700 text-xs rounded-md hover:bg-slate-300">
+                        내용 보기
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 코드 에디터 */}
+                  <div className="p-3">
+                    <div className="text-xs text-slate-500 mb-2">변경된 내용:</div>
+                    <div className="bg-slate-50 rounded-md p-2 font-mono text-xs">
+                      <div className="flex">
+                        <div className="text-slate-400 pr-3 select-none">
+                          <div>1</div>
+                          <div>2</div>
+                          <div>3</div>
+                          <div>4</div>
+                          <div>5</div>
+                          <div>6</div>
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-slate-700">#include &lt;stdio.h&gt;</div>
+                          <div></div>
+                          <div className="text-slate-700">int main(){"{"} int a = 0;</div>
+                          <div className="text-slate-700 bg-red-50">
+                            <span className="bg-red-200 px-1">if(a == 1){"{"}</span>
+                          </div>
+                          <div className="text-slate-700 pl-4">printf("format, cppcheck 툴니...");</div>
+                          <div className="text-slate-700">{"}"}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 에러 섹션들 */}
+                  <div className="space-y-2 p-3 pt-0">
+                    {/* cppcheck 에러 */}
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-2">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <div className="w-3 h-3 bg-red-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs">!</span>
+                        </div>
+                        <span className="font-medium text-red-800 text-sm">cppcheck 에러</span>
+                      </div>
+                      <div className="text-xs text-red-700 ml-5">
+                        • 타입: <code className="bg-red-100 px-1 rounded">style [4, 8]</code>: Condition 'a==1' is always
+                        false
+                      </div>
+                    </div>
+
+                    {/* clang-format 에러 */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-3 h-3 bg-blue-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs">i</span>
+                        </div>
+                        <span className="font-medium text-blue-800 text-sm">clang-format 에러</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 이미지 설명 */}
+                <div className="mt-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                  <p className="text-xs text-slate-600 text-center">
+                    실시간 코드 분석 - 잠재적 버그와 스타일 문제를 즉시 감지하여 코드 품질 향상
+                  </p>
+                </div>
+              </div>
+            </div>
               <div className="text-center">
                 <Link href="/user/create">
                   <button className="bg-slate-500 hover:bg-slate-600 text-white px-8 py-3 rounded-lg font-semibold transition-colors shadow-lg">
