@@ -1,119 +1,54 @@
-# 프로젝트 폴더 구조
-```
-📦Codeplanner_Frontend
- ┣ 📂app                        # Next.js App Router의 메인 폴더
- ┃ ┣ 📂api                       # (비어있음/미정의) API 관련 폴더
- ┃ ┣ 📂auth                      # 인증 관련 페이지 및 컴포넌트
- ┃ ┃ ┣ 📂emailVerified             # 이메일 인증 관련
- ┃ ┃ ┣ 📂forgot-password           # 비밀번호 찾기
- ┃ ┃ ┣ 📂github-oauth              # 깃허브 OAuth 로그인
- ┃ ┃ ┣ 📂login                     # 로그인
- ┃ ┃ ┣ 📂needEmail                 # 이메일 필요 안내
- ┃ ┃ ┗ 📂reset-password            # 비밀번호 재설정
- ┃ ┣ 📂error                      # 에러 페이지
- ┃ ┣ 📂maintenance                # 점검 안내 페이지
- ┃ ┣ 📂not-found.tsx              # 404 Not Found 페이지
- ┃ ┣ 📂projectList                # 프로젝트 리스트 및 깃허브 연동
- ┃ ┣ 📂projects                   # 개별 프로젝트 관련 라우팅
- ┃ ┃ ┣ 📂[projectId]                # 동적 라우팅: 프로젝트별
- ┃ ┃ ┃ ┣ 📂board                      # 칸반보드
- ┃ ┃ ┃ ┣ 📂code                       # 코드/Pull Request
- ┃ ┃ ┃ ┣ 📂issue                      # 이슈 상세
- ┃ ┃ ┃ ┣ 📂issue-generater-ai         # AI 이슈 생성
- ┃ ┃ ┃ ┣ 📂list                       # 이슈 리스트
- ┃ ┃ ┃ ┣ 📂my-issues                  # 내 이슈
- ┃ ┃ ┃ ┣ 📂settings                   # 프로젝트 설정
- ┃ ┃ ┃ ┣ 📂summary                    # 프로젝트 요약
- ┃ ┃ ┃ ┗ 📂timeline                   # 간트차트 등 타임라인
- ┃ ┣ 📂user                       # 유저 관련 페이지
- ┃ ┃ ┣ 📂create                      # 회원가입
- ┃ ┃ ┗ 📂mypage                      # 마이페이지
- ┃ ┣ 📂welcome                    # 웰컴 페이지
- ┃ ┣ layout.tsx                   # 전체 레이아웃
- ┃ ┣ globals.css                  # 전역 스타일
- ┃ ┗ page.tsx                     # 루트 페이지
- ┣ 📂components                  # 전역 컴포넌트
- ┃ ┣ 📂auth-layout                 # 인증 레이아웃
- ┃ ┣ 📂header                      # 헤더
- ┃ ┣ 📂icons                       # 아이콘 컴포넌트
- ┃ ┣ 📂theme-provider              # 테마 관련
- ┃ ┗ 📂ui                          # 버튼, 모달 등 UI 요소
- ┣ 📂lib                         # API, 유틸 함수 등
- ┣ 📂public                      # 정적 파일 (이미지, 파비콘 등)
- ┣ 📂scripts                     # 배포/운영 스크립트
- ┣ components.json
- ┣ DEPLOYMENT.md
- ┣ ENVIRONMENT_SETUP.md
- ┣ GITHUB_SECRETS_SETUP.md
- ┣ jsconfig.json
- ┣ next-env.d.ts
- ┣ next.config.mjs
- ┣ nginx.conf
- ┣ package.json
- ┣ postcss.config.mjs
- ┣ README.md
- ┣ tailwind.config.ts
- ┣ tsconfig.json
-```
+<!-- 가운데 정렬 + width만 지정 -->
+<p align="center">
+  <img width="600" alt="code-planner-logo" src="https://github.com/user-attachments/assets/4650f324-cbd6-46c7-84e8-fb7b5385abd1" />
+</p>
 
-## 프로젝트 실행방법
 
-프로젝트 디렉토리에서 다음을 실행할 수 있습니다.
 
-### 환경변수 설정
+## 📌 목차
 
-프로젝트 루트에 `.env.local` 파일을 생성하고 다음 내용을 추가하세요:
+1. [프로젝트 개요](#프로젝트-개요)  
+2. [서비스 소개](#서비스-소개)  
+3. [포스터](#포스터)  
 
-```bash
-# 개발 환경 설정
-NEXT_PUBLIC_API_URL=http://localhost:5000
-NEXT_PUBLIC_ENV=development
+---
 
-# 배포 환경 설정 (EC2 IP 주소로 변경)
-# NEXT_PUBLIC_API_URL=http://your-ec2-ip:5000
-# NEXT_PUBLIC_ENV=production
-```
+## 📁 프로젝트 개요
 
-### `npm install`
+### 🗓 개발 기간  
+2025년 06월 19일 ~ 2025년 07월 26일
 
-npm 패키지를 프로젝트에 설치합니다.
+### 👥 팀원
 
-### `npm start`
+|<img src="https://avatars.githubusercontent.com/u/186130931?v=4" width="150" height="150"/>|<img src="https://avatars.githubusercontent.com/u/4592459?v=4" width="150" height="150"/>|<img src="https://avatars.githubusercontent.com/u/103018497?v=4" width="150" height="150"/>|<img src="https://avatars.githubusercontent.com/u/201695983?v=4" width="150" height="150"/>|<img src="https://avatars.githubusercontent.com/u/176196654?v=4" width="150" height="150"/>|
+|:-:|:-:|:-:|:-:|:-:|
+|김태용<br/>[@prkty](https://github.com/prkty)|정권호<br/>[@jkh1447](https://github.com/jkh1447)|김명석<br/>[@MyeongSeok98](https://github.com/MyeongSeok98)|김진혁<br/>[@hyuckino](https://github.com/hyuckino)|김윤호<br/>[@kimyounhoex1](https://github.com/kimyounhoex1)|
 
-앱을 개발 모드로 실행합니다.\
-브라우저에서 확인하려면 [http://localhost:3000](http://localhost:3000)을 여세요.
+### 🛠 기술 스택
 
-편집하면 페이지가 다시 로드됩니다.\
-또한 콘솔에서 Lint 오류를 확인할 수 있습니다.
+|분류|기술|
+|----|----|
+|CI/CD|![GitHub Actions](https://img.shields.io/badge/github%20actions-%232671E5.svg?style=for-the-badge&logo=githubactions&logoColor=white)|
+|Infra|![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?style=for-the-badge&logo=amazon-aws&logoColor=white) ![Nginx](https://img.shields.io/badge/nginx-%23009639.svg?style=for-the-badge&logo=nginx&logoColor=white)|
+|Frontend|![Next JS](https://img.shields.io/badge/Next-black?style=for-the-badge&logo=next.js&logoColor=white) ![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white) ![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white) ![HTML5](https://img.shields.io/badge/html5-%23E34F26.svg?style=for-the-badge&logo=html5&logoColor=white)|
+|Backend|![NodeJS](https://img.shields.io/badge/node.js-6DA55F?style=for-the-badge&logo=node.js&logoColor=white) ![NestJS](https://img.shields.io/badge/nestjs-%23E0234E.svg?style=for-the-badge&logo=nestjs&logoColor=white) ![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white) ![Google Gemini](https://img.shields.io/badge/google%20gemini-8E75B2?style=for-the-badge&logo=google%20gemini&logoColor=white)|
+|Other|![Jira](https://img.shields.io/badge/jira-%230A0FFF.svg?style=for-the-badge&logo=jira&logoColor=white) ![Notion](https://img.shields.io/badge/Notion-%23000000.svg?style=for-the-badge&logo=notion&logoColor=white)|
 
-### `npm test`
+---
 
-테스트 실행을 대화형 감시 모드로 실행합니다.\
-자세한 내용은 [테스트 실행](https://facebook.github.io/create-react-app/docs/running-tests) 섹션을 참조하세요.
+## 🧩 서비스 소개
 
-### `npm run build`
+### 시연영상
+[![동영상 썸네일](https://img.youtube.com/vi/lQ6dAhKvjFM/0.jpg)](https://youtu.be/lQ6dAhKvjFM)
 
-프로덕션용 앱을 `build` 폴더에 빌드합니다. \
-프로덕션 모드에서 React를 올바르게 번들링하고 최상의 성능을 위해 빌드를 최적화합니다.
 
-빌드가 최소화되었으며 파일 이름에 해시가 포함됩니다. \
-앱을 배포할 준비가 되었습니다!
 
-자세한 내용은 [배포](https://facebook.github.io/create-react-app/docs/deployment) 섹션을 참조하세요.
+<img width="3637" height="2943" alt="readme2" src="https://github.com/user-attachments/assets/16a6e9ba-0d51-4aa4-91b5-57cfc30c8ae7" />
 
-### `npm run eject`
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build depend                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ency from your project.
+---
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+## 🎨 포스터
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-//
+<img width="7724" height="10933" alt="포스터" src="https://github.com/user-attachments/assets/e0af5e07-4126-43fe-b910-115e4d291a3a" />
