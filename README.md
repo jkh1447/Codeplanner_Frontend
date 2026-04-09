@@ -1,8 +1,11 @@
 <!-- 가운데 정렬 + width만 지정 -->
 <p align="center">
-  <img width="600" alt="code-planner-logo" src="https://github.com/user-attachments/assets/4650f324-cbd6-46c7-84e8-fb7b5385abd1" />
+  <img width="200" height="200" alt="CodePlannerIcon" src="https://github.com/user-attachments/assets/8b15ea4c-c0c9-4531-8868-619e43ca783e" />
 </p>
 
+<p align="center">
+  <b>AI 기반 프로젝트 관리 플랫폼</b>
+</p>
 
 
 ## 📌 목차
@@ -38,17 +41,96 @@
 
 ## 🧩 서비스 소개
 
-### 시연영상
+---
+
+## 🎬 시연 영상
+
 [![동영상 썸네일](https://img.youtube.com/vi/lQ6dAhKvjFM/0.jpg)](https://youtu.be/lQ6dAhKvjFM)
-
-
-
-<img width="3637" height="2943" alt="readme2" src="https://github.com/user-attachments/assets/16a6e9ba-0d51-4aa4-91b5-57cfc30c8ae7" />
-
-
 
 ---
 
+## 🚀 주요 기능
+
+### 📌 이슈 관리
+
+<table>
+<tr>
+<td align="center">
+<img src="https://github.com/user-attachments/assets/1139a398-38d6-4eff-b25d-5ed8fe7bbb4a" width="100%" />
+<br/>
+<b>칸반보드</b><br/>
+칸반 형태로 이슈를 직관적으로 관리
+</td>
+
+<td align="center">
+<img src="https://github.com/user-attachments/assets/59b2c1d7-58a2-4f1e-a6fb-7a70411ee9a0" width="100%" />
+<br/>
+<b>이슈 목록</b><br/>
+전체 이슈를 리스트 형태로 확인
+</td>
+</tr>
+</table>
+
+---
+
+### 📊 프로젝트 분석
+
+<table>
+<tr>
+<td align="center">
+<img src="https://github.com/user-attachments/assets/37f0c569-bfc3-40a4-99c8-7701a4ec54a4" width="100%" />
+<br/>
+<b>요약</b><br/>
+프로젝트 이슈 현황을 자동 요약
+</td>
+
+<td align="center">
+<img src="https://github.com/user-attachments/assets/d397f1d6-1183-438b-b242-1f6137645581" width="100%" />
+<br/>
+<b>타임라인</b><br/>
+간트차트 기반 일정 관리
+</td>
+</tr>
+</table>
+
+---
+
+### 🤖 AI 기능
+
+<table>
+<tr>
+<td align="center">
+<img src="https://github.com/user-attachments/assets/15849df3-a19c-4a51-9070-54a2775b348c" width="100%" />
+<br/>
+<b>AI 이슈 생성</b><br/>
+회의록 기반 자동 이슈 생성
+</td>
+
+<td align="center">
+<img src="https://github.com/user-attachments/assets/540344e0-6d4a-44f4-b7d1-87b7dfff020c" width="100%" />
+<br/>
+<b>AI 요약</b><br/>
+이슈 및 커밋 기록 자동 요약
+</td>
+</tr>
+</table>
+
+---
+
+### 💻 코드 관리
+
+<table>
+<tr>
+<td align="center">
+<img src="https://github.com/user-attachments/assets/3870bfba-f179-40b1-85d6-eabdcb59c817" width="70%" />
+<br/>
+<b>코드 관리</b><br/>
+브랜치, 커밋, PR 기록 통합 관리
+</td>
+</tr>
+</table>
+
+---
 ## 🎨 포스터
 
 <img width="7724" height="10933" alt="포스터" src="https://github.com/user-attachments/assets/e0af5e07-4126-43fe-b910-115e4d291a3a" />
