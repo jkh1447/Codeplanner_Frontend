@@ -21,6 +21,10 @@
 ### 🗓 개발 기간  
 2025년 06월 19일 ~ 2025년 07월 26일
 
+### 🏗️ 아키텍쳐
+<img width="1318" height="390" alt="image (3)" src="https://github.com/user-attachments/assets/143c4d51-f729-425b-a0cc-00a6e850c1db" />
+
+
 ### 👥 팀원
 
 |<img src="https://avatars.githubusercontent.com/u/186130931?v=4" width="150" height="150"/>|<img src="https://avatars.githubusercontent.com/u/4592459?v=4" width="150" height="150"/>|<img src="https://avatars.githubusercontent.com/u/103018497?v=4" width="150" height="150"/>|<img src="https://avatars.githubusercontent.com/u/201695983?v=4" width="150" height="150"/>|<img src="https://avatars.githubusercontent.com/u/176196654?v=4" width="150" height="150"/>|
